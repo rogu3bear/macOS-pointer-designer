@@ -241,7 +241,7 @@ public final class BackgroundColorDetector {
 
         // Check Dock (approximate - Dock position varies)
         // This is a heuristic since Dock position detection requires private APIs
-        if let mainScreen = NSScreen.main {
+        if NSScreen.main != nil {
             let dockHeight: CGFloat = 70
             if point.y < dockHeight {
                 return true

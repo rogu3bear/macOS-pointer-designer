@@ -220,25 +220,20 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         var success = false
 
         while attempts < maxRetries && !success {
-            do {
-                // Post notification
-                DistributedNotificationCenter.default().postNotificationName(
-                    NSNotification.Name(name),
-                    object: nil,
-                    userInfo: nil,
-                    deliverImmediately: true
-                )
+            // Post notification
+            DistributedNotificationCenter.default().postNotificationName(
+                NSNotification.Name(name),
+                object: nil,
+                userInfo: nil,
+                deliverImmediately: true
+            )
 
-                // Give a small delay to ensure delivery
-                Thread.sleep(forTimeInterval: 0.1)
+            // Give a small delay to ensure delivery
+            Thread.sleep(forTimeInterval: 0.1)
 
-                success = true
-                NSLog("HelperTool: Posted notification '\(name)' successfully")
-            } catch {
-                NSLog("HelperTool: Failed to post notification '\(name)': \(error)")
-                attempts += 1
-                Thread.sleep(forTimeInterval: 0.2)
-            }
+            success = true
+            NSLog("HelperTool: Posted notification '\(name)' successfully")
+            attempts += 1
         }
 
         return success

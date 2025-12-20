@@ -63,7 +63,6 @@ public final class DisplayManager {
         }
 
         let screenFrame = screen.frame
-        let screenHeight = screenFrame.height
 
         // Convert Y coordinate within this screen's coordinate space
         return CGPoint(

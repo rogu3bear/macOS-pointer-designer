@@ -88,12 +88,9 @@ public final class PermissionManager {
         alert.addButton(withTitle: "Open System Settings")
         alert.addButton(withTitle: "Later")
 
-        let response: NSApplication.ModalResponse
-        if let window = window {
-            response = alert.runModal()
-        } else {
-            response = alert.runModal()
-        }
+        // Note: window parameter reserved for future sheet presentation
+        _ = window
+        let response = alert.runModal()
 
         if response == .alertFirstButtonReturn {
             openSystemPreferences(for: permission)

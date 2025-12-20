@@ -107,10 +107,11 @@ public final class LaunchAtLoginManager {
     }
 
     // MARK: - Legacy (macOS 12 and earlier)
+    // Note: These use deprecated LSSharedFileList APIs (deprecated in macOS 10.11)
+    // but are required for backward compatibility with pre-macOS 13 systems.
 
+    @available(macOS, deprecated: 10.11, message: "Using deprecated LSSharedFileList for macOS 12 compatibility")
     private var legacyIsEnabled: Bool {
-        // Legacy implementation using deprecated APIs
-        // These warnings are expected and acceptable for backward compatibility
         guard let loginItems = LSSharedFileListCreate(
             nil,
             kLSSharedFileListSessionLoginItems.takeRetainedValue(),
@@ -135,6 +136,7 @@ public final class LaunchAtLoginManager {
         return false
     }
 
+    @available(macOS, deprecated: 10.11, message: "Using deprecated LSSharedFileList for macOS 12 compatibility")
     private func setEnabledLegacy(_ enabled: Bool) -> Result<Void, LaunchAtLoginError> {
         guard let loginItems = LSSharedFileListCreate(
             nil,
