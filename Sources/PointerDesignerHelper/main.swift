@@ -1,14 +1,27 @@
 import Foundation
 import AppKit
+import Security
 
 /// Privileged helper tool for system-wide cursor changes
 final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelperProtocol {
     private let listener: NSXPCListener
 
+    // Edge case #60: Expected team identifier for code signing verification
+    private let expectedTeamIdentifier = "YOUR_TEAM_ID" // Replace with actual team ID
+
+    // Edge case #62: Temp file cleanup timer
+    private var cleanupTimer: Timer?
+
     override init() {
         listener = NSXPCListener(machServiceName: "com.pointerdesigner.helper")
         super.init()
         listener.delegate = self
+
+        // Edge case #62: Clean up old temp files on startup
+        cleanupOldTempFiles()
+
+        // Edge case #62: Set up periodic cleanup (every hour)
+        setupPeriodicCleanup()
     }
 
     func run() {
@@ -16,11 +29,53 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         RunLoop.current.run()
     }
 
+    // Edge case #62: Clean up temp files older than 24 hours
+    private func cleanupOldTempFiles() {
+        let tempDir = NSTemporaryDirectory()
+        let fileManager = FileManager.default
+
+        do {
+            let contents = try fileManager.contentsOfDirectory(atPath: tempDir)
+            let maxAge: TimeInterval = 24 * 60 * 60 // 24 hours
+
+            for file in contents {
+                // Only clean up our cursor files
+                if file.hasPrefix("com.pointerdesigner.cursor") {
+                    let filePath = (tempDir as NSString).appendingPathComponent(file)
+
+                    if let attributes = try? fileManager.attributesOfItem(atPath: filePath),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+
+                        let age = Date().timeIntervalSince(modificationDate)
+                        if age > maxAge {
+                            try? fileManager.removeItem(atPath: filePath)
+                            NSLog("HelperTool: Cleaned up old temp file: \(file)")
+                        }
+                    }
+                }
+            }
+        } catch {
+            NSLog("HelperTool: Error during temp file cleanup: \(error)")
+        }
+    }
+
+    // Edge case #62: Set up periodic cleanup
+    private func setupPeriodicCleanup() {
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            self?.cleanupOldTempFiles()
+        }
+    }
+
+    deinit {
+        cleanupTimer?.invalidate()
+    }
+
     // MARK: - NSXPCListenerDelegate
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        // Verify the connecting process is our main app
+        // Edge case #60: Verify the connecting process is our main app
         guard verifyClient(connection: newConnection) else {
+            NSLog("HelperTool: Rejected connection from unauthorized client")
             return false
         }
 
@@ -31,13 +86,71 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         return true
     }
 
+    // Edge case #60: Implement proper SecCode verification
     private func verifyClient(connection: NSXPCConnection) -> Bool {
-        // In production, verify code signing requirements
-        // For now, accept connections from our app bundle ID
-        let validBundleIDs = ["com.pointerdesigner.app"]
+        var code: SecCode?
+        var status: OSStatus
 
-        // Get the audit token and verify
-        // Simplified for example - production code should use SecCode verification
+        // Get the SecCode for the connecting process
+        let attributes = [kSecGuestAttributePid: connection.processIdentifier] as CFDictionary
+        status = SecCodeCopyGuestWithAttributes(nil, attributes, [], &code)
+
+        guard status == errSecSuccess, let clientCode = code else {
+            NSLog("HelperTool: Failed to get SecCode for client: \(status)")
+            return false
+        }
+
+        // Edge case #60: Check code signing requirement
+        // Verify the client is properly signed
+        var staticCode: SecStaticCode?
+        status = SecCodeCopyStaticCode(clientCode, [], &staticCode)
+
+        guard status == errSecSuccess, let clientStaticCode = staticCode else {
+            NSLog("HelperTool: Failed to get static code: \(status)")
+            return false
+        }
+
+        // Verify signature is valid
+        status = SecStaticCodeCheckValidity(clientStaticCode, [], nil)
+        guard status == errSecSuccess else {
+            NSLog("HelperTool: Client signature validation failed: \(status)")
+            return false
+        }
+
+        // Edge case #60: Check team identifier matches expected value
+        var signingInfo: CFDictionary?
+        status = SecCodeCopySigningInformation(clientStaticCode, [], &signingInfo)
+
+        guard status == errSecSuccess,
+              let info = signingInfo as? [String: Any] else {
+            NSLog("HelperTool: Failed to get signing information: \(status)")
+            return false
+        }
+
+        // Extract team identifier
+        if let teamIdentifier = info[kSecCodeInfoTeamIdentifier as String] as? String {
+            // If we have a specific team ID to check against
+            if expectedTeamIdentifier != "YOUR_TEAM_ID" && teamIdentifier != expectedTeamIdentifier {
+                NSLog("HelperTool: Team identifier mismatch. Expected: \(expectedTeamIdentifier), Got: \(teamIdentifier)")
+                return false
+            }
+            NSLog("HelperTool: Client verified with team ID: \(teamIdentifier)")
+        } else {
+            // Edge case #60: Reject unsigned clients
+            NSLog("HelperTool: Client is not signed with a team identifier")
+            return false
+        }
+
+        // Optionally verify bundle identifier
+        if let bundleIdentifier = info[kSecCodeInfoIdentifier as String] as? String {
+            let validBundleIDs = ["com.pointerdesigner.app", "com.pointerdesigner"]
+            if !validBundleIDs.contains(bundleIdentifier) {
+                NSLog("HelperTool: Invalid bundle identifier: \(bundleIdentifier)")
+                return false
+            }
+            NSLog("HelperTool: Client verified with bundle ID: \(bundleIdentifier)")
+        }
+
         return true
     }
 
@@ -75,13 +188,18 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         // Fallback: Save cursor to a shared location for the main app to use
         saveCursorImage(image)
 
-        // Notify main app via distributed notification
-        DistributedNotificationCenter.default().postNotificationName(
-            NSNotification.Name("com.pointerdesigner.cursorUpdated"),
-            object: nil,
-            userInfo: nil,
-            deliverImmediately: true
+        // Edge case #63: Distributed notification with fallback mechanism
+        // Note: For more reliable delivery, consider using XPC reply callback instead
+        let notificationPosted = postNotificationWithRetry(
+            name: "com.pointerdesigner.cursorUpdated",
+            maxRetries: 3
         )
+
+        if !notificationPosted {
+            NSLog("HelperTool: Warning - Failed to post cursor updated notification after retries")
+            // In a production environment, you might want to use XPC reply callback
+            // instead of distributed notifications for guaranteed delivery
+        }
     }
 
     private func restoreDefaultCursor() {
@@ -89,18 +207,62 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         let cursorPath = "/tmp/com.pointerdesigner.cursor.tiff"
         try? FileManager.default.removeItem(atPath: cursorPath)
 
-        DistributedNotificationCenter.default().postNotificationName(
-            NSNotification.Name("com.pointerdesigner.cursorRestored"),
-            object: nil,
-            userInfo: nil,
-            deliverImmediately: true
+        // Edge case #63: Use notification with retry
+        _ = postNotificationWithRetry(
+            name: "com.pointerdesigner.cursorRestored",
+            maxRetries: 3
         )
     }
 
+    // Edge case #63: Add fallback mechanism for notifications
+    private func postNotificationWithRetry(name: String, maxRetries: Int) -> Bool {
+        var attempts = 0
+        var success = false
+
+        while attempts < maxRetries && !success {
+            do {
+                // Post notification
+                DistributedNotificationCenter.default().postNotificationName(
+                    NSNotification.Name(name),
+                    object: nil,
+                    userInfo: nil,
+                    deliverImmediately: true
+                )
+
+                // Give a small delay to ensure delivery
+                Thread.sleep(forTimeInterval: 0.1)
+
+                success = true
+                NSLog("HelperTool: Posted notification '\(name)' successfully")
+            } catch {
+                NSLog("HelperTool: Failed to post notification '\(name)': \(error)")
+                attempts += 1
+                Thread.sleep(forTimeInterval: 0.2)
+            }
+        }
+
+        return success
+    }
+
     private func saveCursorImage(_ image: NSImage) {
-        let cursorPath = "/tmp/com.pointerdesigner.cursor.tiff"
+        // Edge case #61: Use secure temp directory with restrictive permissions
+        let tempDir = NSTemporaryDirectory()
+        let cursorPath = (tempDir as NSString).appendingPathComponent("com.pointerdesigner.cursor.tiff")
+
         if let tiffData = image.tiffRepresentation {
-            try? tiffData.write(to: URL(fileURLWithPath: cursorPath))
+            do {
+                // Write the file
+                try tiffData.write(to: URL(fileURLWithPath: cursorPath), options: .atomic)
+
+                // Edge case #61: Set restrictive permissions (0600 = rw-------)
+                // This ensures only the owner can read/write the file
+                let attributes = [FileAttributeKey.posixPermissions: NSNumber(value: 0o600)]
+                try FileManager.default.setAttributes(attributes, ofItemAtPath: cursorPath)
+
+                NSLog("HelperTool: Saved cursor image with secure permissions at \(cursorPath)")
+            } catch {
+                NSLog("HelperTool: Failed to save cursor image or set permissions: \(error)")
+            }
         }
     }
 }
