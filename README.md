@@ -9,6 +9,8 @@ System-wide macOS cursor customization with dynamic contrast adaptation.
 - **Outline Mode**: Add a contrasting outline that adapts to the background
 - **Menu Bar App**: Quick access to settings from the menu bar
 - **Launch at Login**: Optionally start with your Mac
+- **Multi-Monitor Support**: Handles different DPI scales and refresh rates per display
+- **Crash Recovery**: Automatically restores system cursor if app terminates unexpectedly
 
 ## Requirements
 
@@ -37,9 +39,9 @@ brew install --cask pointer-designer
 ### Menu Bar
 
 Click the cursor icon in the menu bar to:
-- Enable/disable cursor customization
-- Switch between contrast modes
-- Open preferences
+- Enable/disable cursor customization (Cmd+E)
+- Switch between contrast modes (Cmd+1/2/3)
+- Open preferences (Cmd+,)
 
 ### Contrast Modes
 
@@ -71,11 +73,14 @@ Click the cursor icon in the menu bar to:
 git clone https://github.com/rogu3bear/macOS-pointer-designer.git
 cd macOS-pointer-designer
 
-# Build release
-make release
+# Build with Swift Package Manager
+swift build
 
 # Run tests
-make test
+swift test
+
+# Build release
+make release
 
 # Create DMG
 make dmg
@@ -86,40 +91,114 @@ make dmg
 ```
 macOS-pointer-designer/
 ├── Sources/
-│   ├── PointerDesigner/         # Main app
-│   │   ├── main.swift
-│   │   ├── AppDelegate.swift
-│   │   ├── MenuBarController.swift
-│   │   └── PreferencesWindowController.swift
-│   ├── PointerDesignerCore/     # Core library
-│   │   ├── CursorEngine.swift
-│   │   ├── CursorRenderer.swift
-│   │   ├── CursorSettings.swift
-│   │   ├── BackgroundColorDetector.swift
-│   │   ├── SettingsManager.swift
-│   │   ├── HelperToolManager.swift
-│   │   └── LaunchAtLoginManager.swift
-│   └── PointerDesignerHelper/   # Privileged helper
-│       └── main.swift
+│   ├── PointerDesigner/           # Main app target
+│   │   ├── main.swift             # App entry point
+│   │   ├── AppDelegate.swift      # App lifecycle, crash recovery, signal handlers
+│   │   ├── MenuBarController.swift    # Menu bar UI and actions
+│   │   └── PreferencesWindowController.swift  # Settings UI
+│   │
+│   ├── PointerDesignerCore/       # Core library (shared logic)
+│   │   ├── CursorSettings.swift       # Settings model with validation
+│   │   ├── CursorEngine.swift         # Main engine: display link, cursor updates
+│   │   ├── CursorRenderer.swift       # Renders cursor images with CoreGraphics
+│   │   ├── BackgroundColorDetector.swift  # Samples screen colors
+│   │   ├── DisplayManager.swift       # Multi-monitor handling, DPI, HDR detection
+│   │   ├── PermissionManager.swift    # Screen recording permission checks
+│   │   ├── SettingsManager.swift      # Persistence with backup/migration
+│   │   ├── HelperToolManager.swift    # XPC communication with helper
+│   │   ├── LaunchAtLoginManager.swift # SMAppService integration
+│   │   └── SystemIntegrationManager.swift  # Sleep/wake, appearance changes
+│   │
+│   └── PointerDesignerHelper/     # Privileged helper (XPC service)
+│       └── main.swift             # System-wide cursor application
+│
 ├── Tests/
-├── Scripts/
-├── Casks/
+│   └── PointerDesignerTests/
+│       ├── CursorSettingsTests.swift
+│       ├── BackgroundColorDetectorTests.swift
+│       └── EdgeCaseTests.swift
+│
 ├── Package.swift
 └── Makefile
 ```
 
-## How It Works
+## Architecture
 
-1. **Background Detection**: Uses `CGWindowListCreateImage` to sample screen colors at the cursor position
-2. **Color Calculation**: Computes relative luminance to determine if background is light or dark
-3. **Cursor Rendering**: Generates cursor images with CoreGraphics based on current settings
-4. **System-Wide Application**: Helper tool applies cursor changes across all applications
+### Application Flow
+
+```
+main.swift
+    └── AppDelegate.applicationDidFinishLaunching()
+        ├── ensureSingleInstance()      # Prevent duplicate instances
+        ├── setupCrashRecovery()        # Register exception handler
+        ├── setupSignalHandlers()       # SIGTERM/SIGINT handling
+        ├── setupMenuBar()              # Create status item + menu
+        ├── setupCursorEngine()         # Initialize core engine
+        └── checkHelperToolInstallation()
+```
+
+### Core Engine Pipeline
+
+```
+CursorEngine.start()
+    │
+    ├── CVDisplayLink (vsync callback)
+    │       ↓
+    ├── processFrame()
+    │   ├── Get mouse location (NSEvent.mouseLocation)
+    │   ├── Convert coordinates (DisplayManager)
+    │   └── Check movement threshold
+    │           ↓
+    ├── BackgroundColorDetector.sampleColor()
+    │   ├── Check screen recording permission
+    │   ├── CGWindowListCreateImage (sample 5x5 pixels)
+    │   ├── Convert to sRGB color space
+    │   ├── Apply flicker suppression
+    │   └── Apply hysteresis (prevent oscillation)
+    │           ↓
+    ├── applyCursor()
+    │   ├── Calculate effective color (based on ContrastMode)
+    │   ├── CursorRenderer.renderCursor()
+    │   │   ├── Check image cache
+    │   │   ├── Create CGContext with correct scale
+    │   │   ├── Draw cursor path with optional outline
+    │   │   └── Cache rendered image
+    │   ├── NSCursor.set() (in-app)
+    │   └── HelperToolManager.setCursor() (system-wide via XPC)
+```
+
+### Settings Persistence
+
+```
+SettingsManager
+    ├── Primary storage: UserDefaults (JSON-encoded CursorSettings)
+    ├── Backup storage: Separate key for crash recovery
+    ├── Validation: Clamps values to valid ranges
+    ├── Migration: Schema versioning for future updates
+    └── Notifications: .settingsDidChange broadcast
+```
+
+## Edge Cases Handled
+
+The application handles 70+ edge cases across these categories:
+
+| Category | Examples |
+|----------|----------|
+| **Display** | Multi-monitor DPI, display hotplug, HDR color clamping, ProMotion refresh rates |
+| **Color Detection** | Transparent windows, video flicker suppression, gradient detection, P3 wide gamut |
+| **Cursor Rendering** | Outline width bounds, hot spot calculation, image caching, fallback cursor |
+| **Performance** | Idle detection, rate limiting, memory pressure handling, background throttling |
+| **System Integration** | Sleep/wake, permission prompts, launch at login, single instance |
+| **Persistence** | Corrupted data recovery, file locking, schema migration, save verification |
+| **Accessibility** | VoiceOver labels, keyboard navigation, contrast ratios (WCAG) |
 
 ## Privacy & Permissions
 
 Pointer Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
 - **Administrator Access**: One-time for helper tool installation
+
+No data is collected or transmitted. All processing happens locally.
 
 ## Troubleshooting
 
@@ -131,6 +210,14 @@ Pointer Designer requires:
 ### High CPU usage
 - Lower the sampling rate in Preferences (default: 60 Hz)
 - Use "None" contrast mode when dynamic adaptation isn't needed
+
+### Cursor flickers on videos
+- The app includes flicker suppression for video content
+- If issues persist, lower sampling rate to 30 Hz
+
+### App crashed and cursor is stuck
+- The app tracks cursor state and will restore it on next launch
+- Force quit and relaunch to trigger recovery
 
 ## License
 
