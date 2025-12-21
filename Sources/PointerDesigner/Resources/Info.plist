@@ -30,6 +30,10 @@
     <string>Copyright © 2024. All rights reserved.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSScreenRecordingUsageDescription</key>
+    <string>Pointer Designer needs screen recording access to detect background colors and dynamically adjust cursor contrast for better visibility.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>Pointer Designer requires accessibility access to provide system-wide cursor customization.</string>
     <key>SMPrivilegedExecutables</key>
     <dict>
         <key>com.pointerdesigner.helper</key>

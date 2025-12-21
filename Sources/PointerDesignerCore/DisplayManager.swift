@@ -4,10 +4,14 @@ import CoreGraphics
 
 /// Manages display configuration and handles multi-monitor, DPI, and display change scenarios
 /// Fixes edge cases: #1, #3, #4, #6, #7, #8, #9, #10
-public final class DisplayManager {
+public final class DisplayManager: DisplayService {
     public static let shared = DisplayManager()
 
-    private var displayConfigurationToken: CGDisplayReconfigurationCallBack?
+    private var displayCallback: CGDisplayReconfigurationCallBack?
+    private var callbackUserInfo: UnsafeMutableRawPointer?
+
+    // Thread safety lock for cache access
+    private let cacheLock = NSLock()
     private var cachedDisplayInfo: [CGDirectDisplayID: DisplayInfo] = [:]
 
     public struct DisplayInfo {
@@ -45,7 +49,11 @@ public final class DisplayManager {
             return nearestDisplay(to: point)
         }
 
-        return cachedDisplayInfo[displayID] ?? createDisplayInfo(for: displayID)
+        cacheLock.lock()
+        let info = cachedDisplayInfo[displayID]
+        cacheLock.unlock()
+
+        return info ?? createDisplayInfo(for: displayID)
     }
 
     /// Get the appropriate scale factor for cursor rendering at a point
@@ -127,19 +135,29 @@ public final class DisplayManager {
 
     /// Refresh all display information (call after display configuration change)
     public func refreshDisplayInfo() {
-        cachedDisplayInfo.removeAll()
-
         var displayCount: UInt32 = 0
         CGGetActiveDisplayList(0, nil, &displayCount)
 
-        guard displayCount > 0 else { return }
+        guard displayCount > 0 else {
+            cacheLock.lock()
+            cachedDisplayInfo.removeAll()
+            cacheLock.unlock()
+            return
+        }
 
         var displays = [CGDirectDisplayID](repeating: 0, count: Int(displayCount))
         CGGetActiveDisplayList(displayCount, &displays, &displayCount)
 
+        // Create all display info before locking
+        var newCache: [CGDirectDisplayID: DisplayInfo] = [:]
         for displayID in displays {
-            cachedDisplayInfo[displayID] = createDisplayInfo(for: displayID)
+            newCache[displayID] = createDisplayInfo(for: displayID)
         }
+
+        // Swap atomically
+        cacheLock.lock()
+        cachedDisplayInfo = newCache
+        cacheLock.unlock()
     }
 
     // MARK: - Display Change Notifications (Edge case #4, #10)
@@ -151,8 +169,9 @@ public final class DisplayManager {
             manager.handleDisplayChange(displayID: displayID, flags: flags)
         }
 
-        let userInfo = Unmanaged.passUnretained(self).toOpaque()
-        CGDisplayRegisterReconfigurationCallback(callback, userInfo)
+        displayCallback = callback
+        callbackUserInfo = Unmanaged.passUnretained(self).toOpaque()
+        CGDisplayRegisterReconfigurationCallback(callback, callbackUserInfo)
 
         // Also observe NSScreen changes
         NotificationCenter.default.addObserver(
@@ -165,6 +184,13 @@ public final class DisplayManager {
 
     private func unregisterForDisplayChanges() {
         NotificationCenter.default.removeObserver(self)
+
+        // Unregister the display reconfiguration callback to prevent use-after-free
+        if let callback = displayCallback {
+            CGDisplayRemoveReconfigurationCallback(callback, callbackUserInfo)
+            displayCallback = nil
+            callbackUserInfo = nil
+        }
     }
 
     @objc private func screensDidChange(_ notification: Notification) {
@@ -234,10 +260,14 @@ public final class DisplayManager {
     }
 
     private func nearestDisplay(to point: CGPoint) -> DisplayInfo? {
+        cacheLock.lock()
+        let cache = cachedDisplayInfo
+        cacheLock.unlock()
+
         var nearestDisplay: DisplayInfo?
         var nearestDistance: CGFloat = .greatestFiniteMagnitude
 
-        for (_, info) in cachedDisplayInfo {
+        for (_, info) in cache {
             let center = CGPoint(
                 x: info.bounds.midX,
                 y: info.bounds.midY

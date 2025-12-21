@@ -4,7 +4,7 @@ import CoreGraphics
 
 /// Manages system permissions required for cursor customization
 /// Fixes edge case #5: Screen recording permission denied
-public final class PermissionManager {
+public final class PermissionManager: PermissionService {
     public static let shared = PermissionManager()
 
     public enum Permission {

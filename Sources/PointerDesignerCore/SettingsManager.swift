@@ -2,7 +2,7 @@ import Foundation
 
 /// Manages persistence and retrieval of cursor settings
 /// Fixes edge cases: #45 (corrupted data), #46 (file locked), #47 (migration), #50 (error handling)
-public final class SettingsManager {
+public final class SettingsManager: SettingsService {
     public static let shared = SettingsManager()
 
     private let userDefaults = UserDefaults.standard

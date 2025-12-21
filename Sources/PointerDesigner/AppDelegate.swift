@@ -20,6 +20,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // CRITICAL: Always restore system cursor on startup
+        // This fixes cursor stuck after SIGKILL, crash, or unexpected termination
+        forceRestoreSystemCursor()
+
         // Clean up any orphaned helper processes from previous crashes
         cleanupOrphanedProcesses()
 
@@ -29,6 +33,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupCursorEngine()
         checkHelperToolInstallation()
         checkCrashRecovery() // Edge case #67
+    }
+
+    /// Force restore system cursor on startup (handles crash recovery)
+    private func forceRestoreSystemCursor() {
+        // Check if we crashed with cursor active
+        let wasActive = UserDefaults.standard.bool(forKey: cursorActiveKey)
+
+        // Always restore to be safe
+        NSCursor.arrow.set()
+        NSCursor.arrow.push()
+
+        if wasActive {
+            NSLog("AppDelegate: Detected previous crash with custom cursor active, restored system cursor")
+        }
+
+        // Clear the flag - will be set again if we activate custom cursor
+        UserDefaults.standard.set(false, forKey: cursorActiveKey)
+        UserDefaults.standard.synchronize()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
@@ -265,10 +287,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Orphaned Process Cleanup
 
-    private static let helperPIDFilePath = "/tmp/com.pointerdesigner.helper.pid"
+    // Use user-specific directory to avoid permission issues with root helper
+    private static var helperPIDFilePath: String {
+        let userTmp = FileManager.default.temporaryDirectory.path
+        return "\(userTmp)/com.pointerdesigner.helper.pid"
+    }
+
+    // Lock file to prevent race between cleanup and spawn
+    private static var cleanupLockPath: String {
+        let userTmp = FileManager.default.temporaryDirectory.path
+        return "\(userTmp)/com.pointerdesigner.cleanup.lock"
+    }
 
     /// Find and terminate any orphaned helper processes from previous runs
     private func cleanupOrphanedProcesses() {
+        // Acquire cleanup lock to prevent race with new helper spawn
+        guard acquireCleanupLock() else {
+            NSLog("AppDelegate: Cleanup already in progress, skipping")
+            return
+        }
+        defer { releaseCleanupLock() }
+
         // First try PID file (most reliable)
         if let pid = readHelperPID() {
             cleanupProcess(pid: pid, source: "PID file")
@@ -276,6 +315,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Fallback: also check with pgrep in case PID file is stale
         cleanupOrphanedProcessesWithPgrep()
+    }
+
+    private func acquireCleanupLock() -> Bool {
+        let lockPath = Self.cleanupLockPath
+        let fd = open(lockPath, O_CREAT | O_EXCL | O_WRONLY, 0o600)
+        if fd >= 0 {
+            close(fd)
+            return true
+        }
+        // Check if lock is stale (older than 30 seconds)
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: lockPath),
+           let modDate = attrs[.modificationDate] as? Date,
+           Date().timeIntervalSince(modDate) > 30 {
+            try? FileManager.default.removeItem(atPath: lockPath)
+            return acquireCleanupLock()
+        }
+        return false
+    }
+
+    private func releaseCleanupLock() {
+        try? FileManager.default.removeItem(atPath: Self.cleanupLockPath)
     }
 
     private func readHelperPID() -> Int32? {
@@ -286,6 +346,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return pid
     }
 
+    /// Verify the PID actually belongs to our helper (prevents PID recycling attack)
+    private func verifyProcessIsHelper(pid: Int32) -> Bool {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/ps")
+        task.arguments = ["-p", "\(pid)", "-o", "comm="]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
+                // Verify it's actually our helper process
+                return output.contains("PointerDesignerHelper") || output.contains("com.pointerdesigner")
+            }
+        } catch {
+            NSLog("AppDelegate: Failed to verify process \(pid): \(error)")
+        }
+        return false
+    }
+
     private func cleanupProcess(pid: Int32, source: String) {
         // Check if process exists
         guard kill(pid, 0) == 0 else {
@@ -294,24 +379,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // CRITICAL: Verify process is actually our helper before killing (prevents PID recycling attack)
+        guard verifyProcessIsHelper(pid: pid) else {
+            NSLog("AppDelegate: PID \(pid) is not our helper, removing stale PID file")
+            try? FileManager.default.removeItem(atPath: Self.helperPIDFilePath)
+            return
+        }
+
         NSLog("AppDelegate: Found orphaned helper (PID: \(pid)) via \(source), terminating")
         kill(pid, SIGTERM)
 
-        // Wait briefly then force kill if needed
-        DispatchQueue.global().asyncAfter(deadline: .now() + 2.0) {
-            if kill(pid, 0) == 0 {
-                NSLog("AppDelegate: Force killing unresponsive helper (PID: \(pid))")
-                kill(pid, SIGKILL)
+        // Wait synchronously for termination (max 2 seconds)
+        for _ in 0..<20 {
+            Thread.sleep(forTimeInterval: 0.1)
+            if kill(pid, 0) != 0 {
+                NSLog("AppDelegate: Helper terminated gracefully")
+                break
             }
-            // Clean up PID file
-            try? FileManager.default.removeItem(atPath: Self.helperPIDFilePath)
         }
+
+        // Force kill if still running
+        if kill(pid, 0) == 0 {
+            NSLog("AppDelegate: Force killing unresponsive helper (PID: \(pid))")
+            kill(pid, SIGKILL)
+        }
+
+        // Clean up PID file
+        try? FileManager.default.removeItem(atPath: Self.helperPIDFilePath)
     }
 
     private func cleanupOrphanedProcessesWithPgrep() {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-f", "PointerDesignerHelper"]
+        task.arguments = ["-x", "PointerDesignerHelper"]  // -x for exact match
 
         let pipe = Pipe()
         task.standardOutput = pipe
@@ -327,7 +427,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let currentPID = ProcessInfo.processInfo.processIdentifier
 
                 for pid in pids where pid != currentPID {
-                    cleanupProcess(pid: pid, source: "pgrep")
+                    // Still verify even with pgrep (defense in depth)
+                    if verifyProcessIsHelper(pid: pid) {
+                        cleanupProcess(pid: pid, source: "pgrep")
+                    }
                 }
             }
         } catch {

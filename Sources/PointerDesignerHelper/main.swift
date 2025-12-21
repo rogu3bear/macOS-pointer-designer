@@ -273,6 +273,13 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         reply("1.0.0")
     }
 
+    func requestShutdown() {
+        NSLog("HelperTool: Received shutdown request via XPC")
+        DispatchQueue.main.async { [weak self] in
+            self?.shutdown()
+        }
+    }
+
     // MARK: - Private Cursor Methods
 
     private func applyCursorSystemWide(_ image: NSImage) {

@@ -3,7 +3,7 @@ import ServiceManagement
 
 /// Manages launch at login functionality
 /// Fixes edge case #50: Proper error handling for SMAppService
-public final class LaunchAtLoginManager {
+public final class LaunchAtLoginManager: LaunchAtLoginService {
     public static let shared = LaunchAtLoginManager()
 
     public enum LaunchAtLoginError: Error, LocalizedError {

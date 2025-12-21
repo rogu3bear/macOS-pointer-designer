@@ -26,7 +26,8 @@ let package = Package(
         .executableTarget(
             name: "PointerDesignerHelper",
             dependencies: ["PointerDesignerCore"],
-            path: "Sources/PointerDesignerHelper"
+            path: "Sources/PointerDesignerHelper",
+            exclude: ["Resources"]
         ),
         .testTarget(
             name: "PointerDesignerTests",

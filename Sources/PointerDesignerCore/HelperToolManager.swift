@@ -105,6 +105,37 @@ public final class HelperToolManager: HelperService {
         return healthy
     }
 
+    /// Request helper to shut down gracefully via XPC
+    /// This is preferred over kill() for launchd-managed services to avoid respawn loops
+    public func requestHelperShutdown(completion: ((Bool) -> Void)? = nil) {
+        xpcQueue.async { [weak self] in
+            guard let self = self,
+                  let connection = self.getConnection() else {
+                DispatchQueue.main.async { completion?(false) }
+                return
+            }
+
+            let helper = connection.remoteObjectProxyWithErrorHandler { error in
+                NSLog("HelperToolManager: Failed to request shutdown: \(error)")
+                DispatchQueue.main.async { completion?(false) }
+            } as? PointerHelperProtocol
+
+            guard let helper = helper else {
+                DispatchQueue.main.async { completion?(false) }
+                return
+            }
+
+            NSLog("HelperToolManager: Requesting helper shutdown via XPC")
+            helper.requestShutdown()
+
+            // Invalidate our connection
+            connection.invalidate()
+            self.xpcConnection = nil
+
+            DispatchQueue.main.async { completion?(true) }
+        }
+    }
+
     /// Install the helper tool (requires admin privileges)
     public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
         // For modern macOS (10.13+), use SMAppService for LaunchDaemons
@@ -391,4 +422,6 @@ public final class HelperToolManager: HelperService {
     func setCursor(imageData: Data)
     func restoreCursor()
     func getVersion(reply: @escaping (String) -> Void)
+    /// Request graceful shutdown (for launchd-managed services, avoids kill/respawn loop)
+    func requestShutdown()
 }

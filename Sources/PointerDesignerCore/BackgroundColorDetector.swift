@@ -6,8 +6,13 @@ import AppKit
 /// Fixes edge cases: #2, #5, #11, #12, #13, #14, #15, #16, #19, #20
 public final class BackgroundColorDetector {
     private let sampleSize: CGFloat = 5
-    private let displayManager = DisplayManager.shared
-    private let permissionManager = PermissionManager.shared
+
+    // Injected dependencies (protocol-based for testability)
+    private let displayService: DisplayService
+    private let permissionService: PermissionService
+
+    // Thread safety lock for mutable state
+    private let stateLock = NSLock()
 
     // Edge case #12: Debounce rapid color changes
     private var lastSampleTime: CFAbsoluteTime = 0
@@ -19,22 +24,35 @@ public final class BackgroundColorDetector {
     private var brightnessHistory: [Float] = []
     private let historySize = 5
 
-    public init() {}
+    /// Default initializer using production singletons
+    public init() {
+        self.displayService = DisplayManager.shared
+        self.permissionService = PermissionManager.shared
+    }
+
+    /// Initializer for dependency injection (testing)
+    public init(displayService: DisplayService, permissionService: PermissionService) {
+        self.displayService = displayService
+        self.permissionService = permissionService
+    }
 
     /// Sample the average color at a given screen position
     /// Returns nil if permission denied or invalid position
     public func sampleColor(at point: CGPoint, settings: CursorSettings = .defaults) -> CursorColor? {
         // Edge case #5: Check screen recording permission
-        guard permissionManager.hasScreenRecordingPermission else {
+        guard permissionService.hasScreenRecordingPermission else {
             return nil
         }
 
         // Edge case #2: Get safe sampling rect within screen bounds
-        let safeRect = displayManager.safeSamplingRect(centeredAt: point, size: sampleSize)
+        let safeRect = displayService.safeSamplingRect(centeredAt: point, size: sampleSize)
 
         // Edge case #3: Verify point is on a valid display
-        guard displayManager.isPointOnScreen(point) else {
-            return lastStableColor // Return last known good color
+        guard displayService.isPointOnScreen(point) else {
+            stateLock.lock()
+            let stableColor = lastStableColor
+            stateLock.unlock()
+            return stableColor // Return last known good color
         }
 
         guard let image = CGWindowListCreateImage(
@@ -53,11 +71,15 @@ public final class BackgroundColorDetector {
         // Edge case #16: Handle P3 wide gamut by clamping
         color = CursorColor(red: color.red, green: color.green, blue: color.blue, alpha: color.alpha)
 
+        // FIXED: Hold lock across both operations to ensure atomic state updates
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
         // Edge case #12: Detect and suppress flickering
-        color = applyFlickerSuppression(color, settings: settings)
+        color = applyFlickerSuppressionLocked(color, settings: settings)
 
         // Edge case #14: Apply hysteresis to prevent oscillation
-        color = applyHysteresis(color, settings: settings)
+        color = applyHysteresisLocked(color, settings: settings)
 
         return color
     }
@@ -128,7 +150,7 @@ public final class BackgroundColorDetector {
 
     /// Sample multiple points around cursor for gradient detection (edge case #13)
     public func sampleColorWithContext(at point: CGPoint, radius: CGFloat = 10, settings: CursorSettings = .defaults) -> CursorColor? {
-        guard permissionManager.hasScreenRecordingPermission else {
+        guard permissionService.hasScreenRecordingPermission else {
             return nil
         }
 
@@ -144,7 +166,7 @@ public final class BackgroundColorDetector {
         var brightnesses: [Float] = []
 
         for samplePoint in samplePoints {
-            if displayManager.isPointOnScreen(samplePoint),
+            if displayService.isPointOnScreen(samplePoint),
                let color = sampleColor(at: samplePoint, settings: settings) {
                 colors.append(color)
                 brightnesses.append(color.brightness)
@@ -171,7 +193,8 @@ public final class BackgroundColorDetector {
     }
 
     // Edge case #12: Suppress flickering from video/animation
-    private func applyFlickerSuppression(_ color: CursorColor, settings: CursorSettings) -> CursorColor {
+    // REQUIRES: stateLock must be held by caller
+    private func applyFlickerSuppressionLocked(_ color: CursorColor, settings: CursorSettings) -> CursorColor {
         let now = CFAbsoluteTimeGetCurrent()
         let timeDelta = now - lastSampleTime
         lastSampleTime = now
@@ -201,7 +224,8 @@ public final class BackgroundColorDetector {
     }
 
     // Edge case #14: Apply hysteresis to prevent oscillation at threshold
-    private func applyHysteresis(_ color: CursorColor, settings: CursorSettings) -> CursorColor {
+    // REQUIRES: stateLock must be held by caller
+    private func applyHysteresisLocked(_ color: CursorColor, settings: CursorSettings) -> CursorColor {
         brightnessHistory.append(color.brightness)
         if brightnessHistory.count > historySize {
             brightnessHistory.removeFirst()
@@ -253,6 +277,9 @@ public final class BackgroundColorDetector {
 
     /// Reset detection state
     public func reset() {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
         lastSampleTime = 0
         lastStableColor = .white
         colorChangeCount = 0

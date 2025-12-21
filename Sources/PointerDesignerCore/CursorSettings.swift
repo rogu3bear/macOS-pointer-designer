@@ -10,6 +10,145 @@ public enum ContrastMode: String, Codable, CaseIterable, Sendable {
     case outline
 }
 
+/// Pre-designed cursor themes
+public enum CursorPreset: String, Codable, CaseIterable, Sendable {
+    case custom      // User's own settings
+    case neonGlow    // Vibrant with glow effect
+    case stealth     // Dark, minimal, semi-transparent
+    case highContrast // Bold black/white for accessibility
+    case sunset      // Warm oranges/reds
+    case ocean       // Cool blues/teals
+    case mint        // Fresh green/cyan
+    case lavender    // Soft purple tones
+    case monochrome  // Clean grayscale
+
+    public var displayName: String {
+        switch self {
+        case .custom: return "Custom"
+        case .neonGlow: return "Neon Glow"
+        case .stealth: return "Stealth"
+        case .highContrast: return "High Contrast"
+        case .sunset: return "Sunset"
+        case .ocean: return "Ocean"
+        case .mint: return "Mint"
+        case .lavender: return "Lavender"
+        case .monochrome: return "Monochrome"
+        }
+    }
+
+    public var settings: PresetSettings {
+        switch self {
+        case .custom:
+            return PresetSettings(
+                color: .white,
+                glowEnabled: false,
+                glowColor: .white,
+                glowRadius: 0,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .neonGlow:
+            return PresetSettings(
+                color: CursorColor(red: 0.0, green: 1.0, blue: 0.9),
+                glowEnabled: true,
+                glowColor: CursorColor(red: 0.0, green: 1.0, blue: 0.9),
+                glowRadius: 8,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .stealth:
+            return PresetSettings(
+                color: CursorColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 0.7),
+                glowEnabled: false,
+                glowColor: .black,
+                glowRadius: 0,
+                shadowEnabled: true,
+                scale: 0.9
+            )
+        case .highContrast:
+            return PresetSettings(
+                color: .white,
+                glowEnabled: false,
+                glowColor: .white,
+                glowRadius: 0,
+                shadowEnabled: true,
+                scale: 1.2
+            )
+        case .sunset:
+            return PresetSettings(
+                color: CursorColor(red: 1.0, green: 0.4, blue: 0.2),
+                glowEnabled: true,
+                glowColor: CursorColor(red: 1.0, green: 0.6, blue: 0.0),
+                glowRadius: 5,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .ocean:
+            return PresetSettings(
+                color: CursorColor(red: 0.0, green: 0.6, blue: 0.9),
+                glowEnabled: true,
+                glowColor: CursorColor(red: 0.0, green: 0.8, blue: 1.0),
+                glowRadius: 6,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .mint:
+            return PresetSettings(
+                color: CursorColor(red: 0.2, green: 0.9, blue: 0.7),
+                glowEnabled: true,
+                glowColor: CursorColor(red: 0.4, green: 1.0, blue: 0.8),
+                glowRadius: 4,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .lavender:
+            return PresetSettings(
+                color: CursorColor(red: 0.7, green: 0.5, blue: 0.9),
+                glowEnabled: true,
+                glowColor: CursorColor(red: 0.8, green: 0.6, blue: 1.0),
+                glowRadius: 5,
+                shadowEnabled: false,
+                scale: 1.0
+            )
+        case .monochrome:
+            return PresetSettings(
+                color: CursorColor(red: 0.9, green: 0.9, blue: 0.9),
+                glowEnabled: false,
+                glowColor: .white,
+                glowRadius: 0,
+                shadowEnabled: true,
+                scale: 1.0
+            )
+        }
+    }
+}
+
+/// Settings associated with a preset
+public struct PresetSettings: Codable, Equatable, Sendable {
+    public var color: CursorColor
+    public var glowEnabled: Bool
+    public var glowColor: CursorColor
+    public var glowRadius: Float
+    public var shadowEnabled: Bool
+    public var scale: Float
+
+    public init(
+        color: CursorColor,
+        glowEnabled: Bool,
+        glowColor: CursorColor,
+        glowRadius: Float,
+        shadowEnabled: Bool,
+        scale: Float
+    ) {
+        self.color = color
+        self.glowEnabled = glowEnabled
+        self.glowColor = glowColor
+        self.glowRadius = max(0, min(20, glowRadius))
+        self.shadowEnabled = shadowEnabled
+        self.scale = max(0.5, min(2.0, scale))
+    }
+}
+
 /// RGBA color representation for cursor customization
 /// Fixes edge cases: #6 (HDR), #17/#18 (pure black/white), #22 (zero alpha), #23 (negative values)
 public struct CursorColor: Codable, Equatable, Sendable {
@@ -102,7 +241,7 @@ public struct CursorColor: Codable, Equatable, Sendable {
 /// Fixes edge cases: #45 (corrupted data), #47 (migration), #48 (zero sampling), #49 (zero outline)
 public struct CursorSettings: Codable, Equatable, Sendable {
     /// Schema version for migration support (edge case #47)
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var isEnabled: Bool
@@ -118,6 +257,14 @@ public struct CursorSettings: Codable, Equatable, Sendable {
     public var hysteresis: Float // Edge case #14: prevent oscillation
     public var adaptiveScaling: Bool // Edge case #1: per-display scaling
 
+    // New: Preset and visual effects
+    public var preset: CursorPreset
+    public var glowEnabled: Bool
+    public var glowColor: CursorColor
+    public var glowRadius: Float
+    public var shadowEnabled: Bool
+    public var cursorScale: Float
+
     public init(
         schemaVersion: Int = CursorSettings.currentSchemaVersion,
         isEnabled: Bool = true,
@@ -129,7 +276,13 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         launchAtLogin: Bool = false,
         brightnessThreshold: Float = 0.5,
         hysteresis: Float = 0.1,
-        adaptiveScaling: Bool = true
+        adaptiveScaling: Bool = true,
+        preset: CursorPreset = .custom,
+        glowEnabled: Bool = false,
+        glowColor: CursorColor = .white,
+        glowRadius: Float = 0,
+        shadowEnabled: Bool = false,
+        cursorScale: Float = 1.0
     ) {
         self.schemaVersion = schemaVersion
         self.isEnabled = isEnabled
@@ -144,9 +297,29 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         self.brightnessThreshold = max(0.1, min(0.9, brightnessThreshold))
         self.hysteresis = max(0.01, min(0.2, hysteresis))
         self.adaptiveScaling = adaptiveScaling
+        self.preset = preset
+        self.glowEnabled = glowEnabled
+        self.glowColor = glowColor
+        self.glowRadius = max(0, min(20, glowRadius))
+        self.shadowEnabled = shadowEnabled
+        self.cursorScale = max(0.5, min(2.0, cursorScale))
     }
 
     public static let defaults = CursorSettings()
+
+    /// Apply a preset's settings
+    public mutating func applyPreset(_ preset: CursorPreset) {
+        self.preset = preset
+        if preset != .custom {
+            let presetSettings = preset.settings
+            self.cursorColor = presetSettings.color
+            self.glowEnabled = presetSettings.glowEnabled
+            self.glowColor = presetSettings.glowColor
+            self.glowRadius = presetSettings.glowRadius
+            self.shadowEnabled = presetSettings.shadowEnabled
+            self.cursorScale = presetSettings.scale
+        }
+    }
 
     /// Validate settings and fix any invalid values
     public mutating func validate() {
@@ -154,6 +327,8 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         samplingRate = max(15, min(120, samplingRate))
         brightnessThreshold = max(0.1, min(0.9, brightnessThreshold))
         hysteresis = max(0.01, min(0.2, hysteresis))
+        glowRadius = max(0, min(20, glowRadius))
+        cursorScale = max(0.5, min(2.0, cursorScale))
     }
 
     /// Create settings from potentially corrupted data with fallbacks (edge case #45)
@@ -173,6 +348,14 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         self.hysteresis = (try? container.decode(Float.self, forKey: .hysteresis)) ?? 0.1
         self.adaptiveScaling = (try? container.decode(Bool.self, forKey: .adaptiveScaling)) ?? true
 
+        // New v2 fields with defaults for migration
+        self.preset = (try? container.decode(CursorPreset.self, forKey: .preset)) ?? .custom
+        self.glowEnabled = (try? container.decode(Bool.self, forKey: .glowEnabled)) ?? false
+        self.glowColor = (try? container.decode(CursorColor.self, forKey: .glowColor)) ?? .white
+        self.glowRadius = (try? container.decode(Float.self, forKey: .glowRadius)) ?? 0
+        self.shadowEnabled = (try? container.decode(Bool.self, forKey: .shadowEnabled)) ?? false
+        self.cursorScale = (try? container.decode(Float.self, forKey: .cursorScale)) ?? 1.0
+
         // Validate after loading
         validate()
 
@@ -183,12 +366,15 @@ public struct CursorSettings: Codable, Equatable, Sendable {
     }
 
     private mutating func migrateFromVersion(_ version: Int) {
-        // Future migration logic goes here
-        // Example:
-        // if version < 2 {
-        //     // Migrate from v1 to v2
-        //     self.newField = defaultValue
-        // }
+        // Migration from v1 to v2: Add preset and visual effects
+        if version < 2 {
+            self.preset = .custom
+            self.glowEnabled = false
+            self.glowColor = .white
+            self.glowRadius = 0
+            self.shadowEnabled = false
+            self.cursorScale = 1.0
+        }
         self.schemaVersion = Self.currentSchemaVersion
     }
 
@@ -196,5 +382,6 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         case schemaVersion, isEnabled, cursorColor, contrastMode
         case outlineWidth, outlineColor, samplingRate, launchAtLogin
         case brightnessThreshold, hysteresis, adaptiveScaling
+        case preset, glowEnabled, glowColor, glowRadius, shadowEnabled, cursorScale
     }
 }
