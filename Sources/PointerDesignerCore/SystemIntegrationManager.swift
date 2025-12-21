@@ -6,19 +6,39 @@ import AppKit
 public final class SystemIntegrationManager: SystemIntegrationService {
     public static let shared = SystemIntegrationManager()
 
-    // Edge case #40: Track other cursor apps
-    private var knownCursorApps: Set<String> = [
+    // Thread safety for mutable state
+    private let stateLock = NSLock()
+
+    // Edge case #40: Track other cursor apps (protected by stateLock)
+    private var _knownCursorApps: Set<String> = [
         "com.alexzielenski.Mousecape",
         "com.cursor.Cursor",
         "com.mousecape.helper"
     ]
 
-    // Edge case #41: Screen saver state
-    private var isScreenSaverActive = false
+    // Edge case #41: Screen saver state (protected by stateLock)
+    private var _isScreenSaverActive = false
 
-    // Edge case #44: Full screen app tracking
-    private var isFullScreenAppActive = false
-    private var fullScreenAppBundleID: String?
+    // Edge case #44: Full screen app tracking (protected by stateLock)
+    private var _isFullScreenAppActive = false
+    private var _fullScreenAppBundleID: String?
+
+    // Thread-safe accessors
+    private var knownCursorApps: Set<String> {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _knownCursorApps }
+    }
+    private var isScreenSaverActive: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _isScreenSaverActive }
+        set { stateLock.lock(); defer { stateLock.unlock() }; _isScreenSaverActive = newValue }
+    }
+    private var isFullScreenAppActive: Bool {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _isFullScreenAppActive }
+        set { stateLock.lock(); defer { stateLock.unlock() }; _isFullScreenAppActive = newValue }
+    }
+    private var fullScreenAppBundleID: String? {
+        get { stateLock.lock(); defer { stateLock.unlock() }; return _fullScreenAppBundleID }
+        set { stateLock.lock(); defer { stateLock.unlock() }; _fullScreenAppBundleID = newValue }
+    }
 
     private init() {
         setupObservers()
@@ -34,14 +54,16 @@ public final class SystemIntegrationManager: SystemIntegrationService {
     public func shutdown() {
         removeObservers()
 
-        // Clear tracked state
+        // Clear tracked state with proper locking
         positionsLock.lock()
         lastCursorPositions.removeAll()
         positionsLock.unlock()
 
-        isScreenSaverActive = false
-        isFullScreenAppActive = false
-        fullScreenAppBundleID = nil
+        stateLock.lock()
+        _isScreenSaverActive = false
+        _isFullScreenAppActive = false
+        _fullScreenAppBundleID = nil
+        stateLock.unlock()
 
         NSLog("SystemIntegrationManager: Shutdown complete")
     }
@@ -128,7 +150,9 @@ public final class SystemIntegrationManager: SystemIntegrationService {
 
     /// Register a custom cursor app bundle ID for conflict detection
     public func registerCursorApp(_ bundleID: String) {
-        knownCursorApps.insert(bundleID)
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        _knownCursorApps.insert(bundleID)
     }
 
     // MARK: - Edge case #39: Shake to Locate detection
@@ -189,20 +213,25 @@ public final class SystemIntegrationManager: SystemIntegrationService {
     // MARK: - Private Setup
 
     private func setupObservers() {
-        // Edge case #41: Screen saver notifications
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(screenSaverDidStart),
-            name: NSNotification.Name("com.apple.screensaver.didstart"),
-            object: nil
-        )
+        // Edge case #41: Screen saver notifications via DistributedNotificationCenter
+        // Note: Requires app to NOT be sandboxed, or have com.apple.security.temporary-exception.mach-lookup.global-name
+        // If sandboxed without entitlement, these observers will silently fail to receive notifications
+        do {
+            let dnc = DistributedNotificationCenter.default()
+            dnc.addObserver(
+                self,
+                selector: #selector(screenSaverDidStart),
+                name: NSNotification.Name("com.apple.screensaver.didstart"),
+                object: nil
+            )
 
-        DistributedNotificationCenter.default().addObserver(
-            self,
-            selector: #selector(screenSaverDidStop),
-            name: NSNotification.Name("com.apple.screensaver.didstop"),
-            object: nil
-        )
+            dnc.addObserver(
+                self,
+                selector: #selector(screenSaverDidStop),
+                name: NSNotification.Name("com.apple.screensaver.didstop"),
+                object: nil
+            )
+        }
 
         // Edge case #44: Full screen app tracking
         NSWorkspace.shared.notificationCenter.addObserver(

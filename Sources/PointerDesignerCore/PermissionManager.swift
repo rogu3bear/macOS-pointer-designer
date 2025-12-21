@@ -125,17 +125,38 @@ public final class PermissionManager: PermissionService {
     }
 
     private func isValidScreenCapture(_ image: CGImage) -> Bool {
-        // Check if the captured image has any non-zero content
-        // Permission-denied captures return valid CGImage but with no real content
+        // Check if the captured image has actual content
+        // Permission-denied captures return valid CGImage but with black/empty content
 
         let width = image.width
         let height = image.height
 
         guard width > 0, height > 0 else { return false }
 
-        // For a 1x1 test capture, just check if we got the image
-        // A more robust check would analyze pixel data
-        return true
+        // Analyze pixel data to detect permission-denied black image
+        guard let dataProvider = image.dataProvider,
+              let data = dataProvider.data,
+              CFDataGetLength(data) > 0 else {
+            return false
+        }
+
+        let ptr = CFDataGetBytePtr(data)
+        let length = CFDataGetLength(data)
+
+        // Check if all bytes are zero (black image = permission denied)
+        // Sample a few bytes rather than checking all for performance
+        var hasNonZero = false
+        let sampleCount = min(length, 100)
+        let stepSize = max(1, length / sampleCount)
+
+        for i in Swift.stride(from: 0, to: min(length, sampleCount * stepSize), by: stepSize) {
+            if ptr?[i] != 0 {
+                hasNonZero = true
+                break
+            }
+        }
+
+        return hasNonZero
     }
 
     private func requestScreenRecordingPermission(completion: @escaping (PermissionStatus) -> Void) {

@@ -43,17 +43,35 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
     private func writePIDFile() {
         let pid = ProcessInfo.processInfo.processIdentifier
-        do {
-            try "\(pid)".write(toFile: Self.pidFilePath, atomically: true, encoding: .utf8)
-            // Restrict permissions to owner only
-            try FileManager.default.setAttributes(
-                [.posixPermissions: 0o600],
-                ofItemAtPath: Self.pidFilePath
-            )
-            NSLog("HelperTool: Wrote PID \(pid) to \(Self.pidFilePath)")
-        } catch {
-            NSLog("HelperTool: Failed to write PID file: \(error)")
+        let path = Self.pidFilePath
+
+        // SECURITY: Remove any existing file/symlink to prevent symlink attacks
+        // Check if it's a symlink first
+        var isSymlink = false
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+           let fileType = attrs[.type] as? FileAttributeType,
+           fileType == .typeSymbolicLink {
+            isSymlink = true
         }
+
+        if FileManager.default.fileExists(atPath: path) || isSymlink {
+            try? FileManager.default.removeItem(atPath: path)
+        }
+
+        // Create file with O_EXCL to ensure we create a new file (prevents TOCTOU)
+        let fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0o600)
+        guard fd >= 0 else {
+            NSLog("HelperTool: Failed to create PID file securely: \(errno)")
+            return
+        }
+
+        let pidString = "\(pid)"
+        _ = pidString.withCString { ptr in
+            write(fd, ptr, strlen(ptr))
+        }
+        close(fd)
+
+        NSLog("HelperTool: Wrote PID \(pid) to \(path)")
     }
 
     private func removePIDFile() {
@@ -315,8 +333,9 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     }
 
     private func restoreDefaultCursor() {
-        // Remove custom cursor files
-        let cursorPath = "/tmp/com.pointerdesigner.cursor.tiff"
+        // Remove custom cursor files (use same path as saveCursorImage)
+        let tempDir = NSTemporaryDirectory()
+        let cursorPath = (tempDir as NSString).appendingPathComponent("com.pointerdesigner.cursor.tiff")
         try? FileManager.default.removeItem(atPath: cursorPath)
 
         // Edge case #63: Use notification with retry
@@ -345,9 +364,21 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         let tempDir = NSTemporaryDirectory()
         let cursorPath = (tempDir as NSString).appendingPathComponent("com.pointerdesigner.cursor.tiff")
 
+        // SECURITY: Check for and remove any existing symlink to prevent symlink attacks
+        var isSymlink = false
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: cursorPath),
+           let fileType = attrs[.type] as? FileAttributeType,
+           fileType == .typeSymbolicLink {
+            isSymlink = true
+        }
+        if isSymlink {
+            NSLog("HelperTool: Detected symlink at cursor path, removing")
+            try? FileManager.default.removeItem(atPath: cursorPath)
+        }
+
         if let tiffData = image.tiffRepresentation {
             do {
-                // Write the file
+                // Write the file atomically (creates temp then renames)
                 try tiffData.write(to: URL(fileURLWithPath: cursorPath), options: .atomic)
 
                 // Edge case #61: Set restrictive permissions (0600 = rw-------)
