@@ -7,7 +7,10 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     private let listener: NSXPCListener
 
     // Edge case #60: Expected team identifier for code signing verification
-    private let expectedTeamIdentifier = "YOUR_TEAM_ID" // Replace with actual team ID
+    // SECURITY: Replace with your actual team ID before distribution!
+    // When set to placeholder, verification is relaxed (development mode)
+    private let expectedTeamIdentifier = "YOUR_TEAM_ID"
+    private var isSecurityRelaxed: Bool { expectedTeamIdentifier == "YOUR_TEAM_ID" }
 
     // Edge case #62: Temp file cleanup timer
     private var cleanupTimer: Timer?
@@ -226,15 +229,20 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
         // Extract team identifier
         if let teamIdentifier = info[kSecCodeInfoTeamIdentifier as String] as? String {
-            // If we have a specific team ID to check against
-            if expectedTeamIdentifier != "YOUR_TEAM_ID" && teamIdentifier != expectedTeamIdentifier {
+            if isSecurityRelaxed {
+                // Development mode - warn but allow
+                NSLog("HelperTool: ⚠️ SECURITY RELAXED - Team ID verification disabled (development mode)")
+                NSLog("HelperTool: Client team ID: \(teamIdentifier) (not verified)")
+            } else if teamIdentifier != expectedTeamIdentifier {
+                // Production mode - enforce team ID match
                 NSLog("HelperTool: Team identifier mismatch. Expected: \(expectedTeamIdentifier), Got: \(teamIdentifier)")
                 return false
+            } else {
+                NSLog("HelperTool: Client verified with team ID: \(teamIdentifier)")
             }
-            NSLog("HelperTool: Client verified with team ID: \(teamIdentifier)")
         } else {
-            // Edge case #60: Reject unsigned clients
-            NSLog("HelperTool: Client is not signed with a team identifier")
+            // Always reject unsigned clients, even in development
+            NSLog("HelperTool: REJECTED - Client is not signed with a team identifier")
             return false
         }
 

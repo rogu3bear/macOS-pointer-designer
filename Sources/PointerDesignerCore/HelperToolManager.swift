@@ -90,7 +90,14 @@ public final class HelperToolManager: HelperService {
     }
 
     /// Synchronous health check (blocks calling thread)
+    /// WARNING: Do NOT call from main thread - will deadlock. Use checkHealth() instead.
     public var isHelperHealthy: Bool {
+        // Prevent main thread deadlock
+        if Thread.isMainThread {
+            NSLog("HelperToolManager: WARNING - isHelperHealthy called on main thread, returning cached state")
+            return isHelperInstalled && cachedHelperVersion != nil
+        }
+
         guard isHelperInstalled else { return false }
 
         let semaphore = DispatchSemaphore(value: 0)

@@ -131,13 +131,21 @@ public final class CursorEngine: CursorService {
     private func setupDisplayLink() {
         // Edge case #4: Create display link that handles hotplug
         var link: CVDisplayLink?
-        CVDisplayLinkCreateWithActiveCGDisplays(&link)
+        let status = CVDisplayLinkCreateWithActiveCGDisplays(&link)
 
-        guard let displayLink = link else { return }
+        guard status == kCVReturnSuccess, let displayLink = link else {
+            NSLog("CursorEngine: Failed to create display link, status: \(status)")
+            return
+        }
 
+        // SAFETY: Callback uses unretained reference - isRunning check must happen
+        // before any self access to prevent use-after-free during shutdown
         let callback: CVDisplayLinkOutputCallback = { displayLink, inNow, inOutputTime, flagsIn, flagsOut, userInfo -> CVReturn in
             guard let userInfo = userInfo else { return kCVReturnSuccess }
             let engine = Unmanaged<CursorEngine>.fromOpaque(userInfo).takeUnretainedValue()
+            // Critical: Check isRunning FIRST before any other property access
+            // isRunning is set to false in stop() before CVDisplayLinkStop is called
+            guard engine.isRunning else { return kCVReturnSuccess }
             engine.displayLinkFired()
             return kCVReturnSuccess
         }

@@ -362,8 +362,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) {
-                // Verify it's actually our helper process
-                return output.contains("PointerDesignerHelper") || output.contains("com.pointerdesigner")
+                // SECURITY: Use exact match to prevent spoofing
+                // e.g., "PointerDesignerHelperEvil" would fail this check
+                let validNames = ["PointerDesignerHelper", "com.pointerdesigner.helper"]
+                let isValid = validNames.contains { output == $0 || output.hasSuffix("/\($0)") }
+                if !isValid {
+                    NSLog("AppDelegate: Process name '\(output)' does not match expected helper names")
+                }
+                return isValid
             }
         } catch {
             NSLog("AppDelegate: Failed to verify process \(pid): \(error)")
