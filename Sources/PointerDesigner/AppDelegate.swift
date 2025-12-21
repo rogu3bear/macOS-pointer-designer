@@ -7,6 +7,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindowController: PreferencesWindowController?
     private let cursorEngine = CursorEngine.shared
 
+    // Edge case #66: Signal dispatch sources for safe signal handling
+    private var sigtermSource: DispatchSourceSignal?
+    private var sigintSource: DispatchSourceSignal?
+
     // Edge case #67: Track cursor active state for crash recovery
     private let cursorActiveKey = "com.pointerdesigner.cursorWasActive"
 
@@ -15,6 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !ensureSingleInstance() {
             return
         }
+
+        // Clean up any orphaned helper processes from previous crashes
+        cleanupOrphanedProcesses()
 
         setupCrashRecovery() // Edge case #67
         setupSignalHandlers() // Edge case #66
@@ -25,8 +32,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        // Edge case #66: Cancel signal sources to prevent late callbacks
+        sigtermSource?.cancel()
+        sigintSource?.cancel()
+        sigtermSource = nil
+        sigintSource = nil
+
+        // Remove notification observers
+        NotificationCenter.default.removeObserver(self)
+
+        // Clean up menu bar controller
+        menuBarController = nil
+
         // Edge case #66: Always restore cursor on termination
         restoreCursorState()
+
+        // Shutdown helper tool manager XPC connection
+        HelperToolManager.shared.shutdown()
+
+        // Shutdown system integration manager
+        SystemIntegrationManager.shared.shutdown()
     }
 
     private func setupMenuBar() {
@@ -156,25 +181,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     // Edge case #66: Set up signal handlers for clean shutdown
+    // Uses DispatchSourceSignal for safe signal handling instead of C signal()
     private func setupSignalHandlers() {
-        // Use atexit as a backup restoration mechanism
-        atexit {
-            // This runs when the process exits normally
-            CursorEngine.shared.stop()
+        // SIGTERM handling (e.g., kill command, system shutdown)
+        signal(SIGTERM, SIG_IGN) // Ignore default handler
+        sigtermSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        sigtermSource?.setEventHandler { [weak self] in
+            self?.handleTerminationSignal()
         }
+        sigtermSource?.resume()
 
-        // Set up signal handlers for SIGTERM and SIGINT
-        signal(SIGTERM) { signal in
-            // Restore cursor and exit
-            CursorEngine.shared.stop()
-            exit(0)
+        // SIGINT handling (e.g., Ctrl+C in terminal)
+        signal(SIGINT, SIG_IGN) // Ignore default handler
+        sigintSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+        sigintSource?.setEventHandler { [weak self] in
+            self?.handleTerminationSignal()
         }
+        sigintSource?.resume()
+    }
 
-        signal(SIGINT) { signal in
-            // Restore cursor and exit
-            CursorEngine.shared.stop()
-            exit(0)
-        }
+    // Safe termination handler called on main queue
+    private func handleTerminationSignal() {
+        restoreCursorState()
+        NSApplication.shared.terminate(nil)
     }
 
     // Edge case #67: Set up crash handler
@@ -217,5 +246,52 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         cursorEngine.stop()
         UserDefaults.standard.set(false, forKey: cursorActiveKey)
         UserDefaults.standard.synchronize()
+    }
+
+    // MARK: - Orphaned Process Cleanup
+
+    /// Find and terminate any orphaned helper processes from previous runs
+    private func cleanupOrphanedProcesses() {
+        let helperName = "PointerDesignerHelper"
+        let currentPID = ProcessInfo.processInfo.processIdentifier
+
+        // Use pgrep to find helper processes
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-f", helperName]
+
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+
+        do {
+            try task.run()
+            task.waitUntilExit()
+
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                let pids = output.split(separator: "\n").compactMap { Int32($0) }
+
+                for pid in pids where pid != currentPID {
+                    NSLog("AppDelegate: Found orphaned helper process (PID: \(pid)), terminating")
+                    kill(pid, SIGTERM)
+
+                    // Give it a moment to terminate gracefully
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
+                        // Force kill if still running
+                        if kill(pid, 0) == 0 {
+                            NSLog("AppDelegate: Force killing unresponsive helper (PID: \(pid))")
+                            kill(pid, SIGKILL)
+                        }
+                    }
+                }
+
+                if !pids.isEmpty {
+                    NSLog("AppDelegate: Cleaned up \(pids.count) orphaned helper process(es)")
+                }
+            }
+        } catch {
+            NSLog("AppDelegate: Failed to check for orphaned processes: \(error)")
+        }
     }
 }

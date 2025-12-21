@@ -3,7 +3,7 @@ import AppKit
 
 /// Manages integration with macOS system features and other apps
 /// Fixes edge cases: #38, #39, #40, #41, #43, #44
-public final class SystemIntegrationManager {
+public final class SystemIntegrationManager: SystemIntegrationService {
     public static let shared = SystemIntegrationManager()
 
     // Edge case #40: Track other cursor apps
@@ -27,6 +27,23 @@ public final class SystemIntegrationManager {
 
     deinit {
         removeObservers()
+    }
+
+    /// Shutdown the manager and clean up observers
+    /// Call this during app termination
+    public func shutdown() {
+        removeObservers()
+
+        // Clear tracked state
+        positionsLock.lock()
+        lastCursorPositions.removeAll()
+        positionsLock.unlock()
+
+        isScreenSaverActive = false
+        isFullScreenAppActive = false
+        fullScreenAppBundleID = nil
+
+        NSLog("SystemIntegrationManager: Shutdown complete")
     }
 
     // MARK: - Public API
@@ -116,14 +133,21 @@ public final class SystemIntegrationManager {
 
     // MARK: - Edge case #39: Shake to Locate detection
 
+    private let positionsLock = NSLock()
     private var lastCursorPositions: [(point: CGPoint, time: CFAbsoluteTime)] = []
 
     public func isShakeToLocateActive() -> Bool {
-        // Detect rapid back-and-forth mouse movement that triggers shake to locate
-        guard lastCursorPositions.count >= 4 else { return false }
+        positionsLock.lock()
+        let positions = lastCursorPositions
+        positionsLock.unlock()
 
-        let recentPositions = Array(lastCursorPositions.suffix(4))
-        let timeSpan = recentPositions.last!.time - recentPositions.first!.time
+        // Detect rapid back-and-forth mouse movement that triggers shake to locate
+        guard positions.count >= 4 else { return false }
+
+        let recentPositions = Array(positions.suffix(4))
+        guard let firstPosition = recentPositions.first,
+              let lastPosition = recentPositions.last else { return false }
+        let timeSpan = lastPosition.time - firstPosition.time
 
         // Must happen within 0.5 seconds
         guard timeSpan < 0.5 else { return false }
@@ -147,6 +171,9 @@ public final class SystemIntegrationManager {
     }
 
     public func recordCursorPosition(_ point: CGPoint) {
+        positionsLock.lock()
+        defer { positionsLock.unlock() }
+
         let now = CFAbsoluteTimeGetCurrent()
         lastCursorPositions.append((point: point, time: now))
 

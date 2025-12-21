@@ -4,41 +4,63 @@ import CoreGraphics
 
 /// Core engine managing cursor appearance and dynamic updates
 /// Fixes edge cases: #4, #9, #10, #30, #31, #32, #33, #34, #35, #36, #37
-public final class CursorEngine {
+public final class CursorEngine: CursorService {
     public static let shared = CursorEngine()
+
+    // Injected dependencies (protocol-based for testability)
+    private let displayService: DisplayService
+    private let permissionService: PermissionService
+    private let helperService: HelperService
+    private let backgroundDetector: BackgroundColorDetector
+    private let cursorRenderer: CursorRenderer
 
     private var settings: CursorSettings = .defaults
     private var displayLink: CVDisplayLink?
-    private var isRunning = false
-    private let backgroundDetector = BackgroundColorDetector()
-    private let cursorRenderer = CursorRenderer()
-    private let displayManager = DisplayManager.shared
-    private let permissionManager = PermissionManager.shared
 
-    private var lastMouseLocation: CGPoint = .zero
-    private var lastBackgroundColor: CursorColor = .white
+    // Thread-safe state accessed from display link callback
+    @Atomic private var isRunning = false
+    @Atomic private var lastMouseLocation: CGPoint = .zero
+    @Atomic private var lastBackgroundColor: CursorColor = .white
+    @Atomic private var lastActivityTime: CFAbsoluteTime = 0
+    @Atomic private var movementThreshold: CGFloat = 2.0
+    @Atomic private var lastCursorUpdateTime: CFAbsoluteTime = 0
+    @Atomic private var currentRefreshRate: Double = 60.0
+
+    // Main thread only
     private var lastAppliedCursor: NSCursor?
-
-    // Edge case #34: Idle detection
     private var idleTimer: Timer?
-    private var lastActivityTime: CFAbsoluteTime = 0
+
+    // Constants
     private let idleThreshold: TimeInterval = 5.0 // seconds
-
-    // Edge case #35: Adaptive movement threshold
-    private var movementThreshold: CGFloat = 2.0
-
-    // Edge case #37: Rate limiting for cursor updates
-    private var lastCursorUpdateTime: CFAbsoluteTime = 0
     private let minUpdateInterval: TimeInterval = 1.0 / 120.0 // Max 120 updates/sec
-
-    // Edge case #9: Track display refresh rate
-    private var currentRefreshRate: Double = 60.0
 
     // Thread safety
     private let updateQueue = DispatchQueue(label: "com.pointerdesigner.cursorengine", qos: .userInteractive)
-    private let lock = NSLock()
+    private let settingsLock = NSLock()
 
+    /// Default initializer using production singletons
     private init() {
+        self.displayService = DisplayManager.shared
+        self.permissionService = PermissionManager.shared
+        self.helperService = HelperToolManager.shared
+        self.backgroundDetector = BackgroundColorDetector()
+        self.cursorRenderer = CursorRenderer()
+        setupObservers()
+    }
+
+    /// Initializer for dependency injection (testing)
+    public init(
+        displayService: DisplayService,
+        permissionService: PermissionService,
+        helperService: HelperService,
+        backgroundDetector: BackgroundColorDetector? = nil,
+        cursorRenderer: CursorRenderer? = nil
+    ) {
+        self.displayService = displayService
+        self.permissionService = permissionService
+        self.helperService = helperService
+        self.backgroundDetector = backgroundDetector ?? BackgroundColorDetector()
+        self.cursorRenderer = cursorRenderer ?? CursorRenderer()
         setupObservers()
     }
 
@@ -51,9 +73,9 @@ public final class CursorEngine {
 
     /// Configure the engine with new settings
     public func configure(with settings: CursorSettings) {
-        lock.lock()
+        settingsLock.lock()
         self.settings = settings
-        lock.unlock()
+        settingsLock.unlock()
 
         cursorRenderer.configure(with: settings)
         backgroundDetector.reset()
@@ -68,8 +90,8 @@ public final class CursorEngine {
         guard !isRunning else { return }
 
         // Edge case #5: Check permissions first
-        if settings.contrastMode != .none && !permissionManager.hasScreenRecordingPermission {
-            permissionManager.promptForPermission(.screenRecording)
+        if settings.contrastMode != .none && !permissionService.hasScreenRecordingPermission {
+            permissionService.promptForPermission(.screenRecording, from: nil)
         }
 
         isRunning = true
@@ -91,12 +113,17 @@ public final class CursorEngine {
         isRunning = false
 
         stopIdleTimer()
-
-        if let displayLink = displayLink {
-            CVDisplayLinkStop(displayLink)
-        }
-
+        releaseDisplayLink()
         restoreSystemCursor()
+    }
+
+    /// Properly release the CVDisplayLink to prevent resource leaks
+    private func releaseDisplayLink() {
+        if let link = displayLink {
+            CVDisplayLinkStop(link)
+            // CVDisplayLink is a CFType, setting to nil releases it
+            displayLink = nil
+        }
     }
 
     // MARK: - Setup
@@ -202,10 +229,7 @@ public final class CursorEngine {
 
     @objc private func handleDisplayChange(_ notification: Notification) {
         // Edge case #4, #10: Recreate display link for new configuration
-        if let displayLink = displayLink {
-            CVDisplayLinkStop(displayLink)
-        }
-        displayLink = nil
+        releaseDisplayLink()
 
         if isRunning {
             setupDisplayLink()
@@ -240,9 +264,7 @@ public final class CursorEngine {
 
     @objc private func handleSleepNotification(_ notification: Notification) {
         // Edge case #32, #42: Stop before sleep
-        if let displayLink = displayLink {
-            CVDisplayLinkStop(displayLink)
-        }
+        releaseDisplayLink()
     }
 
     @objc private func handleWakeNotification(_ notification: Notification) {
@@ -294,16 +316,20 @@ public final class CursorEngine {
         // Edge case #37: Rate limit updates
         guard now - lastCursorUpdateTime >= minUpdateInterval else { return }
 
-        updateQueue.async { [weak self] in
-            self?.processFrame()
+        // CRITICAL: NSEvent.mouseLocation must be accessed on main thread
+        // Capture it here and pass to background processing
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.isRunning else { return }
+            let mouseLocation = NSEvent.mouseLocation
+            self.updateQueue.async { [weak self] in
+                self?.processFrame(mouseLocation: mouseLocation)
+            }
         }
     }
 
-    private func processFrame() {
-        let mouseLocation = NSEvent.mouseLocation
-
+    private func processFrame(mouseLocation: NSPoint) {
         // Edge case #3: Convert coordinates properly for current display
-        let cgPoint = displayManager.convertToCGPoint(mouseLocation)
+        let cgPoint = displayService.convertToCGPoint(mouseLocation)
 
         // Edge case #35: Adaptive movement threshold based on speed
         let distance = hypot(cgPoint.x - lastMouseLocation.x, cgPoint.y - lastMouseLocation.y)
@@ -326,9 +352,9 @@ public final class CursorEngine {
         lastMouseLocation = cgPoint
 
         // Sample background color if contrast mode is active
-        lock.lock()
+        settingsLock.lock()
         let currentSettings = settings
-        lock.unlock()
+        settingsLock.unlock()
 
         if currentSettings.contrastMode != .none {
             if let bgColor = backgroundDetector.sampleColor(at: cgPoint, settings: currentSettings) {
@@ -347,9 +373,9 @@ public final class CursorEngine {
     // MARK: - Cursor Application
 
     private func applyCursor() {
-        lock.lock()
+        settingsLock.lock()
         let currentSettings = settings
-        lock.unlock()
+        settingsLock.unlock()
 
         let effectiveColor: CursorColor
 
@@ -389,7 +415,7 @@ public final class CursorEngine {
         }
 
         // For system-wide changes, communicate with helper
-        HelperToolManager.shared.setCursor(cursorImage)
+        helperService.setCursor(cursorImage)
     }
 
     private func calculateInvertedColor(against background: CursorColor, settings: CursorSettings) -> CursorColor {
@@ -418,7 +444,7 @@ public final class CursorEngine {
         DispatchQueue.main.async {
             NSCursor.arrow.set()
         }
-        HelperToolManager.shared.restoreSystemCursor()
+        helperService.restoreSystemCursor()
         lastAppliedCursor = nil
     }
 
@@ -433,6 +459,6 @@ public final class CursorEngine {
 
     /// Check if engine can use contrast features
     public var canUseContrastFeatures: Bool {
-        return permissionManager.hasScreenRecordingPermission
+        return permissionService.hasScreenRecordingPermission
     }
 }

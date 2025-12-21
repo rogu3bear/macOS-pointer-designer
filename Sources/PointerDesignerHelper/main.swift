@@ -12,6 +12,11 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     // Edge case #62: Temp file cleanup timer
     private var cleanupTimer: Timer?
 
+    // Signal handling for graceful shutdown
+    private var sigtermSource: DispatchSourceSignal?
+    private var sigintSource: DispatchSourceSignal?
+    private var shouldTerminate = false
+
     override init() {
         listener = NSXPCListener(machServiceName: "com.pointerdesigner.helper")
         super.init()
@@ -22,11 +27,74 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
         // Edge case #62: Set up periodic cleanup (every hour)
         setupPeriodicCleanup()
+
+        // Set up signal handlers for graceful shutdown
+        setupSignalHandlers()
+    }
+
+    private func setupSignalHandlers() {
+        // Ignore default signal behavior
+        signal(SIGTERM, SIG_IGN)
+        signal(SIGINT, SIG_IGN)
+
+        // Handle SIGTERM (sent by launchd or kill command)
+        sigtermSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        sigtermSource?.setEventHandler { [weak self] in
+            NSLog("HelperTool: Received SIGTERM, shutting down gracefully")
+            self?.shutdown()
+        }
+        sigtermSource?.resume()
+
+        // Handle SIGINT (Ctrl+C)
+        sigintSource = DispatchSource.makeSignalSource(signal: SIGINT, queue: .main)
+        sigintSource?.setEventHandler { [weak self] in
+            NSLog("HelperTool: Received SIGINT, shutting down gracefully")
+            self?.shutdown()
+        }
+        sigintSource?.resume()
+    }
+
+    func shutdown() {
+        guard !shouldTerminate else { return }
+        shouldTerminate = true
+
+        NSLog("HelperTool: Beginning shutdown sequence")
+
+        // Invalidate cleanup timer
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
+
+        // Cancel signal sources
+        sigtermSource?.cancel()
+        sigintSource?.cancel()
+        sigtermSource = nil
+        sigintSource = nil
+
+        // Invalidate XPC listener
+        listener.suspend()
+
+        // Restore cursor before exit
+        restoreDefaultCursor()
+
+        // Stop the run loop
+        CFRunLoopStop(CFRunLoopGetCurrent())
+
+        NSLog("HelperTool: Shutdown complete")
     }
 
     func run() {
         listener.resume()
-        RunLoop.current.run()
+        NSLog("HelperTool: Started and listening for connections")
+
+        // Use CFRunLoop with explicit stop support instead of RunLoop.run()
+        while !shouldTerminate {
+            let result = CFRunLoopRunInMode(.defaultMode, 1.0, true)
+            if result == .stopped {
+                break
+            }
+        }
+
+        NSLog("HelperTool: Run loop exited")
     }
 
     // Edge case #62: Clean up temp files older than 24 hours
@@ -214,29 +282,18 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         )
     }
 
-    // Edge case #63: Add fallback mechanism for notifications
+    // Edge case #63: Post distributed notification
+    // Note: postNotificationName doesn't throw, so retry logic is not meaningful.
+    // We post once and return true. If delivery fails, it fails silently.
     private func postNotificationWithRetry(name: String, maxRetries: Int) -> Bool {
-        var attempts = 0
-        var success = false
-
-        while attempts < maxRetries && !success {
-            // Post notification
-            DistributedNotificationCenter.default().postNotificationName(
-                NSNotification.Name(name),
-                object: nil,
-                userInfo: nil,
-                deliverImmediately: true
-            )
-
-            // Give a small delay to ensure delivery
-            Thread.sleep(forTimeInterval: 0.1)
-
-            success = true
-            NSLog("HelperTool: Posted notification '\(name)' successfully")
-            attempts += 1
-        }
-
-        return success
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name(name),
+            object: nil,
+            userInfo: nil,
+            deliverImmediately: true
+        )
+        NSLog("HelperTool: Posted notification '\(name)'")
+        return true
     }
 
     private func saveCursorImage(_ image: NSImage) {

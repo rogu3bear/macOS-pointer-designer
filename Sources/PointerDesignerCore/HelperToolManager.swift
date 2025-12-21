@@ -3,7 +3,7 @@ import AppKit
 import ServiceManagement
 
 /// Manages the privileged helper tool for system-wide cursor changes
-public final class HelperToolManager {
+public final class HelperToolManager: HelperService {
     public static let shared = HelperToolManager()
 
     private let helperBundleID = "com.pointerdesigner.helper"
@@ -16,10 +16,8 @@ public final class HelperToolManager {
     private static let maxImageDataSize = 5 * 1024 * 1024
 
     // Edge case #59: Serial queue for thread-safe XPC operations
+    // All connection state modifications happen on this queue
     private let xpcQueue = DispatchQueue(label: "com.pointerdesigner.xpc", qos: .userInitiated)
-
-    // Edge case #59: Lock for connection access
-    private let connectionLock = NSLock()
 
     private var xpcConnection: NSXPCConnection?
 
@@ -27,6 +25,24 @@ public final class HelperToolManager {
     private var cachedHelperVersion: String?
 
     private init() {}
+
+    /// Shutdown the helper tool manager and clean up XPC connection
+    /// Call this during app termination
+    public func shutdown() {
+        xpcQueue.sync {
+            if let connection = xpcConnection {
+                // Restore cursor before closing connection
+                if let helper = connection.remoteObjectProxy as? PointerHelperProtocol {
+                    helper.restoreCursor()
+                }
+                // Invalidate the connection to release resources
+                connection.invalidate()
+                xpcConnection = nil
+            }
+            cachedHelperVersion = nil
+        }
+        NSLog("HelperToolManager: Shutdown complete")
+    }
 
     /// Check if helper tool is installed
     public var isHelperInstalled: Bool {
@@ -151,7 +167,10 @@ public final class HelperToolManager {
     }
 
     // Edge case #57: Check helper version before operations
+    // Must be called on xpcQueue. Completion is always called on xpcQueue.
     private func checkHelperVersion(completion: @escaping (Bool) -> Void) {
+        dispatchPrecondition(condition: .onQueue(xpcQueue))
+
         // If we have a cached version that matches, return immediately
         if let cached = cachedHelperVersion, cached == Self.expectedHelperVersion {
             completion(true)
@@ -164,9 +183,10 @@ public final class HelperToolManager {
             return
         }
 
-        guard let helper = connection.remoteObjectProxyWithErrorHandler({ error in
+        guard let helper = connection.remoteObjectProxyWithErrorHandler({ [weak self] error in
             NSLog("HelperToolManager: Error getting version: \(error)")
-            completion(false)
+            // Dispatch back to xpcQueue for completion
+            self?.xpcQueue.async { completion(false) }
         }) as? PointerHelperProtocol else {
             completion(false)
             return
@@ -174,21 +194,30 @@ public final class HelperToolManager {
 
         helper.getVersion { [weak self] version in
             guard let self = self else {
-                completion(false)
+                // Dispatch back to xpcQueue for completion
+                self?.xpcQueue.async { completion(false) }
                 return
             }
 
-            self.cachedHelperVersion = version
-
-            if version != Self.expectedHelperVersion {
-                NSLog("HelperToolManager: Helper version mismatch. Expected \(Self.expectedHelperVersion), got \(version)")
-                // Prompt user to reinstall helper
-                DispatchQueue.main.async {
-                    self.promptForHelperReinstall()
+            // Dispatch back to xpcQueue for state updates and completion
+            self.xpcQueue.async { [weak self] in
+                guard let self = self else {
+                    completion(false)
+                    return
                 }
-                completion(false)
-            } else {
-                completion(true)
+
+                self.cachedHelperVersion = version
+
+                if version != Self.expectedHelperVersion {
+                    NSLog("HelperToolManager: Helper version mismatch. Expected \(Self.expectedHelperVersion), got \(version)")
+                    // Prompt user to reinstall helper
+                    DispatchQueue.main.async {
+                        self.promptForHelperReinstall()
+                    }
+                    completion(false)
+                } else {
+                    completion(true)
+                }
             }
         }
     }
@@ -240,9 +269,10 @@ public final class HelperToolManager {
 
     // Edge case #59: Thread-safe connection access with proper handlers
     // Edge case #56: Add interruption and invalidation handlers
+    // Fixed: Use xpcQueue for all connection state modifications to avoid lock contention
     private func getConnection() -> NSXPCConnection? {
-        connectionLock.lock()
-        defer { connectionLock.unlock() }
+        // Must be called on xpcQueue to ensure thread safety
+        dispatchPrecondition(condition: .onQueue(xpcQueue))
 
         if let existing = xpcConnection {
             return existing
@@ -253,42 +283,49 @@ public final class HelperToolManager {
         connection.remoteObjectInterface = NSXPCInterface(with: PointerHelperProtocol.self)
 
         // Edge case #56: Handle connection interruption (e.g., helper crashed)
+        // Use xpcQueue to avoid race conditions
         connection.interruptionHandler = { [weak self] in
             NSLog("HelperToolManager: XPC connection interrupted, will attempt to reconnect")
-            self?.handleConnectionInterruption()
+            self?.xpcQueue.async { [weak self] in
+                self?.handleConnectionInterruption()
+            }
         }
 
         // Edge case #56: Handle connection invalidation (e.g., helper terminated)
+        // Use xpcQueue to avoid race conditions
         connection.invalidationHandler = { [weak self] in
             NSLog("HelperToolManager: XPC connection invalidated")
-            self?.handleConnectionInvalidation()
+            self?.xpcQueue.async { [weak self] in
+                self?.handleConnectionInvalidation()
+            }
         }
 
-        connection.resume()
+        // Store before resume to ensure handlers can find it
         xpcConnection = connection
+        connection.resume()
 
         return connection
     }
 
     // Edge case #56: Reconnect automatically on interruption
+    // Must be called on xpcQueue
     private func handleConnectionInterruption() {
-        xpcQueue.async { [weak self] in
-            guard let self = self else { return }
+        dispatchPrecondition(condition: .onQueue(xpcQueue))
 
-            // Clear cached version to force recheck
-            self.cachedHelperVersion = nil
+        // Clear cached version to force recheck
+        cachedHelperVersion = nil
 
-            // Connection will be recreated on next use
-            NSLog("HelperToolManager: Ready to reconnect on next operation")
-        }
+        // Connection will be recreated on next use
+        NSLog("HelperToolManager: Ready to reconnect on next operation")
     }
 
     // Edge case #56: Clear connection reference on invalidation
+    // Must be called on xpcQueue
     private func handleConnectionInvalidation() {
-        connectionLock.lock()
+        dispatchPrecondition(condition: .onQueue(xpcQueue))
+
         xpcConnection = nil
         cachedHelperVersion = nil
-        connectionLock.unlock()
     }
 }
 

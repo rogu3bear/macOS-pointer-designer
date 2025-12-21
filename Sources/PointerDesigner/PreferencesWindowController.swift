@@ -3,8 +3,9 @@ import PointerDesignerCore
 
 final class PreferencesWindowController: NSWindowController {
     private var preferencesView: PreferencesView?
+    private let stateController: CursorStateController
 
-    convenience init() {
+    convenience init(stateController: CursorStateController = .shared) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
             styleMask: [.titled, .closable],
@@ -32,15 +33,26 @@ final class PreferencesWindowController: NSWindowController {
         window.setAccessibilityLabel("Pointer Designer Preferences")
         window.setAccessibilityHelp("Configure cursor appearance and behavior settings")
 
-        self.init(window: window)
+        self.init(window: window, stateController: stateController)
 
-        preferencesView = PreferencesView(frame: window.contentView!.bounds)
+        guard let contentView = window.contentView else { return }
+        preferencesView = PreferencesView(frame: contentView.bounds, stateController: self.stateController)
         window.contentView = preferencesView
 
         // Edge case #70: Set initial first responder for keyboard navigation
         if let firstControl = preferencesView?.firstKeyView {
             window.initialFirstResponder = firstControl
         }
+    }
+
+    init(window: NSWindow, stateController: CursorStateController) {
+        self.stateController = stateController
+        super.init(window: window)
+    }
+
+    required init?(coder: NSCoder) {
+        self.stateController = .shared
+        super.init(coder: coder)
     }
 }
 
@@ -50,13 +62,22 @@ final class PreferencesView: NSView {
     private var outlineWidthSlider: NSSlider?
     private var launchAtLoginCheckbox: NSButton?
     private var samplingRateSlider: NSSlider?
+    private var presetPopup: NSPopUpButton?
+    private var glowCheckbox: NSButton?
+    private var shadowCheckbox: NSButton?
+    private var scaleSlider: NSSlider?
+    private var scaleLabel: NSTextField?
+
+    // Use CursorStateController for business logic
+    private let stateController: CursorStateController
 
     // Edge case #70: Track first key view for keyboard navigation
     var firstKeyView: NSView? {
         return colorWell
     }
 
-    override init(frame frameRect: NSRect) {
+    init(frame frameRect: NSRect, stateController: CursorStateController = .shared) {
+        self.stateController = stateController
         super.init(frame: frameRect)
         setupUI()
         loadSettings()
@@ -70,6 +91,7 @@ final class PreferencesView: NSView {
     }
 
     required init?(coder: NSCoder) {
+        self.stateController = .shared
         super.init(coder: coder)
         setupUI()
         loadSettings()
@@ -100,66 +122,122 @@ final class PreferencesView: NSView {
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20)
         ])
 
+        // Theme/Preset Section
+        let presetSection = createSection(title: "Theme")
+        let presetPopupView = NSPopUpButton()
+        for preset in CursorPreset.allCases {
+            presetPopupView.addItem(withTitle: preset.displayName)
+        }
+        presetPopupView.target = self
+        presetPopupView.action = #selector(presetChanged)
+        presetPopupView.setAccessibilityLabel("Cursor Theme")
+        presetPopupView.setAccessibilityHelp("Choose a pre-designed cursor theme")
+        presetPopup = presetPopupView
+        presetSection.addArrangedSubview(presetPopupView)
+        stackView.addArrangedSubview(presetSection)
+
         // Cursor Color Section
         let colorSection = createSection(title: "Cursor Color")
-        colorWell = NSColorWell()
-        colorWell?.color = .white
-        colorWell?.target = self
-        colorWell?.action = #selector(colorChanged)
+        let colorWellView = NSColorWell()
+        colorWellView.color = .white
+        colorWellView.target = self
+        colorWellView.action = #selector(colorChanged)
         // Edge case #69: VoiceOver accessibility
-        colorWell?.setAccessibilityLabel("Cursor Color")
-        colorWell?.setAccessibilityHelp("Choose the color for your custom cursor")
-        colorSection.addArrangedSubview(colorWell!)
+        colorWellView.setAccessibilityLabel("Cursor Color")
+        colorWellView.setAccessibilityHelp("Choose the color for your custom cursor")
+        colorWell = colorWellView
+        colorSection.addArrangedSubview(colorWellView)
         stackView.addArrangedSubview(colorSection)
+
+        // Cursor Scale Section
+        let scaleSection = createSection(title: "Cursor Size")
+        let scaleRow = NSStackView()
+        scaleRow.orientation = .horizontal
+        scaleRow.spacing = 10
+
+        let scaleSliderView = NSSlider(value: 1.0, minValue: 0.5, maxValue: 2.0, target: self, action: #selector(scaleChanged))
+        scaleSliderView.isContinuous = true
+        scaleSliderView.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        scaleSliderView.setAccessibilityLabel("Cursor Size")
+        scaleSliderView.setAccessibilityHelp("Adjust cursor size from 50% to 200%")
+        scaleSlider = scaleSliderView
+
+        let scaleLabelView = NSTextField(labelWithString: "100%")
+        scaleLabelView.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+        scaleLabel = scaleLabelView
+
+        scaleRow.addArrangedSubview(scaleSliderView)
+        scaleRow.addArrangedSubview(scaleLabelView)
+        scaleSection.addArrangedSubview(scaleRow)
+        stackView.addArrangedSubview(scaleSection)
+
+        // Visual Effects Section
+        let effectsSection = createSection(title: "Visual Effects")
+        let glowCheck = NSButton(checkboxWithTitle: "Glow Effect", target: self, action: #selector(glowChanged))
+        glowCheck.setAccessibilityLabel("Glow Effect")
+        glowCheck.setAccessibilityHelp("Add a glowing aura around the cursor")
+        glowCheckbox = glowCheck
+        effectsSection.addArrangedSubview(glowCheck)
+
+        let shadowCheck = NSButton(checkboxWithTitle: "Drop Shadow", target: self, action: #selector(shadowChanged))
+        shadowCheck.setAccessibilityLabel("Drop Shadow")
+        shadowCheck.setAccessibilityHelp("Add a shadow beneath the cursor")
+        shadowCheckbox = shadowCheck
+        effectsSection.addArrangedSubview(shadowCheck)
+        stackView.addArrangedSubview(effectsSection)
 
         // Contrast Mode Section
         let contrastSection = createSection(title: "Contrast Mode")
-        contrastModePopup = NSPopUpButton()
-        contrastModePopup?.addItems(withTitles: ["None", "Auto-Invert", "Outline"])
-        contrastModePopup?.target = self
-        contrastModePopup?.action = #selector(contrastModeChanged)
+        let contrastPopup = NSPopUpButton()
+        contrastPopup.addItems(withTitles: ["None", "Auto-Invert", "Outline"])
+        contrastPopup.target = self
+        contrastPopup.action = #selector(contrastModeChanged)
         // Edge case #69: VoiceOver accessibility
-        contrastModePopup?.setAccessibilityLabel("Contrast Mode")
-        contrastModePopup?.setAccessibilityHelp("Select how the cursor adapts to different backgrounds: None, Auto-Invert, or Outline")
-        contrastSection.addArrangedSubview(contrastModePopup!)
+        contrastPopup.setAccessibilityLabel("Contrast Mode")
+        contrastPopup.setAccessibilityHelp("Select how the cursor adapts to different backgrounds: None, Auto-Invert, or Outline")
+        contrastModePopup = contrastPopup
+        contrastSection.addArrangedSubview(contrastPopup)
         stackView.addArrangedSubview(contrastSection)
 
         // Outline Width Section
         let outlineSection = createSection(title: "Outline Width")
-        outlineWidthSlider = NSSlider(value: 2, minValue: 1, maxValue: 5, target: self, action: #selector(outlineWidthChanged))
+        let outlineSlider = NSSlider(value: 2, minValue: 1, maxValue: 5, target: self, action: #selector(outlineWidthChanged))
         // Edge case #53: Disable continuous updates to avoid excessive saves
-        outlineWidthSlider?.isContinuous = false
-        outlineWidthSlider?.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        outlineSlider.isContinuous = false
+        outlineSlider.widthAnchor.constraint(equalToConstant: 200).isActive = true
         // Edge case #69: VoiceOver accessibility
-        outlineWidthSlider?.setAccessibilityLabel("Outline Width")
-        outlineWidthSlider?.setAccessibilityHelp("Adjust the width of the cursor outline from 1 to 5 pixels")
-        outlineWidthSlider?.setAccessibilityValue("\(Int(outlineWidthSlider?.doubleValue ?? 2)) pixels")
-        outlineSection.addArrangedSubview(outlineWidthSlider!)
+        outlineSlider.setAccessibilityLabel("Outline Width")
+        outlineSlider.setAccessibilityHelp("Adjust the width of the cursor outline from 1 to 5 pixels")
+        outlineSlider.setAccessibilityValue("\(Int(outlineSlider.doubleValue)) pixels")
+        outlineWidthSlider = outlineSlider
+        outlineSection.addArrangedSubview(outlineSlider)
         stackView.addArrangedSubview(outlineSection)
 
         // Sampling Rate Section
         let samplingSection = createSection(title: "Background Sampling Rate")
-        samplingRateSlider = NSSlider(value: 60, minValue: 15, maxValue: 120, target: self, action: #selector(samplingRateChanged))
+        let samplingSlider = NSSlider(value: 60, minValue: 15, maxValue: 120, target: self, action: #selector(samplingRateChanged))
         // Edge case #53: Disable continuous updates to avoid excessive saves
-        samplingRateSlider?.isContinuous = false
-        samplingRateSlider?.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        samplingSlider.isContinuous = false
+        samplingSlider.widthAnchor.constraint(equalToConstant: 200).isActive = true
         // Edge case #69: VoiceOver accessibility
-        samplingRateSlider?.setAccessibilityLabel("Background Sampling Rate")
-        samplingRateSlider?.setAccessibilityHelp("Adjust how often the cursor samples the background. Higher values are smoother but use more CPU. Range: 15 to 120 Hz")
-        samplingRateSlider?.setAccessibilityValue("\(Int(samplingRateSlider?.doubleValue ?? 60)) Hz")
+        samplingSlider.setAccessibilityLabel("Background Sampling Rate")
+        samplingSlider.setAccessibilityHelp("Adjust how often the cursor samples the background. Higher values are smoother but use more CPU. Range: 15 to 120 Hz")
+        samplingSlider.setAccessibilityValue("\(Int(samplingSlider.doubleValue)) Hz")
+        samplingRateSlider = samplingSlider
         let samplingLabel = NSTextField(labelWithString: "Higher = smoother, more CPU")
         samplingLabel.font = NSFont.systemFont(ofSize: 10)
         samplingLabel.textColor = .secondaryLabelColor
-        samplingSection.addArrangedSubview(samplingRateSlider!)
+        samplingSection.addArrangedSubview(samplingSlider)
         samplingSection.addArrangedSubview(samplingLabel)
         stackView.addArrangedSubview(samplingSection)
 
         // Launch at Login Section
-        launchAtLoginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: self, action: #selector(launchAtLoginChanged))
+        let loginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: self, action: #selector(launchAtLoginChanged))
         // Edge case #69: VoiceOver accessibility
-        launchAtLoginCheckbox?.setAccessibilityLabel("Launch at Login")
-        launchAtLoginCheckbox?.setAccessibilityHelp("Automatically start Pointer Designer when you log in")
-        stackView.addArrangedSubview(launchAtLoginCheckbox!)
+        loginCheckbox.setAccessibilityLabel("Launch at Login")
+        loginCheckbox.setAccessibilityHelp("Automatically start Pointer Designer when you log in")
+        launchAtLoginCheckbox = loginCheckbox
+        stackView.addArrangedSubview(loginCheckbox)
 
         // Reset Button
         let resetButton = NSButton(title: "Reset to Defaults", target: self, action: #selector(resetToDefaults))
@@ -207,8 +285,14 @@ final class PreferencesView: NSView {
     }
 
     private func loadSettings() {
-        let settings = SettingsManager.shared.currentSettings
+        let settings = stateController.currentSettings
 
+        // Preset
+        if let index = CursorPreset.allCases.firstIndex(of: settings.preset) {
+            presetPopup?.selectItem(at: index)
+        }
+
+        // Color
         colorWell?.color = NSColor(
             red: CGFloat(settings.cursorColor.red),
             green: CGFloat(settings.cursorColor.green),
@@ -216,6 +300,15 @@ final class PreferencesView: NSView {
             alpha: CGFloat(settings.cursorColor.alpha)
         )
 
+        // Scale
+        scaleSlider?.doubleValue = Double(settings.cursorScale)
+        updateScaleLabel()
+
+        // Visual effects
+        glowCheckbox?.state = settings.glowEnabled ? .on : .off
+        shadowCheckbox?.state = settings.shadowEnabled ? .on : .off
+
+        // Contrast mode
         switch settings.contrastMode {
         case .none: contrastModePopup?.selectItem(at: 0)
         case .autoInvert: contrastModePopup?.selectItem(at: 1)
@@ -224,7 +317,12 @@ final class PreferencesView: NSView {
 
         outlineWidthSlider?.doubleValue = Double(settings.outlineWidth)
         samplingRateSlider?.doubleValue = Double(settings.samplingRate)
-        launchAtLoginCheckbox?.state = settings.launchAtLogin ? .on : .off
+        launchAtLoginCheckbox?.state = stateController.isLaunchAtLoginEnabled ? .on : .off
+    }
+
+    private func updateScaleLabel() {
+        let scale = scaleSlider?.doubleValue ?? 1.0
+        scaleLabel?.stringValue = "\(Int(scale * 100))%"
     }
 
     @objc private func colorChanged() {
@@ -234,78 +332,101 @@ final class PreferencesView: NSView {
         guard let sRGBColor = color.usingColorSpace(.sRGB) else {
             // Fallback: try converting via RGB color space
             if let rgbColor = color.usingColorSpace(NSColorSpace.deviceRGB) {
-                var settings = SettingsManager.shared.currentSettings
-                settings.cursorColor = CursorColor(
+                let cursorColor = CursorColor(
                     red: Float(rgbColor.redComponent),
                     green: Float(rgbColor.greenComponent),
                     blue: Float(rgbColor.blueComponent),
                     alpha: Float(rgbColor.alphaComponent)
                 )
-                saveAndApply(settings)
+                stateController.setCursorColor(cursorColor)
             }
             return
         }
 
-        var settings = SettingsManager.shared.currentSettings
-        settings.cursorColor = CursorColor(
+        let cursorColor = CursorColor(
             red: Float(sRGBColor.redComponent),
             green: Float(sRGBColor.greenComponent),
             blue: Float(sRGBColor.blueComponent),
             alpha: Float(sRGBColor.alphaComponent)
         )
-        saveAndApply(settings)
+        stateController.setCursorColor(cursorColor)
+    }
+
+    @objc private func presetChanged() {
+        guard let index = presetPopup?.indexOfSelectedItem,
+              index < CursorPreset.allCases.count else { return }
+        let preset = CursorPreset.allCases[index]
+        stateController.updateSettings { settings in
+            settings.preset = preset
+        }
+        // Reload to apply preset defaults
+        loadSettings()
+    }
+
+    @objc private func scaleChanged() {
+        let scale = Float(scaleSlider?.doubleValue ?? 1.0)
+        updateScaleLabel()
+        stateController.updateSettings { settings in
+            settings.cursorScale = scale
+        }
+    }
+
+    @objc private func glowChanged() {
+        let enabled = glowCheckbox?.state == .on
+        stateController.updateSettings { settings in
+            settings.glowEnabled = enabled
+        }
+    }
+
+    @objc private func shadowChanged() {
+        let enabled = shadowCheckbox?.state == .on
+        stateController.updateSettings { settings in
+            settings.shadowEnabled = enabled
+        }
     }
 
     @objc private func contrastModeChanged() {
-        var settings = SettingsManager.shared.currentSettings
+        let mode: ContrastMode
         switch contrastModePopup?.indexOfSelectedItem {
-        case 0: settings.contrastMode = .none
-        case 1: settings.contrastMode = .autoInvert
-        case 2: settings.contrastMode = .outline
-        default: break
+        case 0: mode = .none
+        case 1: mode = .autoInvert
+        case 2: mode = .outline
+        default: return
         }
-        saveAndApply(settings)
+        stateController.setContrastMode(mode)
     }
 
     @objc private func outlineWidthChanged() {
-        var settings = SettingsManager.shared.currentSettings
-        settings.outlineWidth = Float(outlineWidthSlider?.doubleValue ?? 2)
+        let width = Float(outlineWidthSlider?.doubleValue ?? 2)
         // Edge case #69: Update accessibility value for VoiceOver
         outlineWidthSlider?.setAccessibilityValue("\(Int(outlineWidthSlider?.doubleValue ?? 2)) pixels")
-        saveAndApply(settings)
+        stateController.setOutlineWidth(width)
     }
 
     @objc private func samplingRateChanged() {
-        var settings = SettingsManager.shared.currentSettings
-        settings.samplingRate = Int(samplingRateSlider?.doubleValue ?? 60)
+        let rate = Int(samplingRateSlider?.doubleValue ?? 60)
         // Edge case #69: Update accessibility value for VoiceOver
-        samplingRateSlider?.setAccessibilityValue("\(Int(samplingRateSlider?.doubleValue ?? 60)) Hz")
-        saveAndApply(settings)
+        samplingRateSlider?.setAccessibilityValue("\(rate) Hz")
+        stateController.updateSettings { settings in
+            settings.samplingRate = rate
+        }
     }
 
     @objc private func launchAtLoginChanged() {
-        var settings = SettingsManager.shared.currentSettings
-        settings.launchAtLogin = launchAtLoginCheckbox?.state == .on
-        SettingsManager.shared.save(settings)
-        LaunchAtLoginManager.shared.setEnabled(settings.launchAtLogin)
+        let enabled = launchAtLoginCheckbox?.state == .on
+        stateController.setLaunchAtLogin(enabled)
     }
 
     @objc private func resetToDefaults() {
-        let defaults = CursorSettings.defaults
-        SettingsManager.shared.save(defaults)
+        stateController.resetToDefaults()
         loadSettings()
-        CursorEngine.shared.configure(with: defaults)
     }
 
     // Edge case #55: Refresh UI when settings change externally
     @objc private func settingsDidChange(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
+            self?.stateController.reloadSettings()
             self?.loadSettings()
         }
-    }
-
-    private func saveAndApply(_ settings: CursorSettings) {
-        SettingsManager.shared.save(settings)
-        CursorEngine.shared.configure(with: settings)
     }
 }
