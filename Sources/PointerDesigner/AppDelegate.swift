@@ -31,8 +31,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         checkCrashRecovery() // Edge case #67
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Perform cleanup synchronously to ensure it completes before termination
+        performCleanup()
+        return .terminateNow
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
-        // Edge case #66: Cancel signal sources to prevent late callbacks
+        // Final cleanup - this runs after applicationShouldTerminate returned .terminateNow
+        // Keep this minimal since we already cleaned up in applicationShouldTerminate
+    }
+
+    private func performCleanup() {
+        NSLog("AppDelegate: Beginning cleanup sequence")
+
+        // Cancel signal sources to prevent late callbacks
         sigtermSource?.cancel()
         sigintSource?.cancel()
         sigtermSource = nil
@@ -41,17 +54,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Remove notification observers
         NotificationCenter.default.removeObserver(self)
 
+        // Restore cursor state (synchronous)
+        restoreCursorState()
+
+        // Shutdown helper tool manager XPC connection (synchronous)
+        HelperToolManager.shared.shutdown()
+
+        // Shutdown system integration manager (synchronous)
+        SystemIntegrationManager.shared.shutdown()
+
         // Clean up menu bar controller
         menuBarController = nil
 
-        // Edge case #66: Always restore cursor on termination
-        restoreCursorState()
-
-        // Shutdown helper tool manager XPC connection
-        HelperToolManager.shared.shutdown()
-
-        // Shutdown system integration manager
-        SystemIntegrationManager.shared.shutdown()
+        NSLog("AppDelegate: Cleanup complete")
     }
 
     private func setupMenuBar() {
@@ -250,15 +265,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Orphaned Process Cleanup
 
+    private static let helperPIDFilePath = "/tmp/com.pointerdesigner.helper.pid"
+
     /// Find and terminate any orphaned helper processes from previous runs
     private func cleanupOrphanedProcesses() {
-        let helperName = "PointerDesignerHelper"
-        let currentPID = ProcessInfo.processInfo.processIdentifier
+        // First try PID file (most reliable)
+        if let pid = readHelperPID() {
+            cleanupProcess(pid: pid, source: "PID file")
+        }
 
-        // Use pgrep to find helper processes
+        // Fallback: also check with pgrep in case PID file is stale
+        cleanupOrphanedProcessesWithPgrep()
+    }
+
+    private func readHelperPID() -> Int32? {
+        guard let content = try? String(contentsOfFile: Self.helperPIDFilePath, encoding: .utf8),
+              let pid = Int32(content.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return nil
+        }
+        return pid
+    }
+
+    private func cleanupProcess(pid: Int32, source: String) {
+        // Check if process exists
+        guard kill(pid, 0) == 0 else {
+            NSLog("AppDelegate: PID \(pid) from \(source) no longer exists, cleaning up stale file")
+            try? FileManager.default.removeItem(atPath: Self.helperPIDFilePath)
+            return
+        }
+
+        NSLog("AppDelegate: Found orphaned helper (PID: \(pid)) via \(source), terminating")
+        kill(pid, SIGTERM)
+
+        // Wait briefly then force kill if needed
+        DispatchQueue.global().asyncAfter(deadline: .now() + 2.0) {
+            if kill(pid, 0) == 0 {
+                NSLog("AppDelegate: Force killing unresponsive helper (PID: \(pid))")
+                kill(pid, SIGKILL)
+            }
+            // Clean up PID file
+            try? FileManager.default.removeItem(atPath: Self.helperPIDFilePath)
+        }
+    }
+
+    private func cleanupOrphanedProcessesWithPgrep() {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-f", helperName]
+        task.arguments = ["-f", "PointerDesignerHelper"]
 
         let pipe = Pipe()
         task.standardOutput = pipe
@@ -271,27 +324,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             if let output = String(data: data, encoding: .utf8) {
                 let pids = output.split(separator: "\n").compactMap { Int32($0) }
+                let currentPID = ProcessInfo.processInfo.processIdentifier
 
                 for pid in pids where pid != currentPID {
-                    NSLog("AppDelegate: Found orphaned helper process (PID: \(pid)), terminating")
-                    kill(pid, SIGTERM)
-
-                    // Give it a moment to terminate gracefully
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) {
-                        // Force kill if still running
-                        if kill(pid, 0) == 0 {
-                            NSLog("AppDelegate: Force killing unresponsive helper (PID: \(pid))")
-                            kill(pid, SIGKILL)
-                        }
-                    }
-                }
-
-                if !pids.isEmpty {
-                    NSLog("AppDelegate: Cleaned up \(pids.count) orphaned helper process(es)")
+                    cleanupProcess(pid: pid, source: "pgrep")
                 }
             }
         } catch {
-            NSLog("AppDelegate: Failed to check for orphaned processes: \(error)")
+            // pgrep failure is not critical
         }
     }
 }

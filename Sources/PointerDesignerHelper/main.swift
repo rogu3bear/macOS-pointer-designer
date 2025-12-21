@@ -17,10 +17,16 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     private var sigintSource: DispatchSourceSignal?
     private var shouldTerminate = false
 
+    // PID file for reliable process tracking
+    private static let pidFilePath = "/tmp/com.pointerdesigner.helper.pid"
+
     override init() {
         listener = NSXPCListener(machServiceName: "com.pointerdesigner.helper")
         super.init()
         listener.delegate = self
+
+        // Write PID file for process tracking
+        writePIDFile()
 
         // Edge case #62: Clean up old temp files on startup
         cleanupOldTempFiles()
@@ -30,6 +36,26 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
         // Set up signal handlers for graceful shutdown
         setupSignalHandlers()
+    }
+
+    private func writePIDFile() {
+        let pid = ProcessInfo.processInfo.processIdentifier
+        do {
+            try "\(pid)".write(toFile: Self.pidFilePath, atomically: true, encoding: .utf8)
+            // Restrict permissions to owner only
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: Self.pidFilePath
+            )
+            NSLog("HelperTool: Wrote PID \(pid) to \(Self.pidFilePath)")
+        } catch {
+            NSLog("HelperTool: Failed to write PID file: \(error)")
+        }
+    }
+
+    private func removePIDFile() {
+        try? FileManager.default.removeItem(atPath: Self.pidFilePath)
+        NSLog("HelperTool: Removed PID file")
     }
 
     private func setupSignalHandlers() {
@@ -75,6 +101,9 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
         // Restore cursor before exit
         restoreDefaultCursor()
+
+        // Remove PID file
+        removePIDFile()
 
         // Stop the run loop
         CFRunLoopStop(CFRunLoopGetCurrent())

@@ -49,6 +49,62 @@ public final class HelperToolManager: HelperService {
         FileManager.default.fileExists(atPath: helperToolPath)
     }
 
+    /// Check if helper is responsive (health check)
+    /// - Parameter timeout: Maximum time to wait for response
+    /// - Parameter completion: Called with true if helper responds, false otherwise
+    public func checkHealth(timeout: TimeInterval = 2.0, completion: @escaping (Bool) -> Void) {
+        guard isHelperInstalled else {
+            completion(false)
+            return
+        }
+
+        xpcQueue.async { [weak self] in
+            guard let self = self,
+                  let connection = self.getConnection() else {
+                DispatchQueue.main.async { completion(false) }
+                return
+            }
+
+            let helper = connection.remoteObjectProxyWithErrorHandler { error in
+                NSLog("HelperToolManager: Health check failed: \(error)")
+                DispatchQueue.main.async { completion(false) }
+            } as? PointerHelperProtocol
+
+            guard let helper = helper else {
+                DispatchQueue.main.async { completion(false) }
+                return
+            }
+
+            // Use getVersion as health check ping
+            let workItem = DispatchWorkItem {
+                DispatchQueue.main.async { completion(false) }
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: workItem)
+
+            helper.getVersion { version in
+                workItem.cancel()
+                NSLog("HelperToolManager: Health check passed, version: \(version)")
+                DispatchQueue.main.async { completion(true) }
+            }
+        }
+    }
+
+    /// Synchronous health check (blocks calling thread)
+    public var isHelperHealthy: Bool {
+        guard isHelperInstalled else { return false }
+
+        let semaphore = DispatchSemaphore(value: 0)
+        var healthy = false
+
+        checkHealth(timeout: 1.0) { result in
+            healthy = result
+            semaphore.signal()
+        }
+
+        _ = semaphore.wait(timeout: .now() + 1.5)
+        return healthy
+    }
+
     /// Install the helper tool (requires admin privileges)
     public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
         // For modern macOS (10.13+), use SMAppService for LaunchDaemons
