@@ -6,8 +6,26 @@ import ServiceManagement
 public final class HelperToolManager: HelperService {
     public static let shared = HelperToolManager()
 
-    private let helperBundleID = "com.pointerdesigner.helper"
-    private let helperToolPath = "/Library/PrivilegedHelperTools/com.pointerdesigner.helper"
+    /// Verify helper wiring is consistent
+    /// Call this during development to catch identifier mismatches early
+    /// Returns nil if OK, or an error description if mismatched
+    public static func verifyWiring() -> String? {
+        let appBundleID = Bundle.main.bundleIdentifier ?? "<nil>"
+
+        // Check main app bundle ID matches expected
+        if !Identity.validClientBundleIDs.contains(appBundleID) {
+            return "App bundle ID mismatch: expected one of \(Identity.validClientBundleIDs), got '\(appBundleID)'"
+        }
+
+        // Verify identity invariants
+        let errors = Identity.verifyInvariants()
+        if !errors.isEmpty {
+            return "Identity invariant failures: \(errors.joined(separator: ", "))"
+        }
+
+        NSLog("HelperToolManager: Wiring verification passed (app: \(appBundleID), helper: \(Identity.helperBundleID))")
+        return nil
+    }
 
     // Edge case #57: Helper version constants
     private static let expectedHelperVersion = "1.0.0"
@@ -17,7 +35,7 @@ public final class HelperToolManager: HelperService {
 
     // Edge case #59: Serial queue for thread-safe XPC operations
     // All connection state modifications happen on this queue
-    private let xpcQueue = DispatchQueue(label: "com.pointerdesigner.xpc", qos: .userInitiated)
+    private let xpcQueue = DispatchQueue(label: Identity.xpcQueueLabel, qos: .userInitiated)
 
     private var xpcConnection: NSXPCConnection?
 
@@ -46,7 +64,7 @@ public final class HelperToolManager: HelperService {
 
     /// Check if helper tool is installed
     public var isHelperInstalled: Bool {
-        FileManager.default.fileExists(atPath: helperToolPath)
+        FileManager.default.fileExists(atPath: Identity.helperToolPath)
     }
 
     /// Check if helper is responsive (health check)
@@ -155,7 +173,7 @@ public final class HelperToolManager: HelperService {
 
     @available(macOS 13.0, *)
     private func installHelperModern(completion: @escaping (Bool, Error?) -> Void) {
-        let service = SMAppService.daemon(plistName: "com.pointerdesigner.helper.plist")
+        let service = SMAppService.daemon(plistName: Identity.helperPlistName)
 
         do {
             try service.register()
@@ -182,7 +200,7 @@ public final class HelperToolManager: HelperService {
     /// Uninstall the helper tool
     public func uninstallHelper(completion: @escaping (Bool, Error?) -> Void) {
         if #available(macOS 13.0, *) {
-            let service = SMAppService.daemon(plistName: "com.pointerdesigner.helper.plist")
+            let service = SMAppService.daemon(plistName: Identity.helperPlistName)
             do {
                 try service.unregister()
                 completion(true, nil)
@@ -373,7 +391,7 @@ public final class HelperToolManager: HelperService {
         }
 
         // Create new connection
-        let connection = NSXPCConnection(machServiceName: helperBundleID)
+        let connection = NSXPCConnection(machServiceName: Identity.xpcMachServiceName)
         connection.remoteObjectInterface = NSXPCInterface(with: PointerHelperProtocol.self)
 
         // Edge case #56: Handle connection interruption (e.g., helper crashed)
@@ -421,14 +439,4 @@ public final class HelperToolManager: HelperService {
         xpcConnection = nil
         cachedHelperVersion = nil
     }
-}
-
-// MARK: - Helper Protocol
-
-@objc public protocol PointerHelperProtocol {
-    func setCursor(imageData: Data)
-    func restoreCursor()
-    func getVersion(reply: @escaping (String) -> Void)
-    /// Request graceful shutdown (for launchd-managed services, avoids kill/respawn loop)
-    func requestShutdown()
 }

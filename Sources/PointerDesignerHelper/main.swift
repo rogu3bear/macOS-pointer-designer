@@ -1,6 +1,7 @@
 import Foundation
 import AppKit
 import Security
+import PointerDesignerCore
 
 /// Privileged helper tool for system-wide cursor changes
 final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelperProtocol {
@@ -19,10 +20,10 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     private var shouldTerminate = false
 
     // PID file for reliable process tracking
-    private static let pidFilePath = "/tmp/com.pointerdesigner.helper.pid"
+    private static let pidFilePath = Identity.helperPIDPath
 
     override init() {
-        listener = NSXPCListener(machServiceName: "com.pointerdesigner.helper")
+        listener = NSXPCListener(machServiceName: Identity.xpcMachServiceName)
         super.init()
         listener.delegate = self
 
@@ -156,7 +157,7 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
 
             for file in contents {
                 // Only clean up our cursor files
-                if file.hasPrefix("com.pointerdesigner.cursor") {
+                if file.hasPrefix(Identity.cursorTempPrefix) {
                     let filePath = (tempDir as NSString).appendingPathComponent(file)
 
                     if let attributes = try? fileManager.attributesOfItem(atPath: filePath),
@@ -212,7 +213,7 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         }
 
         // Basic check: verify bundle identifier
-        let validBundleIDs = ["com.pointerdesigner.app", "com.pointerdesigner"]
+        let validBundleIDs = Identity.validClientBundleIDs
 
         // Get process info via SecCode (lighter check)
         var code: SecCode?
@@ -283,7 +284,7 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         // Edge case #63: Distributed notification with fallback mechanism
         // Note: For more reliable delivery, consider using XPC reply callback instead
         let notificationPosted = postNotificationWithRetry(
-            name: "com.pointerdesigner.cursorUpdated",
+            name: Identity.cursorUpdatedNotification,
             maxRetries: 3
         )
 
@@ -297,12 +298,12 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     private func restoreDefaultCursor() {
         // Remove custom cursor files (use same path as saveCursorImage)
         let tempDir = NSTemporaryDirectory()
-        let cursorPath = (tempDir as NSString).appendingPathComponent("com.pointerdesigner.cursor.tiff")
+        let cursorPath = (tempDir as NSString).appendingPathComponent("\(Identity.cursorTempPrefix).tiff")
         try? FileManager.default.removeItem(atPath: cursorPath)
 
         // Edge case #63: Use notification with retry
         _ = postNotificationWithRetry(
-            name: "com.pointerdesigner.cursorRestored",
+            name: Identity.cursorRestoredNotification,
             maxRetries: 3
         )
     }
@@ -324,7 +325,7 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     private func saveCursorImage(_ image: NSImage) {
         // Edge case #61: Use secure temp directory with restrictive permissions
         let tempDir = NSTemporaryDirectory()
-        let cursorPath = (tempDir as NSString).appendingPathComponent("com.pointerdesigner.cursor.tiff")
+        let cursorPath = (tempDir as NSString).appendingPathComponent("\(Identity.cursorTempPrefix).tiff")
 
         // SECURITY: Check for and remove any existing symlink to prevent symlink attacks
         var isSymlink = false
@@ -354,13 +355,6 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
             }
         }
     }
-}
-
-// Protocol definition (must match PointerDesignerCore)
-@objc protocol PointerHelperProtocol {
-    func setCursor(imageData: Data)
-    func restoreCursor()
-    func getVersion(reply: @escaping (String) -> Void)
 }
 
 // Main entry point

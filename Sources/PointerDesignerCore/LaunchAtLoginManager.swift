@@ -206,5 +206,5 @@ public final class LaunchAtLoginManager: LaunchAtLoginService {
 // MARK: - Notifications
 
 public extension Notification.Name {
-    static let launchAtLoginChanged = Notification.Name("com.pointerdesigner.launchAtLoginChanged")
+    static let launchAtLoginChanged = Notification.Name(Identity.launchAtLoginChangedNotification)
 }

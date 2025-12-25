@@ -6,8 +6,8 @@ public final class SettingsManager: SettingsService {
     public static let shared = SettingsManager()
 
     private let userDefaults = UserDefaults.standard
-    private let settingsKey = "com.pointerdesigner.settings"
-    private let backupKey = "com.pointerdesigner.settings.backup"
+    private let settingsKey = Identity.settingsKey
+    private let backupKey = Identity.settingsBackupKey
 
     private var cachedSettings: CursorSettings?
     private let lock = NSLock()
@@ -72,9 +72,9 @@ public final class SettingsManager: SettingsService {
                 break
             }
 
-            // Edge case #46: Brief delay before retry
+            // Edge case #46: Brief delay before retry using RunLoop (non-blocking)
             if attempt < maxSaveRetries - 1 {
-                Thread.sleep(forTimeInterval: 0.1)
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
             }
         }
 
@@ -141,7 +141,7 @@ public final class SettingsManager: SettingsService {
             return settings
         } catch {
             // Log error but don't crash
-            print("PointerDesigner: Failed to decode settings: \(error)")
+            print("CursorDesigner: Failed to decode settings: \(error)")
             return nil
         }
     }
@@ -171,7 +171,7 @@ public final class SettingsManager: SettingsService {
 
             return false
         } catch {
-            print("PointerDesigner: Failed to encode settings: \(error)")
+            print("CursorDesigner: Failed to encode settings: \(error)")
             return false
         }
     }
@@ -190,8 +190,8 @@ public final class SettingsManager: SettingsService {
 
     private func migrateFromV0IfNeeded() {
         // Example: Migrate from old individual keys to unified settings object
-        let oldColorKey = "com.pointerdesigner.cursorColor"
-        let oldEnabledKey = "com.pointerdesigner.enabled"
+        let oldColorKey = Identity.legacyCursorColorKey
+        let oldEnabledKey = Identity.legacyEnabledKey
 
         // Check if old format exists
         guard userDefaults.object(forKey: oldColorKey) != nil ||
@@ -221,7 +221,7 @@ public final class SettingsManager: SettingsService {
         userDefaults.removeObject(forKey: oldColorKey)
         userDefaults.removeObject(forKey: oldEnabledKey)
 
-        print("PointerDesigner: Migrated settings from v0 format")
+        print("CursorDesigner: Migrated settings from v0 format")
     }
 
     // MARK: - Diagnostics
@@ -240,6 +240,6 @@ public final class SettingsManager: SettingsService {
 // MARK: - Notifications
 
 public extension Notification.Name {
-    static let settingsDidChange = Notification.Name("com.pointerdesigner.settingsDidChange")
-    static let settingsSaveFailed = Notification.Name("com.pointerdesigner.settingsSaveFailed")
+    static let settingsDidChange = Notification.Name(Identity.settingsDidChangeNotification)
+    static let settingsSaveFailed = Notification.Name(Identity.settingsSaveFailedNotification)
 }

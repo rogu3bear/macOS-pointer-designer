@@ -19,7 +19,7 @@ public final class PermissionManager: PermissionService {
     }
 
     private var permissionCache: [Permission: PermissionStatus] = [:]
-    private let checkQueue = DispatchQueue(label: "com.pointerdesigner.permissions")
+    private let checkQueue = DispatchQueue(label: Identity.permissionsQueueLabel)
 
     private init() {}
 
@@ -77,11 +77,11 @@ public final class PermissionManager: PermissionService {
         switch permission {
         case .screenRecording:
             alert.messageText = "Screen Recording Permission Required"
-            alert.informativeText = "Pointer Designer needs screen recording permission to detect background colors for dynamic cursor contrast.\n\nWithout this permission, the cursor will use static colors only."
+            alert.informativeText = "Cursor Designer needs screen recording permission to detect background colors for dynamic cursor contrast.\n\nWithout this permission, the cursor will use static colors only."
 
         case .accessibility:
             alert.messageText = "Accessibility Permission Required"
-            alert.informativeText = "Pointer Designer needs accessibility permission for advanced cursor features."
+            alert.informativeText = "Cursor Designer needs accessibility permission for advanced cursor features."
         }
 
         alert.alertStyle = .informational

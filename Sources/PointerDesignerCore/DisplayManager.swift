@@ -287,5 +287,5 @@ public final class DisplayManager: DisplayService {
 // MARK: - Notifications
 
 public extension Notification.Name {
-    static let displayConfigurationDidChange = Notification.Name("com.pointerdesigner.displayConfigurationDidChange")
+    static let displayConfigurationDidChange = Notification.Name(Identity.displayConfigurationDidChangeNotification)
 }

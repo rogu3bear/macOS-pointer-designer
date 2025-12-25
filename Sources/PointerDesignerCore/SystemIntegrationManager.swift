@@ -379,8 +379,8 @@ public final class SystemIntegrationManager: SystemIntegrationService {
 // MARK: - Notifications
 
 public extension Notification.Name {
-    static let cursorAppConflictDetected = Notification.Name("com.pointerdesigner.cursorAppConflict")
-    static let screenSaverStateChanged = Notification.Name("com.pointerdesigner.screenSaverStateChanged")
-    static let fullScreenStateChanged = Notification.Name("com.pointerdesigner.fullScreenStateChanged")
-    static let sessionStateChanged = Notification.Name("com.pointerdesigner.sessionStateChanged")
+    static let cursorAppConflictDetected = Notification.Name(Identity.cursorAppConflictDetectedNotification)
+    static let screenSaverStateChanged = Notification.Name(Identity.screenSaverStateChangedNotification)
+    static let fullScreenStateChanged = Notification.Name(Identity.fullScreenStateChangedNotification)
+    static let sessionStateChanged = Notification.Name(Identity.sessionStateChangedNotification)
 }
