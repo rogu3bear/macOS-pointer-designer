@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "PointerDesigner",
+    name: "CursorDesigner",
     platforms: [
         .macOS(.v13)
     ],

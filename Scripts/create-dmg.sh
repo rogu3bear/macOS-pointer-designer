@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PRODUCT_NAME="PointerDesigner"
+PRODUCT_NAME="CursorDesigner"
 APP_PATH=".build/release/${PRODUCT_NAME}.app"
 DMG_NAME="${PRODUCT_NAME}.dmg"
 DMG_TEMP="temp_${DMG_NAME}"

@@ -1,6 +1,6 @@
-.PHONY: all build release clean test install uninstall dmg
+.PHONY: all build release clean test install uninstall dmg preflight
 
-PRODUCT_NAME = PointerDesigner
+PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
 RELEASE_DIR = $(BUILD_DIR)/release
 APP_BUNDLE = $(RELEASE_DIR)/$(PRODUCT_NAME).app
@@ -37,6 +37,21 @@ release: build
 # Run tests
 test:
 	swift test
+
+# Preflight check: build fresh, run tests, validate bundle
+# Use this before commits/releases to catch identity or wiring regressions
+# Exits non-zero if any step fails (tests fail, bundle invalid, identity mismatch)
+preflight: clean release
+	@echo ""
+	@echo "=== Running Preflight Checks ==="
+	@echo ""
+	@echo ">>> Step 1: swift test"
+	@swift test
+	@echo ""
+	@echo ">>> Step 2: Validate app bundle"
+	@./Scripts/trust-check.sh --app $(APP_BUNDLE)
+	@echo ""
+	@echo "=== Preflight Complete ✓ ==="
 
 # Clean build artifacts
 clean:
