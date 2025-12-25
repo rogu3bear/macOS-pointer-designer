@@ -19,6 +19,7 @@ final class MenuBarController {
     init(statusItem: NSStatusItem, stateController: CursorStateController = .shared) {
         self.statusItem = statusItem
         self.stateController = stateController
+        menu.autoenablesItems = false // Prevent auto-disabling menu items
         setupStatusItem()
         setupMenu()
         setupBindings()
@@ -37,7 +38,7 @@ final class MenuBarController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
                 self?.enabledMenuItem?.title = isEnabled ? "Enabled ✓" : "Disabled"
-                self?.enabledMenuItem?.setAccessibilityLabel(isEnabled ? "Disable Pointer Designer" : "Enable Pointer Designer")
+                self?.enabledMenuItem?.setAccessibilityLabel(isEnabled ? "Disable Cursor Designer" : "Enable Cursor Designer")
             }
             .store(in: &cancellables)
 
@@ -91,12 +92,12 @@ final class MenuBarController {
         statusItem.autosaveName = "PointerDesignerStatusItem"
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "cursorarrow", accessibilityDescription: "Pointer Designer")
+            button.image = NSImage(systemSymbolName: "cursorarrow", accessibilityDescription: "Cursor Designer")
             button.image?.isTemplate = true
 
             // Edge case #70: Keyboard accessibility for menu bar icon
-            button.setAccessibilityLabel("Pointer Designer Menu")
-            button.setAccessibilityHelp("Click to open Pointer Designer menu, or press Control-Option-Space")
+            button.setAccessibilityLabel("Cursor Designer Menu")
+            button.setAccessibilityHelp("Click to open Cursor Designer menu, or press Control-Option-Space")
         }
         statusItem.menu = menu
     }
@@ -138,7 +139,7 @@ final class MenuBarController {
         )
         enabledMenuItem?.target = self
         // Edge case #70: Accessibility
-        enabledMenuItem?.setAccessibilityLabel(settings.isEnabled ? "Disable Pointer Designer" : "Enable Pointer Designer")
+        enabledMenuItem?.setAccessibilityLabel(settings.isEnabled ? "Disable Cursor Designer" : "Enable Cursor Designer")
         if let menuItem = enabledMenuItem {
             menu.addItem(menuItem)
         }
@@ -206,6 +207,7 @@ final class MenuBarController {
         // Preferences - Edge case #70: Standard Cmd+, shortcut
         let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
         prefsItem.target = self
+        prefsItem.isEnabled = true
         prefsItem.setAccessibilityLabel("Open Preferences Window")
         menu.addItem(prefsItem)
 
@@ -214,7 +216,7 @@ final class MenuBarController {
         // Quit - Edge case #70: Standard Cmd+Q shortcut
         let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         quitItem.target = self
-        quitItem.setAccessibilityLabel("Quit Pointer Designer")
+        quitItem.setAccessibilityLabel("Quit Cursor Designer")
         menu.addItem(quitItem)
     }
 

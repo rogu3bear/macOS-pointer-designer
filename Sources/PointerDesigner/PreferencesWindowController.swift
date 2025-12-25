@@ -1,8 +1,87 @@
 import AppKit
 import PointerDesignerCore
 
+// MARK: - CursorPreviewView (Overlay for cursor rects)
+
+/// Transparent overlay view that displays the custom cursor
+/// Uses NSTrackingArea with cursorUpdate to override control cursors
+final class CursorPreviewView: NSView {
+    private var activeCursor: NSCursor?
+    private var trackingArea: NSTrackingArea?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupCursorObserver()
+        setupTrackingArea()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupCursorObserver()
+        setupTrackingArea()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private func setupCursorObserver() {
+        activeCursor = CursorEngine.shared.currentCursor
+        NSLog("CursorPreviewView: Initial cursor = %@", activeCursor != nil ? "set" : "nil")
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(cursorDidUpdate),
+            name: .cursorDidUpdate,
+            object: nil
+        )
+    }
+
+    private func setupTrackingArea() {
+        let options: NSTrackingArea.Options = [.cursorUpdate, .activeAlways, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(trackingArea!)
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let existing = trackingArea {
+            removeTrackingArea(existing)
+        }
+        let options: NSTrackingArea.Options = [.cursorUpdate, .activeAlways, .inVisibleRect]
+        trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+        addTrackingArea(trackingArea!)
+    }
+
+    @objc private func cursorDidUpdate(_ notification: Notification) {
+        guard let cursor = notification.userInfo?["cursor"] as? NSCursor else { return }
+        NSLog("CursorPreviewView: Cursor updated, setting new cursor")
+        activeCursor = cursor
+        // Immediately apply cursor
+        cursor.set()
+    }
+
+    // Called by NSTrackingArea when cursor enters/moves in the view
+    override func cursorUpdate(with event: NSEvent) {
+        if let cursor = activeCursor {
+            cursor.set()
+            NSLog("CursorPreviewView: cursorUpdate - set custom cursor")
+        } else {
+            super.cursorUpdate(with: event)
+        }
+    }
+
+    // Allow mouse events to pass through to underlying controls
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
+    }
+}
+
+// MARK: - PreferencesWindowController
+
 final class PreferencesWindowController: NSWindowController {
     private var preferencesView: PreferencesView?
+    private var cursorOverlay: CursorPreviewView?
     private let stateController: CursorStateController
 
     convenience init(stateController: CursorStateController = .shared) {
@@ -12,7 +91,7 @@ final class PreferencesWindowController: NSWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "Pointer Designer Preferences"
+        window.title = "Cursor Designer Preferences"
 
         // Edge case #54: Center window on main screen to avoid wrong display/space
         if let mainScreen = NSScreen.main {
@@ -30,14 +109,23 @@ final class PreferencesWindowController: NSWindowController {
         window.collectionBehavior = [.moveToActiveSpace]
 
         // Edge case #69: Accessibility for preferences window
-        window.setAccessibilityLabel("Pointer Designer Preferences")
+        window.setAccessibilityLabel("Cursor Designer Preferences")
         window.setAccessibilityHelp("Configure cursor appearance and behavior settings")
 
         self.init(window: window, stateController: stateController)
 
         guard let contentView = window.contentView else { return }
+
+        // Add preferences view
         preferencesView = PreferencesView(frame: contentView.bounds, stateController: self.stateController)
-        window.contentView = preferencesView
+        preferencesView?.autoresizingMask = [.width, .height]
+        contentView.addSubview(preferencesView!)
+
+        // Add cursor overlay on top (for cursor rects to work above all controls)
+        cursorOverlay = CursorPreviewView(frame: contentView.bounds)
+        cursorOverlay?.autoresizingMask = [.width, .height]
+        contentView.addSubview(cursorOverlay!)
+        NSLog("PreferencesWindowController: Added CursorPreviewView overlay")
 
         // Edge case #70: Set initial first responder for keyboard navigation
         if let firstControl = preferencesView?.firstKeyView {
@@ -67,6 +155,8 @@ final class PreferencesView: NSView {
     private var shadowCheckbox: NSButton?
     private var scaleSlider: NSSlider?
     private var scaleLabel: NSTextField?
+    private var permissionStatusLabel: NSTextField?
+    private var permissionButton: NSButton?
 
     // Use CursorStateController for business logic
     private let stateController: CursorStateController
@@ -231,11 +321,37 @@ final class PreferencesView: NSView {
         samplingSection.addArrangedSubview(samplingLabel)
         stackView.addArrangedSubview(samplingSection)
 
+        // Permission Status Section
+        let permissionSection = createSection(title: "Screen Recording")
+        let permissionRow = NSStackView()
+        permissionRow.orientation = .horizontal
+        permissionRow.spacing = 10
+
+        let statusLabel = NSTextField(labelWithString: "")
+        statusLabel.font = NSFont.systemFont(ofSize: 12)
+        permissionStatusLabel = statusLabel
+
+        let openSettingsButton = NSButton(title: "Open System Settings", target: self, action: #selector(openPermissionSettings))
+        openSettingsButton.bezelStyle = .rounded
+        openSettingsButton.controlSize = .small
+        openSettingsButton.setAccessibilityLabel("Open Screen Recording Settings")
+        permissionButton = openSettingsButton
+
+        permissionRow.addArrangedSubview(statusLabel)
+        permissionRow.addArrangedSubview(openSettingsButton)
+        permissionSection.addArrangedSubview(permissionRow)
+
+        let permissionNote = NSTextField(labelWithString: "Required for Auto-Invert and Outline contrast modes")
+        permissionNote.font = NSFont.systemFont(ofSize: 10)
+        permissionNote.textColor = .secondaryLabelColor
+        permissionSection.addArrangedSubview(permissionNote)
+        stackView.addArrangedSubview(permissionSection)
+
         // Launch at Login Section
         let loginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: self, action: #selector(launchAtLoginChanged))
         // Edge case #69: VoiceOver accessibility
         loginCheckbox.setAccessibilityLabel("Launch at Login")
-        loginCheckbox.setAccessibilityHelp("Automatically start Pointer Designer when you log in")
+        loginCheckbox.setAccessibilityHelp("Automatically start Cursor Designer when you log in")
         launchAtLoginCheckbox = loginCheckbox
         stackView.addArrangedSubview(loginCheckbox)
 
@@ -318,6 +434,24 @@ final class PreferencesView: NSView {
         outlineWidthSlider?.doubleValue = Double(settings.outlineWidth)
         samplingRateSlider?.doubleValue = Double(settings.samplingRate)
         launchAtLoginCheckbox?.state = stateController.isLaunchAtLoginEnabled ? .on : .off
+
+        // Update permission status
+        updatePermissionStatus()
+    }
+
+    private func updatePermissionStatus() {
+        stateController.refreshPermissionState()
+        let hasPermission = stateController.hasScreenRecordingPermission
+
+        if hasPermission {
+            permissionStatusLabel?.stringValue = "✓ Granted"
+            permissionStatusLabel?.textColor = .systemGreen
+            permissionButton?.isHidden = true
+        } else {
+            permissionStatusLabel?.stringValue = "✗ Not granted"
+            permissionStatusLabel?.textColor = .systemOrange
+            permissionButton?.isHidden = false
+        }
     }
 
     private func updateScaleLabel() {
@@ -420,6 +554,10 @@ final class PreferencesView: NSView {
     @objc private func resetToDefaults() {
         stateController.resetToDefaults()
         loadSettings()
+    }
+
+    @objc private func openPermissionSettings() {
+        PermissionManager.shared.openSystemPreferences(for: .screenRecording)
     }
 
     // Edge case #55: Refresh UI when settings change externally

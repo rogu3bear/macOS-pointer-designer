@@ -35,7 +35,7 @@ public final class CursorEngine: CursorService {
     private let minUpdateInterval: TimeInterval = 1.0 / 120.0 // Max 120 updates/sec
 
     // Thread safety
-    private let updateQueue = DispatchQueue(label: "com.pointerdesigner.cursorengine", qos: .userInteractive)
+    private let updateQueue = DispatchQueue(label: Identity.cursorEngineQueueLabel, qos: .userInteractive)
     private let settingsLock = NSLock()
 
     /// Default initializer using production singletons
@@ -87,10 +87,15 @@ public final class CursorEngine: CursorService {
 
     /// Start cursor customization
     public func start() {
-        guard !isRunning else { return }
+        NSLog("CursorEngine: start() called, isRunning=%d", isRunning ? 1 : 0)
+        guard !isRunning else {
+            NSLog("CursorEngine: Already running, returning early")
+            return
+        }
 
         // Edge case #5: Check permissions first
         if settings.contrastMode != .none && !permissionService.hasScreenRecordingPermission {
+            NSLog("CursorEngine: Prompting for screen recording permission")
             permissionService.promptForPermission(.screenRecording, from: nil)
         }
 
@@ -98,12 +103,15 @@ public final class CursorEngine: CursorService {
         lastActivityTime = CFAbsoluteTimeGetCurrent()
 
         setupDisplayLink()
+        NSLog("CursorEngine: Display link setup, displayLink=%@", displayLink != nil ? "created" : "nil")
 
         if let displayLink = displayLink {
             CVDisplayLinkStart(displayLink)
+            NSLog("CursorEngine: Display link started")
         }
 
         startIdleTimer()
+        NSLog("CursorEngine: Calling initial applyCursor()")
         applyCursor()
     }
 
@@ -381,6 +389,8 @@ public final class CursorEngine: CursorService {
     // MARK: - Cursor Application
 
     private func applyCursor() {
+        NSLog("CursorEngine: applyCursor called, isRunning=%d", isRunning ? 1 : 0)
+
         settingsLock.lock()
         let currentSettings = settings
         settingsLock.unlock()
@@ -408,7 +418,11 @@ public final class CursorEngine: CursorService {
             outlineColor: outlineColor,
             outlineWidth: currentSettings.contrastMode == .outline ? currentSettings.outlineWidth : 0,
             at: lastMouseLocation
-        ) else { return }
+        ) else {
+            NSLog("CursorEngine: renderCursor returned nil (effectiveColor: r=%.2f g=%.2f b=%.2f)",
+                  effectiveColor.red, effectiveColor.green, effectiveColor.blue)
+            return
+        }
 
         // Edge case #25: Calculate correct hot spot
         let hotSpot = cursorRenderer.hotSpot(for: currentSettings.contrastMode == .outline ? currentSettings.outlineWidth : 0)
@@ -417,9 +431,30 @@ public final class CursorEngine: CursorService {
         // Edge case #37: Update timestamp
         lastCursorUpdateTime = CFAbsoluteTimeGetCurrent()
 
+        // Diagnostic logging for cursor rendering
+        let imageSize = cursorImage.size
+        let repsCount = cursorImage.representations.count
+        NSLog("CursorEngine: Rendered cursor - size: %.0fx%.0f, hotspot: (%.1f, %.1f), reps: %d",
+              imageSize.width, imageSize.height, hotSpot.x, hotSpot.y, repsCount)
+
         DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            // Validate cursor before setting
+            guard imageSize.width > 0 && imageSize.height > 0 else {
+                NSLog("CursorEngine: WARNING - cursor image has zero size, skipping")
+                return
+            }
+
             cursor.set()
-            self?.lastAppliedCursor = cursor
+            self.lastAppliedCursor = cursor
+
+            // Post notification for views that use cursor rects
+            NotificationCenter.default.post(
+                name: .cursorDidUpdate,
+                object: self,
+                userInfo: ["cursor": cursor]
+            )
         }
 
         // For system-wide changes, communicate with helper
@@ -469,4 +504,16 @@ public final class CursorEngine: CursorService {
     public var canUseContrastFeatures: Bool {
         return permissionService.hasScreenRecordingPermission
     }
+
+    /// Current cursor for views that need it (e.g., for cursor rects)
+    public var currentCursor: NSCursor? {
+        return lastAppliedCursor
+    }
+}
+
+// MARK: - Notifications
+
+public extension Notification.Name {
+    /// Posted when cursor is updated (userInfo contains "cursor" key with NSCursor)
+    static let cursorDidUpdate = Notification.Name(Identity.cursorUpdatedNotification)
 }
