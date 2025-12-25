@@ -141,6 +141,24 @@ public protocol LaunchAtLoginService: AnyObject {
     var diagnosticInfo: [String: Any] { get }
 }
 
+// MARK: - Process Lifecycle Service Protocol
+
+/// Protocol for application process lifecycle management
+public protocol ProcessLifecycleService: AnyObject {
+    /// Check if the lifecycle manager is running
+    var isRunning: Bool { get }
+
+    /// Perform startup sequence
+    /// Returns false if app should terminate (e.g., another instance running)
+    func startup() -> Bool
+
+    /// Perform clean shutdown
+    func shutdown()
+
+    /// Register a handler to be called on termination
+    func registerForTermination(_ handler: @escaping () -> Void)
+}
+
 // MARK: - System Integration Service Protocol
 
 /// Protocol for system state integration (sleep/wake, fullscreen, etc.)
