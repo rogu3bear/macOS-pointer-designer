@@ -1,4 +1,4 @@
-# Pointer Designer
+# Cursor Designer
 
 System-wide macOS cursor customization with dynamic contrast adaptation.
 
@@ -22,15 +22,15 @@ System-wide macOS cursor customization with dynamic contrast adaptation.
 ### Homebrew (Recommended)
 
 ```bash
-brew tap rogu3bear/pointer-designer
-brew install --cask pointer-designer
+brew tap rogu3bear/cursor-designer-osx
+brew install --cask cursor-designer-osx
 ```
 
 ### Manual Installation
 
-1. Download the latest [PointerDesigner.dmg](https://github.com/rogu3bear/macOS-pointer-designer/releases/latest)
+1. Download the latest [CursorDesigner.dmg](https://github.com/rogu3bear/cursor-designer-osx/releases/latest)
 2. Open the DMG file
-3. Drag `PointerDesigner.app` to your Applications folder
+3. Drag `CursorDesigner.app` to your Applications folder
 4. Launch from Applications
 5. Click "Install Helper Tool" when prompted (required for system-wide changes)
 
@@ -59,6 +59,23 @@ Click the cursor icon in the menu bar to:
 - **Sampling Rate**: Background detection frequency (15-120 Hz)
 - **Launch at Login**: Start automatically with macOS
 
+## Quick Start (Personal Use)
+
+```bash
+# Build
+swift build
+
+# Run the app
+.build/debug/PointerDesigner
+
+# Run the helper (in separate terminal, may need sudo)
+.build/debug/PointerDesignerHelper
+
+# Note: Executable names remain PointerDesigner/PointerDesignerHelper for compatibility
+```
+
+**Note**: For system-wide cursor changes, the helper needs to run. For personal use, the app is configured to accept local connections without code signing verification.
+
 ## Building from Source
 
 ### Prerequisites
@@ -70,8 +87,8 @@ Click the cursor icon in the menu bar to:
 
 ```bash
 # Clone the repository
-git clone https://github.com/rogu3bear/macOS-pointer-designer.git
-cd macOS-pointer-designer
+git clone https://github.com/rogu3bear/cursor-designer-osx.git
+cd cursor-designer-osx
 
 # Build with Swift Package Manager
 swift build
@@ -89,15 +106,15 @@ make dmg
 ### Project Structure
 
 ```
-macOS-pointer-designer/
+cursor-designer-osx/
 ├── Sources/
-│   ├── PointerDesigner/           # Main app target
+│   ├── PointerDesigner/           # Main app target (module name preserved)
 │   │   ├── main.swift             # App entry point
 │   │   ├── AppDelegate.swift      # App lifecycle, crash recovery, signal handlers
 │   │   ├── MenuBarController.swift    # Menu bar UI and actions
 │   │   └── PreferencesWindowController.swift  # Settings UI
 │   │
-│   ├── PointerDesignerCore/       # Core library (shared logic)
+│   ├── PointerDesignerCore/       # Core library (module name preserved)
 │   │   ├── CursorSettings.swift       # Settings model with validation
 │   │   ├── CursorEngine.swift         # Main engine: display link, cursor updates
 │   │   ├── CursorRenderer.swift       # Renders cursor images with CoreGraphics
@@ -109,7 +126,7 @@ macOS-pointer-designer/
 │   │   ├── LaunchAtLoginManager.swift # SMAppService integration
 │   │   └── SystemIntegrationManager.swift  # Sleep/wake, appearance changes
 │   │
-│   └── PointerDesignerHelper/     # Privileged helper (XPC service)
+│   └── PointerDesignerHelper/     # Privileged helper (module name preserved)
 │       └── main.swift             # System-wide cursor application
 │
 ├── Tests/
@@ -194,7 +211,7 @@ The application handles 70+ edge cases across these categories:
 
 ## Privacy & Permissions
 
-Pointer Designer requires:
+Cursor Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
 - **Administrator Access**: One-time for helper tool installation
 

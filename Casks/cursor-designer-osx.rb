@@ -1,17 +1,17 @@
-# Homebrew Cask for Pointer Designer
-# Install: brew install --cask pointer-designer
+# Homebrew Cask for Cursor Designer
+# Install: brew install --cask cursor-designer-osx
 # Or add tap and install:
-#   brew tap rogu3bear/pointer-designer
-#   brew install --cask pointer-designer
+#   brew tap rogu3bear/cursor-designer-osx
+#   brew install --cask cursor-designer-osx
 
-cask "pointer-designer" do
+cask "cursor-designer-osx" do
   version "1.0.0"
   sha256 :no_check  # Update with actual SHA256 after release
 
-  url "https://github.com/rogu3bear/macOS-pointer-designer/releases/download/v#{version}/PointerDesigner.dmg"
-  name "Pointer Designer"
+  url "https://github.com/rogu3bear/cursor-designer-osx/releases/download/v#{version}/CursorDesigner.dmg"
+  name "Cursor Designer"
   desc "System-wide macOS cursor customization with dynamic contrast"
-  homepage "https://github.com/rogu3bear/macOS-pointer-designer"
+  homepage "https://github.com/rogu3bear/cursor-designer-osx"
 
   livecheck do
     url :url
@@ -20,14 +20,18 @@ cask "pointer-designer" do
 
   depends_on macos: ">= :ventura"
 
-  app "PointerDesigner.app"
+  # Prevent dual installs with old cask name
+  conflicts_with cask: "pointer-designer"
+
+  app "CursorDesigner.app"
 
   postflight do
     system_command "/usr/bin/open",
-                   args: ["-a", "#{appdir}/PointerDesigner.app", "--args", "--install-helper"],
+                   args: ["-a", "#{appdir}/CursorDesigner.app", "--args", "--install-helper"],
                    sudo: false
   end
 
+  # Note: Bundle IDs preserved for compatibility
   uninstall quit: "com.pointerdesigner.app",
             launchctl: "com.pointerdesigner.helper",
             delete: [
@@ -36,7 +40,8 @@ cask "pointer-designer" do
             ]
 
   zap trash: [
-    "~/Library/Application Support/PointerDesigner",
+    "~/Library/Application Support/CursorDesigner",
+    "~/Library/Application Support/PointerDesigner",  # Legacy name
     "~/Library/Caches/com.pointerdesigner.app",
     "~/Library/Preferences/com.pointerdesigner.app.plist",
   ]
