@@ -1,0 +1,362 @@
+/* Base styles & Variables - Liquid Design
+   =========================================
+   WindowDrop Design System v2
+   macOS-inspired palette with liquid theme
+   ========================================= */
+:root {
+  color-scheme: light;
+  /* ===========================================
+     PRIMARY PALETTE
+     macOS system blue, slightly warmer
+     =========================================== */
+  --color-primary: #007AFF;
+  --color-primary-dark: #0055D4;
+  --color-primary-light: #5AC8FA;
+  --color-primary-subtle: #E3F2FD;
+
+  /* ===========================================
+     WARM ACCENT (for CTAs and highlights)
+     Creates visual tension with blue
+     =========================================== */
+  --color-accent-warm: var(--color-primary);
+  --color-accent-warm-dark: var(--color-primary-dark);
+  --color-accent-warm-light: var(--color-primary-light);
+  --color-accent-warm-subtle: var(--color-primary-subtle);
+
+  /* ===========================================
+     TEXT HIERARCHY
+     Warm blacks, WCAG AA compliant
+     =========================================== */
+  --color-text: #1D1D1F;
+  --color-text-secondary: #48484A;
+  --color-text-muted: #86868B;
+  --color-text-light: #AEAEB2;
+
+  /* ===========================================
+     BACKGROUNDS
+     Layered surfaces for depth
+     =========================================== */
+  --color-bg: #FFFFFF;
+  --color-bg-alt: #F5F5F7;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-inset: #EFEFF4;
+
+  /* ===========================================
+     BORDERS & DIVIDERS
+     =========================================== */
+  --color-border: #D2D2D7;
+  --color-border-light: #E5E5EA;
+  --color-border-focus: var(--color-primary);
+
+  /* ===========================================
+     SEMANTIC COLORS
+     =========================================== */
+  --color-success: #34C759;
+  --color-success-subtle: #E8F9ED;
+  --color-warning: #FF9500;
+  --color-warning-subtle: #FFF8E6;
+  --color-error: #FF3B30;
+  --color-error-subtle: #FEE9E7;
+  --color-info: #5AC8FA;
+  --color-info-subtle: #E8F7FE;
+
+  /* ===========================================
+     GLASS-MORPHISM SYSTEM
+     Improved for light backgrounds
+     =========================================== */
+  --glass-bg: rgba(248, 250, 252, 0.72);
+  --glass-bg-hover: rgba(241, 245, 249, 0.85);
+  --glass-bg-active: rgba(248, 250, 252, 0.92);
+
+  --glass-border: rgba(148, 163, 184, 0.25);
+  --glass-border-hover: rgba(148, 163, 184, 0.40);
+  --glass-border-subtle: rgba(148, 163, 184, 0.12);
+
+  --glass-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(31, 38, 135, 0.08);
+  --glass-shadow-hover:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 8px 16px rgba(0, 0, 0, 0.05),
+    0 16px 48px rgba(31, 38, 135, 0.12);
+
+  --glass-inner-glow: inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+  --glass-inner-shadow: inset 0 -1px 0 0 rgba(0, 0, 0, 0.03);
+
+  --glass-blur: blur(16px);
+  --glass-blur-strong: blur(24px);
+  --glass-blur-subtle: blur(8px);
+  --glass-saturate: saturate(180%);
+  --glass-filter: var(--glass-blur) var(--glass-saturate);
+  
+  /* Enhanced Liquid Color Palette */
+  --liquid-deep: #1E40AF;           /* Deep ocean blue */
+  --liquid-mid: #3B82F6;            /* Core blue */
+  --liquid-bright: #60A5FA;         /* Bright water */
+  --liquid-teal: #14B8A6;           /* Teal accent for depth */
+  --liquid-aqua: #22D3EE;           /* Cyan highlight */
+  --liquid-foam: #E0F2FE;           /* Foam white-blue */
+  --liquid-shimmer: rgba(255, 255, 255, 0.7);  /* Light shimmer */
+
+  /* Primary Liquid Gradients */
+  --liquid-gradient-1: linear-gradient(
+    135deg,
+    var(--liquid-deep) 0%,
+    var(--liquid-mid) 35%,
+    var(--liquid-teal) 70%,
+    var(--liquid-aqua) 100%
+  );
+
+  /* Ambient background gradients - more organic shapes */
+  --liquid-gradient-2: radial-gradient(
+    ellipse 80% 60% at 25% 40%,
+    rgba(20, 184, 166, 0.25) 0%,
+    rgba(59, 130, 246, 0.15) 40%,
+    transparent 70%
+  );
+  --liquid-gradient-3: radial-gradient(
+    ellipse 70% 80% at 75% 60%,
+    rgba(34, 211, 238, 0.2) 0%,
+    rgba(147, 197, 253, 0.12) 45%,
+    transparent 75%
+  );
+
+  /* Additional ambient layers for depth */
+  --liquid-gradient-foam: radial-gradient(
+    ellipse 40% 30% at 50% 20%,
+    rgba(224, 242, 254, 0.4) 0%,
+    transparent 60%
+  );
+  --liquid-gradient-depth: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(30, 64, 175, 0.03) 50%,
+    rgba(20, 184, 166, 0.05) 100%
+  );
+
+  /* Shimmer overlay for CTAs and highlights */
+  --liquid-shimmer-gradient: linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 75%
+  );
+
+  /* Warm accent gradient for primary CTAs */
+  --liquid-gradient-warm: linear-gradient(
+    135deg,
+    var(--color-accent-warm-dark) 0%,
+    var(--color-accent-warm) 50%,
+    var(--color-accent-warm-light) 100%
+  );
+
+  /* Mixed gradient for special emphasis */
+  --liquid-gradient-mixed: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--liquid-teal) 50%,
+    var(--color-accent-warm) 100%
+  );
+
+  /* Typography */
+  --font-family:
+    -apple-system, blinkmacsystemfont, "SF Pro Display", "SF Pro Text",
+    system-ui, "Segoe UI", roboto, oxygen, ubuntu, cantarell,
+    "Helvetica Neue", arial, sans-serif;
+  --font-family-mono: "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", 
+    "Courier New", monospace;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 4rem;
+  --spacing-2xl: 6rem;
+
+  /* Layout */
+  --max-width: 1200px;
+  --max-width-narrow: 800px;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  
+  /* Animations */
+  --animation-easing: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animation-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --animation-duration: 800ms;
+  --animation-duration-fast: 200ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  line-height: 1.7;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  margin-bottom: var(--spacing-md);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 800;
+}
+
+h2 {
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+h3 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+  max-width: 65ch;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--animation-duration-fast);
+}
+
+a:hover {
+  color: var(--color-primary);
+}
+
+ul, ol {
+  padding-left: 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+
+li {
+  margin-bottom: var(--spacing-sm);
+}
+
+code {
+  font-family: var(--font-family-mono);
+  background: var(--color-bg-alt);
+  padding: 0.2em 0.4em;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+}
+
+/* Utilities */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.container-narrow {
+  max-width: var(--max-width-narrow);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--liquid-deep) 0%,
+    var(--liquid-mid) 30%,
+    var(--liquid-teal) 65%,
+    var(--liquid-aqua) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+}
+
+/* Animated version for hero text */
+.text-gradient-animated {
+  background: linear-gradient(
+    135deg,
+    var(--liquid-deep) 0%,
+    var(--liquid-mid) 30%,
+    var(--liquid-teal) 65%,
+    var(--liquid-aqua) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: textGradientFlow 5s ease-in-out infinite;
+}
+
+@keyframes textGradientFlow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Accessibility */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Selection */
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-text);
+}

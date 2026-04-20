@@ -1,0 +1,9 @@
+pub mod accessibility;
+pub mod changelog;
+pub mod download;
+pub mod home;
+pub mod not_found;
+pub mod privacy;
+pub mod privacy_choices;
+pub mod support;
+pub mod terms;

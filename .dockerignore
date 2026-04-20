@@ -1,0 +1,10 @@
+.git
+.cloudflared
+.wrangler
+.serena
+.claude
+.DS_Store
+*.log
+target
+site/target
+site/dist

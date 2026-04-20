@@ -1,0 +1,322 @@
+/* Layout: Header, Footer, Main - Liquid Design */
+
+.site-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Enhanced Liquid Animated Background */
+.site-layout::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -2;
+  background: var(--color-bg);
+  background-image:
+    var(--liquid-gradient-foam),
+    var(--liquid-gradient-2),
+    var(--liquid-gradient-3),
+    var(--liquid-gradient-depth);
+  background-size: 120% 100%, 180% 180%, 160% 160%, 100% 100%;
+  background-position: 50% 0%, 20% 50%, 80% 50%, 0% 0%;
+  animation: liquidFlow 25s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Secondary layer for more organic movement */
+.site-layout::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(
+      ellipse 50% 40% at 60% 70%,
+      rgba(34, 211, 238, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 45% 35% at 35% 30%,
+      rgba(20, 184, 166, 0.1) 0%,
+      transparent 55%
+    );
+  background-size: 140% 140%, 130% 130%;
+  animation: liquidDrift 30s ease-in-out infinite reverse;
+  pointer-events: none;
+}
+
+@keyframes liquidFlow {
+  0%, 100% {
+    background-position: 50% 0%, 20% 50%, 80% 50%, 0% 0%;
+  }
+  25% {
+    background-position: 45% 5%, 35% 45%, 65% 55%, 0% 0%;
+  }
+  50% {
+    background-position: 55% 0%, 80% 50%, 20% 50%, 0% 0%;
+  }
+  75% {
+    background-position: 48% 3%, 50% 55%, 50% 45%, 0% 0%;
+  }
+}
+
+@keyframes liquidDrift {
+  0%, 100% {
+    background-position: 60% 70%, 35% 30%;
+    opacity: 0.8;
+  }
+  33% {
+    background-position: 40% 60%, 55% 40%;
+    opacity: 1;
+  }
+  66% {
+    background-position: 70% 55%, 25% 45%;
+    opacity: 0.9;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  top: -9999px;
+  left: 1rem;
+  background: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  z-index: 100;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+.site-content {
+  flex: 1;
+  padding-top: var(--spacing-xl);
+  padding-bottom: var(--spacing-2xl);
+}
+
+/* Glass-morphic Header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-filter);
+  backdrop-filter: var(--glass-filter);
+  border-bottom: 1px solid var(--glass-border);
+  padding: var(--spacing-md) 0;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(31, 38, 135, 0.06),
+    var(--glass-inner-glow);
+  transition:
+    background-color var(--animation-duration-fast) var(--animation-easing-smooth),
+    box-shadow var(--animation-duration-fast) var(--animation-easing-smooth);
+}
+
+/* Header becomes more opaque when scrolled */
+.site-header--scrolled {
+  background: var(--glass-bg-active);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(31, 38, 135, 0.1),
+    var(--glass-inner-glow);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--color-text);
+  transition: transform var(--animation-duration-fast);
+}
+
+.logo-link:hover {
+  transform: translateY(-2px);
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  transition: transform var(--animation-duration-fast);
+}
+
+.logo-link:hover .logo-icon {
+  transform: rotate(-5deg) scale(1.1);
+}
+
+.site-nav {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: center;
+}
+
+.site-nav a {
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  position: relative;
+  padding: 0.25rem 0;
+  transition: color var(--animation-duration-fast);
+}
+
+.site-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--liquid-gradient-1);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--animation-duration-fast) var(--animation-easing-smooth);
+}
+
+.site-nav a:hover,
+.site-nav a.active {
+  color: var(--color-primary);
+}
+
+.site-nav a:hover::after,
+.site-nav a.active::after {
+  transform: scaleX(1);
+}
+
+/* Responsive Nav */
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .site-nav {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+}
+
+/* Footer */
+.site-footer {
+  background: var(--color-bg-alt);
+  border-top: 1px solid var(--color-border);
+  padding: var(--spacing-xl) 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-top: var(--spacing-2xl);
+}
+
+.footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+  text-align: center;
+}
+
+.footer-copyright {
+  order: 2;
+}
+
+.footer-nav {
+  order: 1;
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer-nav a {
+  transition: color var(--animation-duration-fast);
+}
+
+.footer-nav a:hover {
+  color: var(--color-primary);
+}
+
+@media (min-width: 768px) {
+  .footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+  
+  .footer-copyright {
+    order: 1;
+  }
+  
+  .footer-nav {
+    order: 2;
+  }
+}
+
+/* Grid System */
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+@media (max-width: 640px) {
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced Motion: Disable liquid background animations */
+@media (prefers-reduced-motion: reduce) {
+  .site-layout::before,
+  .site-layout::after {
+    animation: none !important;
+  }
+}
+
+/* ===========================================
+   GLASS FALLBACK
+   For browsers without backdrop-filter support
+   =========================================== */
+@supports not (backdrop-filter: blur(1px)) {
+  .site-header {
+    background: rgba(248, 250, 252, 0.96);
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      0 4px 12px rgba(0, 0, 0, 0.06),
+      0 8px 32px rgba(31, 38, 135, 0.1);
+  }
+}
