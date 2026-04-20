@@ -6,6 +6,7 @@ final class CursorStateControllerTests: XCTestCase {
     var mockCursor: MockCursorService!
     var mockLaunchAtLogin: MockLaunchAtLoginService!
     var mockPermission: MockPermissionService!
+    var mockHelper: MockHelperService!
     var controller: CursorStateController!
 
     override func setUp() {
@@ -14,12 +15,14 @@ final class CursorStateControllerTests: XCTestCase {
         mockCursor = MockCursorService()
         mockLaunchAtLogin = MockLaunchAtLoginService()
         mockPermission = MockPermissionService()
+        mockHelper = MockHelperService()
 
         controller = CursorStateController(
             settingsService: mockSettings,
             cursorService: mockCursor,
             launchAtLoginService: mockLaunchAtLogin,
-            permissionService: mockPermission
+            permissionService: mockPermission,
+            helperService: mockHelper
         )
     }
 
@@ -29,6 +32,7 @@ final class CursorStateControllerTests: XCTestCase {
         mockCursor = nil
         mockLaunchAtLogin = nil
         mockPermission = nil
+        mockHelper = nil
         super.tearDown()
     }
 
@@ -70,7 +74,17 @@ final class CursorStateControllerTests: XCTestCase {
         controller.setCursorColor(color)
 
         XCTAssertEqual(mockSettings.lastSavedSettings?.cursorColor, color)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .custom)
         XCTAssertEqual(mockCursor.configureCallCount, 1)
+    }
+
+    func testSetCursorColorMarksPresetCustomAfterPresetApply() {
+        controller.applyPreset(.neonGlow)
+
+        controller.setCursorColor(.black)
+
+        XCTAssertEqual(controller.currentSettings.preset, .custom)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .custom)
     }
 
     func testSetOutlineColor() {
@@ -121,6 +135,38 @@ final class CursorStateControllerTests: XCTestCase {
         XCTAssertEqual(mockSettings.lastSavedSettings?.hysteresis, 0.15)
     }
 
+    func testApplyPresetUsesPresetSettings() {
+        controller.applyPreset(.stealth)
+
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .stealth)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.cursorColor, CursorPreset.stealth.settings.color)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.shadowEnabled, CursorPreset.stealth.settings.shadowEnabled)
+    }
+
+    func testSetGlowEnabledMarksPresetCustom() {
+        controller.applyPreset(.neonGlow)
+
+        controller.setGlowEnabled(false)
+
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .custom)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.glowEnabled, false)
+    }
+
+    func testSetCursorScaleMarksPresetCustom() {
+        controller.applyPreset(.stealth)
+
+        controller.setCursorScale(1.4)
+
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .custom)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.cursorScale, 1.4)
+    }
+
+    func testSetSamplingRate() {
+        controller.setSamplingRate(30)
+
+        XCTAssertEqual(mockSettings.lastSavedSettings?.samplingRate, 30)
+    }
+
     func testUpdateSettingsWithTransform() {
         controller.updateSettings { settings in
             settings.cursorColor = .black
@@ -150,6 +196,8 @@ final class CursorStateControllerTests: XCTestCase {
 
         XCTAssertTrue(result.isSuccess)
         XCTAssertTrue(controller.isLaunchAtLoginEnabled)
+        XCTAssertTrue(controller.currentSettings.launchAtLogin)
+        XCTAssertTrue(mockSettings.lastSavedSettings?.launchAtLogin ?? false)
         XCTAssertEqual(mockLaunchAtLogin.setEnabledCallCount, 1)
     }
 
@@ -159,6 +207,7 @@ final class CursorStateControllerTests: XCTestCase {
 
         XCTAssertTrue(result.isSuccess)
         XCTAssertFalse(controller.isLaunchAtLoginEnabled)
+        XCTAssertFalse(controller.currentSettings.launchAtLogin)
     }
 
     func testSetLaunchAtLoginFailure() {
@@ -170,6 +219,24 @@ final class CursorStateControllerTests: XCTestCase {
         XCTAssertFalse(controller.isLaunchAtLoginEnabled)
     }
 
+    func testLaunchAtLoginNotificationResyncsState() {
+        mockLaunchAtLogin.isEnabled = true
+
+        NotificationCenter.default.post(name: .launchAtLoginChanged, object: nil)
+
+        XCTAssertTrue(controller.isLaunchAtLoginEnabled)
+        XCTAssertTrue(controller.currentSettings.launchAtLogin)
+    }
+
+    func testResetToDefaultsDisablesLaunchAtLogin() {
+        _ = controller.setLaunchAtLogin(true)
+
+        controller.resetToDefaults()
+
+        XCTAssertFalse(controller.isLaunchAtLoginEnabled)
+        XCTAssertFalse(controller.currentSettings.launchAtLogin)
+    }
+
     // MARK: - Permission Tests
 
     func testRefreshPermissionState() {
@@ -178,6 +245,30 @@ final class CursorStateControllerTests: XCTestCase {
         controller.refreshPermissionState()
 
         XCTAssertFalse(controller.hasScreenRecordingPermission)
+    }
+
+    // MARK: - Helper Tests
+
+    func testRefreshHelperState() {
+        mockHelper.isHelperInstalled = true
+
+        controller.refreshHelperState()
+
+        XCTAssertTrue(controller.isHelperInstalled)
+    }
+
+    func testInstallHelperUpdatesState() {
+        let expectation = expectation(description: "install helper")
+
+        controller.installHelper { success, error in
+            XCTAssertTrue(success)
+            XCTAssertNil(error)
+            XCTAssertTrue(self.controller.isHelperInstalled)
+            XCTAssertEqual(self.mockHelper.installCallCount, 1)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
     }
 
     // MARK: - Reload Tests

@@ -136,9 +136,14 @@ public final class MockHelperService: HelperService {
     public var setCursorCallCount = 0
     public var restoreCursorCallCount = 0
     public var lastCursorImage: NSImage?
+    public var shouldFailInstall = false
 
     public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
         installCallCount += 1
+        if shouldFailInstall {
+            completion(false, NSError(domain: "MockHelperService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Mock install failure"]))
+            return
+        }
         isHelperInstalled = true
         completion(true, nil)
     }

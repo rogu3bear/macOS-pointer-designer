@@ -10,7 +10,8 @@ public final class CursorStateController: ObservableObject {
         settingsService: SettingsManager.shared,
         cursorService: CursorEngine.shared,
         launchAtLoginService: LaunchAtLoginManager.shared,
-        permissionService: PermissionManager.shared
+        permissionService: PermissionManager.shared,
+        helperService: HelperToolManager.shared
     )
 
     // Injected dependencies
@@ -18,28 +19,46 @@ public final class CursorStateController: ObservableObject {
     private let cursorService: CursorService
     private let launchAtLoginService: LaunchAtLoginService
     private let permissionService: PermissionService
+    private let helperService: HelperService
 
     // Published state for UI binding
     @Published public private(set) var isEnabled: Bool = false
     @Published public private(set) var currentSettings: CursorSettings
     @Published public private(set) var isLaunchAtLoginEnabled: Bool = false
     @Published public private(set) var hasScreenRecordingPermission: Bool = false
+    @Published public private(set) var isHelperInstalled: Bool = false
 
     /// Initializer for dependency injection (testing)
     public init(
         settingsService: SettingsService,
         cursorService: CursorService,
         launchAtLoginService: LaunchAtLoginService,
-        permissionService: PermissionService
+        permissionService: PermissionService,
+        helperService: HelperService
     ) {
         self.settingsService = settingsService
         self.cursorService = cursorService
         self.launchAtLoginService = launchAtLoginService
         self.permissionService = permissionService
+        self.helperService = helperService
         self.currentSettings = settingsService.currentSettings
         self.isEnabled = settingsService.currentSettings.isEnabled
         self.isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
         self.hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission
+        self.isHelperInstalled = helperService.isHelperInstalled
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(launchAtLoginDidChange),
+            name: .launchAtLoginChanged,
+            object: nil
+        )
+
+        synchronizeServiceBackedState(persistIfNeeded: true)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Public API
@@ -68,6 +87,7 @@ public final class CursorStateController: ObservableObject {
     public func setCursorColor(_ color: CursorColor) {
         var settings = currentSettings
         settings.cursorColor = color
+        settings.preset = .custom
         updateSettings(settings)
     }
 
@@ -117,9 +137,7 @@ public final class CursorStateController: ObservableObject {
     public func setGlowEnabled(_ enabled: Bool) {
         var settings = currentSettings
         settings.glowEnabled = enabled
-        if enabled {
-            settings.preset = .custom
-        }
+        settings.preset = .custom
         updateSettings(settings)
     }
 
@@ -127,9 +145,7 @@ public final class CursorStateController: ObservableObject {
     public func setShadowEnabled(_ enabled: Bool) {
         var settings = currentSettings
         settings.shadowEnabled = enabled
-        if enabled {
-            settings.preset = .custom
-        }
+        settings.preset = .custom
         updateSettings(settings)
     }
 
@@ -138,6 +154,13 @@ public final class CursorStateController: ObservableObject {
         var settings = currentSettings
         settings.cursorScale = scale
         settings.preset = .custom
+        updateSettings(settings)
+    }
+
+    /// Set background sampling rate
+    public func setSamplingRate(_ rate: Int) {
+        var settings = currentSettings
+        settings.samplingRate = rate
         updateSettings(settings)
     }
 
@@ -153,6 +176,8 @@ public final class CursorStateController: ObservableObject {
         settingsService.reset()
         currentSettings = settingsService.currentSettings
         isEnabled = currentSettings.isEnabled
+        _ = launchAtLoginService.setEnabled(false)
+        synchronizeServiceBackedState(persistIfNeeded: true)
         cursorService.configure(with: currentSettings)
 
         if isEnabled {
@@ -166,9 +191,7 @@ public final class CursorStateController: ObservableObject {
     @discardableResult
     public func setLaunchAtLogin(_ enabled: Bool) -> Result<Void, LaunchAtLoginManager.LaunchAtLoginError> {
         let result = launchAtLoginService.setEnabled(enabled)
-        if case .success = result {
-            isLaunchAtLoginEnabled = enabled
-        }
+        synchronizeServiceBackedState(persistIfNeeded: true)
         return result
     }
 
@@ -177,19 +200,55 @@ public final class CursorStateController: ObservableObject {
         hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission
     }
 
+    /// Refresh helper installation state
+    public func refreshHelperState() {
+        isHelperInstalled = helperService.isHelperInstalled
+    }
+
+    /// Attempt to install the system-wide helper tool
+    public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
+        helperService.installHelper { [weak self] success, error in
+            DispatchQueue.main.async {
+                self?.refreshHelperState()
+                completion(success, error)
+            }
+        }
+    }
+
     /// Reload settings from storage
     public func reloadSettings() {
         settingsService.reload()
         currentSettings = settingsService.currentSettings
         isEnabled = currentSettings.isEnabled
+        synchronizeServiceBackedState(persistIfNeeded: true)
         cursorService.configure(with: currentSettings)
     }
 
     // MARK: - Private Helpers
 
     private func updateSettings(_ settings: CursorSettings) {
-        currentSettings = settings
-        settingsService.save(settings)
-        cursorService.configure(with: settings)
+        var normalizedSettings = settings
+        normalizedSettings.launchAtLogin = isLaunchAtLoginEnabled
+        currentSettings = normalizedSettings
+        settingsService.save(normalizedSettings)
+        cursorService.configure(with: normalizedSettings)
+    }
+
+    @objc private func launchAtLoginDidChange() {
+        synchronizeServiceBackedState(persistIfNeeded: true)
+    }
+
+    private func synchronizeServiceBackedState(persistIfNeeded: Bool) {
+        let launchAtLoginEnabled = launchAtLoginService.isEnabled
+        isLaunchAtLoginEnabled = launchAtLoginEnabled
+        isHelperInstalled = helperService.isHelperInstalled
+
+        guard currentSettings.launchAtLogin != launchAtLoginEnabled else { return }
+
+        currentSettings.launchAtLogin = launchAtLoginEnabled
+
+        if persistIfNeeded {
+            settingsService.save(currentSettings)
+        }
     }
 }
