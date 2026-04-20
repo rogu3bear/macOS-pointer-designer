@@ -1,6 +1,6 @@
 # Cursor Designer
 
-System-wide macOS cursor customization with dynamic contrast adaptation.
+macOS cursor customization with dynamic contrast adaptation and optional system-wide helper support.
 
 ## Features
 
@@ -9,6 +9,7 @@ System-wide macOS cursor customization with dynamic contrast adaptation.
 - **Outline Mode**: Add a contrasting outline that adapts to the background
 - **Menu Bar App**: Quick access to settings from the menu bar
 - **Launch at Login**: Optionally start with your Mac
+- **Manual Helper Control**: Install the helper from Preferences when you want system-wide cursor changes
 - **Multi-Monitor Support**: Handles different DPI scales and refresh rates per display
 - **Crash Recovery**: Automatically restores system cursor if app terminates unexpectedly
 
@@ -32,7 +33,7 @@ brew install --cask cursor-designer-osx
 2. Open the DMG file
 3. Drag `CursorDesigner.app` to your Applications folder
 4. Launch from Applications
-5. Click "Install Helper Tool" when prompted (required for system-wide changes)
+5. Open Preferences and install the helper tool if you want system-wide cursor changes
 
 ## Usage
 
@@ -57,6 +58,7 @@ Click the cursor icon in the menu bar to:
 - **Contrast Mode**: Select adaptation behavior
 - **Outline Width**: Adjust outline thickness (1-5px)
 - **Sampling Rate**: Background detection frequency (15-120 Hz)
+- **System-wide Helper**: See whether the helper is installed and install it manually when needed
 - **Launch at Login**: Start automatically with macOS
 
 ## Quick Start (Personal Use)
@@ -68,13 +70,13 @@ swift build
 # Run the app
 .build/debug/PointerDesigner
 
-# Run the helper (in separate terminal, may need sudo)
+# Optional: run the helper in a separate terminal for development
 .build/debug/PointerDesignerHelper
 
 # Note: Executable names remain PointerDesigner/PointerDesignerHelper for compatibility
 ```
 
-**Note**: For system-wide cursor changes, the helper needs to run. For personal use, the app is configured to accept local connections without code signing verification.
+**Note**: The menu bar app and Preferences preview work without the helper. System-wide cursor changes require the helper to be installed or running.
 
 ## Building from Source
 
@@ -151,7 +153,7 @@ main.swift
         ├── setupSignalHandlers()       # SIGTERM/SIGINT handling
         ├── setupMenuBar()              # Create status item + menu
         ├── setupCursorEngine()         # Initialize core engine
-        └── checkHelperToolInstallation()
+        └── show helper status in Preferences
 ```
 
 ### Core Engine Pipeline
@@ -213,16 +215,18 @@ The application handles 70+ edge cases across these categories:
 
 Cursor Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
-- **Administrator Access**: One-time for helper tool installation
+- **Administrator Access**: Only when installing the helper for system-wide cursor changes
 
 No data is collected or transmitted. All processing happens locally.
 
 ## Troubleshooting
 
 ### Cursor not changing system-wide
-1. Ensure helper tool is installed (Preferences → Install Helper Tool)
-2. Grant Screen Recording permission
-3. Restart the app
+1. Open Preferences and check the **System-wide Helper** status
+2. Install the helper tool if it is not installed
+3. If you are running a local development build, make sure the helper binary is running
+4. Grant Screen Recording permission
+5. Restart the app
 
 ### High CPU usage
 - Lower the sampling rate in Preferences (default: 60 Hz)

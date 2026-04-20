@@ -86,7 +86,7 @@ final class PreferencesWindowController: NSWindowController {
 
     convenience init(stateController: CursorStateController = .shared) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -157,6 +157,8 @@ final class PreferencesView: NSView {
     private var scaleLabel: NSTextField?
     private var permissionStatusLabel: NSTextField?
     private var permissionButton: NSButton?
+    private var helperStatusLabel: NSTextField?
+    private var helperButton: NSButton?
 
     // Use CursorStateController for business logic
     private let stateController: CursorStateController
@@ -347,6 +349,33 @@ final class PreferencesView: NSView {
         permissionSection.addArrangedSubview(permissionNote)
         stackView.addArrangedSubview(permissionSection)
 
+        // Helper Status Section
+        let helperSection = createSection(title: "System-wide Helper")
+        let helperRow = NSStackView()
+        helperRow.orientation = .horizontal
+        helperRow.spacing = 10
+
+        let helperLabel = NSTextField(labelWithString: "")
+        helperLabel.font = NSFont.systemFont(ofSize: 12)
+        helperStatusLabel = helperLabel
+
+        let installHelperButton = NSButton(title: "Install Helper Tool", target: self, action: #selector(installHelper))
+        installHelperButton.bezelStyle = .rounded
+        installHelperButton.controlSize = .small
+        installHelperButton.setAccessibilityLabel("Install Helper Tool")
+        installHelperButton.setAccessibilityHelp("Install the helper required for system-wide cursor changes")
+        helperButton = installHelperButton
+
+        helperRow.addArrangedSubview(helperLabel)
+        helperRow.addArrangedSubview(installHelperButton)
+        helperSection.addArrangedSubview(helperRow)
+
+        let helperNote = NSTextField(labelWithString: "Preferences preview always works. System-wide cursor changes require the helper.")
+        helperNote.font = NSFont.systemFont(ofSize: 10)
+        helperNote.textColor = .secondaryLabelColor
+        helperSection.addArrangedSubview(helperNote)
+        stackView.addArrangedSubview(helperSection)
+
         // Launch at Login Section
         let loginCheckbox = NSButton(checkboxWithTitle: "Launch at Login", target: self, action: #selector(launchAtLoginChanged))
         // Edge case #69: VoiceOver accessibility
@@ -437,6 +466,7 @@ final class PreferencesView: NSView {
 
         // Update permission status
         updatePermissionStatus()
+        updateHelperStatus()
     }
 
     private func updatePermissionStatus() {
@@ -451,6 +481,21 @@ final class PreferencesView: NSView {
             permissionStatusLabel?.stringValue = "✗ Not granted"
             permissionStatusLabel?.textColor = .systemOrange
             permissionButton?.isHidden = false
+        }
+    }
+
+    private func updateHelperStatus() {
+        stateController.refreshHelperState()
+        let helperInstalled = stateController.isHelperInstalled
+
+        if helperInstalled {
+            helperStatusLabel?.stringValue = "✓ Installed"
+            helperStatusLabel?.textColor = .systemGreen
+            helperButton?.isHidden = true
+        } else {
+            helperStatusLabel?.stringValue = "✗ Not installed"
+            helperStatusLabel?.textColor = .systemOrange
+            helperButton?.isHidden = false
         }
     }
 
@@ -490,33 +535,24 @@ final class PreferencesView: NSView {
         guard let index = presetPopup?.indexOfSelectedItem,
               index < CursorPreset.allCases.count else { return }
         let preset = CursorPreset.allCases[index]
-        stateController.updateSettings { settings in
-            settings.preset = preset
-        }
-        // Reload to apply preset defaults
+        stateController.applyPreset(preset)
         loadSettings()
     }
 
     @objc private func scaleChanged() {
         let scale = Float(scaleSlider?.doubleValue ?? 1.0)
         updateScaleLabel()
-        stateController.updateSettings { settings in
-            settings.cursorScale = scale
-        }
+        stateController.setCursorScale(scale)
     }
 
     @objc private func glowChanged() {
         let enabled = glowCheckbox?.state == .on
-        stateController.updateSettings { settings in
-            settings.glowEnabled = enabled
-        }
+        stateController.setGlowEnabled(enabled)
     }
 
     @objc private func shadowChanged() {
         let enabled = shadowCheckbox?.state == .on
-        stateController.updateSettings { settings in
-            settings.shadowEnabled = enabled
-        }
+        stateController.setShadowEnabled(enabled)
     }
 
     @objc private func contrastModeChanged() {
@@ -541,9 +577,7 @@ final class PreferencesView: NSView {
         let rate = Int(samplingRateSlider?.doubleValue ?? 60)
         // Edge case #69: Update accessibility value for VoiceOver
         samplingRateSlider?.setAccessibilityValue("\(rate) Hz")
-        stateController.updateSettings { settings in
-            settings.samplingRate = rate
-        }
+        stateController.setSamplingRate(rate)
     }
 
     @objc private func launchAtLoginChanged() {
@@ -558,6 +592,25 @@ final class PreferencesView: NSView {
 
     @objc private func openPermissionSettings() {
         PermissionManager.shared.openSystemPreferences(for: .screenRecording)
+    }
+
+    @objc private func installHelper() {
+        helperButton?.isEnabled = false
+
+        stateController.installHelper { [weak self] success, error in
+            guard let self = self else { return }
+
+            self.helperButton?.isEnabled = true
+            self.updateHelperStatus()
+
+            guard !success else { return }
+
+            let alert = NSAlert()
+            alert.messageText = "Helper Installation Failed"
+            alert.informativeText = error?.localizedDescription ?? "Cursor Designer could not install the helper tool."
+            alert.alertStyle = .warning
+            alert.runModal()
+        }
     }
 
     // Edge case #55: Refresh UI when settings change externally
