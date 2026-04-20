@@ -1,0 +1,50 @@
+# Build artifacts
+/site/dist/
+/site/target/
+*.wasm
+*.js
+*.map
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Wrangler
+.wrangler/
+wrangler.toml
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Trunk
+.trunk/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Rust
+**/*.rs.bk
+Cargo.lock
+
+# AI / tooling (do not commit)
+.serena/
+**/CLAUDE.md
+
+# Cloudflare tunnel credentials
+.cloudflared/
