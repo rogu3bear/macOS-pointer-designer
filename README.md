@@ -28,6 +28,5 @@ This monorepo is now the canonical home for website changes; the former standalo
 
 ```bash
 cd apps/website/site
-trunk build --release
-cargo build --release --bin windowdrop-server --features ssr
+./scripts/build-release.sh
 ```

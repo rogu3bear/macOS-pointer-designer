@@ -11,7 +11,7 @@ The former standalone `drop-web` repo is retired; all website changes should lan
 - Health: `/healthz`
 - Logs: `~/.logs/windowdrop-web/`
 - Dev: `cd site && trunk serve`
-- Build/Run: `cd site && trunk build --release` then `cargo build --release --bin windowdrop-server --features ssr`
+- Build: `cd site && ./scripts/build-release.sh`
 
 ## 🌐 Live Site
 
@@ -67,7 +67,7 @@ cargo build --release --bin windowdrop-server --features ssr
 
 ```bash
 # Rebuild and restart
-cd site && trunk build --release
+cd site && ./scripts/build-release.sh
 launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
 
 # Canonical local service entrypoint from apps/website/

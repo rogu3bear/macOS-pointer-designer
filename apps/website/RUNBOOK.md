@@ -31,8 +31,7 @@ tail -f ~/.logs/windowdrop-web/*.log
 cd site
 
 # Build WASM + server
-trunk build --release
-cargo build --release --bin windowdrop-server --features ssr
+./scripts/build-release.sh
 
 # Restart
 launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
@@ -46,7 +45,7 @@ curl http://localhost:3410/healthz
 ### Service not starting
 
 1. Check binary exists: `ls site/target/release/windowdrop-server`
-2. If missing, rebuild: `cd site && trunk build --release && cargo build --release --bin windowdrop-server --features ssr`
+2. If missing, rebuild: `cd site && ./scripts/build-release.sh`
 3. Check logs: `tail -50 ~/.logs/windowdrop-web/*.log`
 
 ### 502 from Cloudflare
