@@ -65,7 +65,7 @@ PORT=3410 ./target/release/windowdrop-server
 ## Project Structure
 
 ```
-drop-web/site/
+apps/website/site/
 ├── src/
 │   ├── main.rs          # CSR app entry (WASM)
 │   ├── lib.rs           # Component library

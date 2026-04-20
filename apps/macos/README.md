@@ -2,6 +2,8 @@
 
 macOS cursor customization with dynamic contrast adaptation and optional system-wide helper support.
 
+This package lives in `apps/macos` inside the Cursor Designer monorepo.
+
 ## Features
 
 - **Custom Cursor Colors**: Choose any color for your cursor
@@ -88,9 +90,9 @@ swift build
 ### Build
 
 ```bash
-# Clone the repository
-git clone https://github.com/rogu3bear/cursor-designer-osx.git
-cd cursor-designer-osx
+# Clone the monorepo
+git clone https://github.com/rogu3bear/macOS-pointer-designer.git
+cd macOS-pointer-designer/apps/macos
 
 # Build with Swift Package Manager
 swift build
@@ -108,7 +110,7 @@ make dmg
 ### Project Structure
 
 ```
-cursor-designer-osx/
+apps/macos/
 ├── Sources/
 │   ├── PointerDesigner/           # Main app target (module name preserved)
 │   │   ├── main.swift             # App entry point

@@ -1,4 +1,4 @@
-# drop-web Runbook
+# WindowDrop Website Runbook
 
 > **Domain:** windowdrop.pro | **Port:** 3410 | **Stack:** Rust/Leptos 0.6 CSR
 
@@ -20,9 +20,8 @@ tail -f ~/.logs/drop-web/*.log
 | Property | Value |
 |----------|-------|
 | LaunchAgent | `com.windowdrop.server` |
-| Binary | `~/Dev/drop-web/site/target/release/windowdrop-server` |
+| Binary | `site/target/release/windowdrop-server` |
 | Health endpoint | `/healthz` |
-| Tunnel | `fe7d370f-93aa-4f87-9cf3-1ef0c7b2bf94` |
 
 ## Build & Deploy
 
@@ -51,7 +50,7 @@ curl http://localhost:3410/healthz
 ### 502 from Cloudflare
 
 1. Verify service running: `lsof -i :3410`
-2. Check tunnel: `cloudflared tunnel info dev-unified`
+2. Verify the Pages deployment and custom-domain state in Cloudflare
 3. Test locally: `curl http://localhost:3410/healthz`
 
 ## Development

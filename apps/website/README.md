@@ -2,6 +2,8 @@
 
 Official website for **WindowDrop** - a macOS utility that moves new windows to your cursor position instantly.
 
+This site lives in `apps/website` inside the Cursor Designer monorepo.
+
 ## At a Glance
 - Domain(s): windowdrop.pro, www.windowdrop.pro
 - Local port: 3410
@@ -25,7 +27,7 @@ Official website for **WindowDrop** - a macOS utility that moves new windows to 
 ## 🏗️ Project Structure
 
 ```
-drop-web/
+apps/website/
 ├── site/
 │   ├── src/
 │   │   ├── components/   # UI components
@@ -38,6 +40,9 @@ drop-web/
 │   ├── assets/           # Images
 │   ├── public/           # robots.txt, sitemap
 │   └── Cargo.toml
+├── docs/
+├── ops/
+├── scripts/
 └── README.md
 ```
 

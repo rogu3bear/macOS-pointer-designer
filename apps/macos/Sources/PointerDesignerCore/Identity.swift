@@ -13,7 +13,7 @@ import Foundation
 /// - Sources/PointerDesigner/Resources/Info.plist
 /// - Sources/PointerDesignerHelper/Resources/Info.plist
 /// - Sources/PointerDesigner/Resources/com.pointerdesigner.helper.plist
-/// - Casks/cursor-designer-osx.rb
+/// - apps/macos/Casks/cursor-designer-osx.rb
 public enum Identity {
     // MARK: - Bundle Identifiers
 
