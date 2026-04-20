@@ -23,6 +23,8 @@ swift build
 ## Website
 
 The product website lives in `apps/website`.
+This monorepo is now the canonical home for website changes; the former standalone
+`drop-web` repo is retired.
 
 ```bash
 cd apps/website/site

@@ -2,6 +2,8 @@
 
 > **Domain:** windowdrop.pro | **Port:** 3410 | **Stack:** Rust/Leptos 0.6 CSR
 
+Canonical checkout: `/Users/star/dev/macOS-pointer-designer/apps/website`
+
 ## Quick Commands
 
 ```bash
@@ -12,7 +14,7 @@ launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
 curl -s http://localhost:3410/healthz
 
 # View logs
-tail -f ~/.logs/drop-web/*.log
+tail -f ~/.logs/windowdrop-web/*.log
 ```
 
 ## Service Details
@@ -45,7 +47,7 @@ curl http://localhost:3410/healthz
 
 1. Check binary exists: `ls site/target/release/windowdrop-server`
 2. If missing, rebuild: `cd site && trunk build --release && cargo build --release --bin windowdrop-server --features ssr`
-3. Check logs: `tail -50 ~/.logs/drop-web/*.log`
+3. Check logs: `tail -50 ~/.logs/windowdrop-web/*.log`
 
 ### 502 from Cloudflare
 

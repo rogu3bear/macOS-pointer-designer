@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    container_name: drop-web
+    container_name: windowdrop-web
     restart: unless-stopped
     env_file: .env
     ports:

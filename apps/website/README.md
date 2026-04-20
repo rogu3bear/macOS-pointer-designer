@@ -3,11 +3,13 @@
 Official website for **WindowDrop** - a macOS utility that moves new windows to your cursor position instantly.
 
 This site lives in `apps/website` inside the Cursor Designer monorepo.
+The former standalone `drop-web` repo is retired; all website changes should land here.
 
 ## At a Glance
 - Domain(s): windowdrop.pro, www.windowdrop.pro
 - Local port: 3410
 - Health: `/healthz`
+- Logs: `~/.logs/windowdrop-web/`
 - Dev: `cd site && trunk serve`
 - Build/Run: `cd site && trunk build --release` then `cargo build --release --bin windowdrop-server --features ssr`
 
@@ -67,6 +69,9 @@ cargo build --release --bin windowdrop-server --features ssr
 # Rebuild and restart
 cd site && trunk build --release
 launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
+
+# Canonical local service entrypoint from apps/website/
+./site/scripts/run.sh prod
 
 # Verify
 curl http://127.0.0.1:3410/healthz
