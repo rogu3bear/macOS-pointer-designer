@@ -22,13 +22,19 @@ pub fn Download() -> impl IntoView {
         .and_then(|name| name.strip_suffix(".dmg"))
         .map(|version| format!("Version {}", version))
         .unwrap_or_else(|| "Current release".to_string());
-    let zip_url = dmg_url.map(|_| CONFIG.zip_url);
+    let zip_url = dmg_url
+        .and_then(|url| url.strip_suffix(".dmg"))
+        .map(|stem| format!("{}.zip", stem));
     let zip_filename = zip_url
+        .as_deref()
         .and_then(|url| url.rsplit('/').next())
         .unwrap_or("WindowDrop.zip")
         .to_string();
-    let checksums_url = dmg_url.map(|_| CONFIG.checksums_url);
+    let checksums_url = dmg_url
+        .and_then(|url| url.strip_suffix(".dmg"))
+        .map(|stem| format!("{}-checksums.txt", stem));
     let checksums_filename = checksums_url
+        .as_deref()
         .and_then(|url| url.rsplit('/').next())
         .unwrap_or("WindowDrop-checksums.txt")
         .to_string();
@@ -45,7 +51,7 @@ pub fn Download() -> impl IntoView {
     } else {
         "When released, download the disk image from the button above.".into_view()
     };
-    let zip_download_link = if let Some(url) = zip_url {
+    let zip_download_link = if let Some(url) = zip_url.clone() {
         view! {
             <a href=url class="download-link" rel="noopener noreferrer" target="_blank">
                 "Download ZIP"
@@ -55,7 +61,7 @@ pub fn Download() -> impl IntoView {
     } else {
         view! { <span class="alternative-meta">"ZIP not available"</span> }.into_view()
     };
-    let verify_instruction = if let Some(url) = checksums_url {
+    let verify_instruction = if let Some(url) = checksums_url.clone() {
         view! {
             <>
                 "Compare the output with "
@@ -159,11 +165,6 @@ pub fn Download() -> impl IntoView {
                     </div>
                     <p class="download-hero-note">
                         {hero_note}
-                        " Latest release: "
-                        <a href=CONFIG.release_url rel="noopener noreferrer" target="_blank">
-                            {CONFIG.release_version}
-                        </a>
-                        "."
                     </p>
                 </div>
             </section>

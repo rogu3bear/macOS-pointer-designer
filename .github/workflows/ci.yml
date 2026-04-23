@@ -48,9 +48,7 @@ jobs:
 
       - name: Check website
         working-directory: apps/website/site
-        run: |
-          source ../ops/release-env.sh
-          cargo check --features ssr --all-targets
+        run: cargo check --features ssr --all-targets
 
       - name: Build website release artifacts
         working-directory: apps/website/site

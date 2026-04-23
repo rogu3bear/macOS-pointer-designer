@@ -29,7 +29,7 @@ Fully responsive from 320px to 4K (3840px). Breakpoints in `responsive.css`:
 
 ## Deployment
 
-**Canonical (production)**: Cloudflare Pages serves the public site on `windowdrop.pro`. Download buttons point to the latest verified GitHub Release assets declared in `ops/release-env.sh`. The public site should stay in `SITE_LIFETIME_MODE=in-app` unless the Pages proxy has already been verified live against a healthy `WEB_CHECKOUT_ORIGIN`.
+**Canonical (production)**: Cloudflare Pages serves the public site, versioned downloads, and the root-level Pages Functions bundle on `windowdrop.pro`. The public site should stay in `SITE_LIFETIME_MODE=in-app` unless the Pages proxy has already been verified live against a healthy `WEB_CHECKOUT_ORIGIN`. Root-level deployment and hosting details live in `../../docs/hosting.md`.
 
 **Optional web-checkout backend**: Axum still serves the private checkout origin for `/checkout/lifetime` and `/api/web-license/*` when `SITE_LIFETIME_MODE=web`. Do not switch the public site into web mode until the custom-domain proxy smoke tests pass for checkout and recovery.
 
@@ -64,7 +64,7 @@ Pricing surfaces are copy-driven and support two explicit lifetime flows:
 
 - `CtaPrimary`: Renders the primary CTA based on config mode
 - `CtaSecondary`: Static secondary button (e.g., "How it works")
-- `EmailCapture`: Email signup form retained for explicit waitlist/interest-capture modes, not the current public default
+- `EmailCapture`: Email signup form for pre-launch phase
 
 ## Analytics
 
@@ -105,12 +105,11 @@ SVG-based animation demonstrating WindowDrop behavior.
 
 Content (supported apps, placement modes, FAQ) is aligned with the parent WindowDrop app. See `docs/reconciliation.md` for source-of-truth mapping and best practices.
 
-## Release Metadata
+## Pre-launch vs Release Mode
 
-The current public download release is declared in `ops/release-env.sh` and sourced by build, run, verify, deploy, and CI surfaces. As of this audit, the website points to WindowDrop `1.0.1` from `rogu3bear/windowdrop`:
+When `trial_url` and `store_url` are `None` (NotifyMe mode), the Download page:
+- Shows email capture as primary action
+- Replaces "Alternative Downloads" and "Verify" with a "When Released" section
+- Installation step 1 wording adapts ("When released, download...")
 
-- `WindowDrop-1.0.1.dmg`
-- `WindowDrop-1.0.1.zip`
-- `WindowDrop-1.0.1-checksums.txt`
-
-When download URLs are set, the full download flow (DMG/ZIP, SHA-256 verify) is shown. If a future build intentionally clears the download URL, the page falls back to waitlist/coming-soon wording.
+When download URLs are set, full download flow (DMG/ZIP, SHA-256 verify) is shown.

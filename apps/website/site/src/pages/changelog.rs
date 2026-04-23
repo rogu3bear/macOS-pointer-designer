@@ -1,12 +1,15 @@
 use crate::components::cta::CtaPrimary;
 use crate::components::icons::{IconCheckCircle, IconClock, IconStar, IconTag};
-use crate::config::CONFIG;
 use crate::seo::meta::SeoMeta;
 use leptos::*;
 
+const CURRENT_RELEASE_VERSION: &str = match option_env!("WINDOWDROP_RELEASE_VERSION") {
+    Some(version) => version,
+    None => "1.1.0",
+};
+
 #[component]
 pub fn Changelog() -> impl IntoView {
-    let current_release_version = CONFIG.release_version;
     view! {
         <SeoMeta
             title="Changelog"
@@ -34,20 +37,20 @@ pub fn Changelog() -> impl IntoView {
                     // Current release
                     <div class="changelog-entry">
                         <div class="changelog-entry-header">
-                            <span class="changelog-version">{current_release_version}</span>
+                            <span class="changelog-version">{CURRENT_RELEASE_VERSION}</span>
                             <span class="changelog-date">"Current downloadable release"</span>
                             <span class="changelog-badge changelog-badge-current">"Current"</span>
                         </div>
                         <div class="changelog-entry-content">
                             <h3 class="changelog-entry-title">"Release Truth + Download Update"</h3>
                             <p class="changelog-entry-description">
-                                "The current public website points download buttons, release notes, and support guidance to the verified latest GitHub release assets while keeping the paid unlock path in the app/download flow by default."
+                                "The current public release aligns versioned downloads, pricing copy, release notes, and support guidance around the safe in-app purchase path."
                             </p>
                             <h4 class="changelog-section-title">"Highlights"</h4>
                             <ul class="changelog-list">
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Download page links to the latest public DMG, ZIP, and checksums published on GitHub Releases"</span>
+                                    <span>"Download page now publishes versioned DMG, ZIP, and checksum files for the current release"</span>
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
@@ -55,7 +58,7 @@ pub fn Changelog() -> impl IntoView {
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Release notes and support copy now match the downloadable build version and current deployment posture"</span>
+                                    <span>"Release notes and support copy now match the downloadable build version and the current selectable placement modes"</span>
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
@@ -146,7 +149,7 @@ pub fn Changelog() -> impl IntoView {
                     <IconTag size=32 />
                     <h2 class="subscribe-title">"Get WindowDrop"</h2>
                     <p class="subscribe-description">
-                        "Download the current release, use Finder for free, then unlock more app coverage with a one-time in-app purchase."
+                        "Try it free, then unlock with a one-time purchase."
                     </p>
                     <div class="changelog-subscribe-cta">
                         <CtaPrimary />

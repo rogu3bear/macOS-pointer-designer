@@ -83,7 +83,7 @@ pub fn Pricing() -> impl IntoView {
                     // Free plan callout
                     <div class="pricing-trial">
                         <p class="pricing-trial-text">
-                            "Download the current release and use Finder for free — "
+                            "Use Finder for free right now — "
                             <a href=free_download_url class="pricing-trial-link">"download WindowDrop"</a>
                         </p>
                     </div>

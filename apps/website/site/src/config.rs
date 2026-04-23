@@ -6,21 +6,6 @@
 
 use std::sync::LazyLock;
 
-pub const DEFAULT_RELEASE_VERSION: &str = "1.0.1";
-pub const DEFAULT_RELEASE_REPO: &str = "rogu3bear/windowdrop";
-pub const DEFAULT_RELEASE_TAG: &str = "v1.0.1";
-#[allow(dead_code)]
-pub const DEFAULT_DMG_URL: &str =
-    "https://github.com/rogu3bear/windowdrop/releases/download/v1.0.1/WindowDrop-1.0.1.dmg";
-#[allow(dead_code)]
-pub const DEFAULT_ZIP_URL: &str =
-    "https://github.com/rogu3bear/windowdrop/releases/download/v1.0.1/WindowDrop-1.0.1.zip";
-#[allow(dead_code)]
-pub const DEFAULT_CHECKSUMS_URL: &str =
-    "https://github.com/rogu3bear/windowdrop/releases/download/v1.0.1/WindowDrop-1.0.1-checksums.txt";
-#[allow(dead_code)]
-pub const DEFAULT_RELEASE_URL: &str = "https://github.com/rogu3bear/windowdrop/releases/tag/v1.0.1";
-
 /// The active CTA mode determines button labels and actions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -82,14 +67,6 @@ pub struct SiteConfig {
     pub cta_mode: CtaMode,
     /// Direct URL for the DMG download (usually /downloads/, optionally overridden)
     pub trial_url: Option<&'static str>,
-    /// Direct URL for the ZIP archive.
-    pub zip_url: &'static str,
-    /// Direct URL for the checksums file.
-    pub checksums_url: &'static str,
-    /// Public release notes / asset page.
-    pub release_url: &'static str,
-    /// Public release version rendered in copy.
-    pub release_version: &'static str,
     /// Path to the download page (always "/download")
     pub download_page_url: &'static str,
     /// URL for waitlist signup (if available)
@@ -112,42 +89,17 @@ pub struct SiteConfig {
 pub static CONFIG: LazyLock<SiteConfig> = LazyLock::new(|| {
     let lifetime_cta_mode = LifetimeCtaMode::from_env(option_env!("SITE_LIFETIME_MODE"));
 
-    let release_version =
-        option_env!("WINDOWDROP_RELEASE_VERSION").unwrap_or(DEFAULT_RELEASE_VERSION);
-    let release_tag = option_env!("WINDOWDROP_RELEASE_TAG").unwrap_or(DEFAULT_RELEASE_TAG);
-    let release_repo = option_env!("WINDOWDROP_RELEASE_REPO").unwrap_or(DEFAULT_RELEASE_REPO);
-    let default_dmg_url = format!(
-        "https://github.com/{release_repo}/releases/download/{release_tag}/WindowDrop-{release_version}.dmg"
-    );
-    let default_zip_url = format!(
-        "https://github.com/{release_repo}/releases/download/{release_tag}/WindowDrop-{release_version}.zip"
-    );
-    let default_checksums_url = format!(
-        "https://github.com/{release_repo}/releases/download/{release_tag}/WindowDrop-{release_version}-checksums.txt"
-    );
-    let default_release_url =
-        format!("https://github.com/{release_repo}/releases/tag/{release_tag}");
-
-    let dmg_url = option_env!("WINDOWDROP_DMG_URL")
+    let trial_url = option_env!("WINDOWDROP_DMG_URL")
         .map(str::to_string)
-        .unwrap_or(default_dmg_url);
-    let zip_url = option_env!("WINDOWDROP_ZIP_URL")
-        .map(str::to_string)
-        .unwrap_or(default_zip_url);
-    let checksums_url = option_env!("WINDOWDROP_CHECKSUMS_URL")
-        .map(str::to_string)
-        .unwrap_or(default_checksums_url);
-    let release_url = option_env!("WINDOWDROP_RELEASE_URL")
-        .map(str::to_string)
-        .unwrap_or(default_release_url);
+        .or_else(|| {
+            option_env!("WINDOWDROP_RELEASE_VERSION")
+                .map(|version| format!("/downloads/WindowDrop-{version}.dmg"))
+        })
+        .map(|url| Box::leak(url.into_boxed_str()) as &'static str);
 
     SiteConfig {
         cta_mode: CtaMode::TrialDownload,
-        trial_url: Some(Box::leak(dmg_url.into_boxed_str())),
-        zip_url: Box::leak(zip_url.into_boxed_str()),
-        checksums_url: Box::leak(checksums_url.into_boxed_str()),
-        release_url: Box::leak(release_url.into_boxed_str()),
-        release_version,
+        trial_url,
         download_page_url: "/download",
         waitlist_url: None,
         store_url: option_env!("APP_STORE_URL"),
@@ -197,10 +149,7 @@ impl SiteConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        CtaMode, LifetimeCtaMode, SiteConfig, DEFAULT_CHECKSUMS_URL, DEFAULT_DMG_URL,
-        DEFAULT_RELEASE_URL, DEFAULT_RELEASE_VERSION, DEFAULT_ZIP_URL,
-    };
+    use super::{CtaMode, LifetimeCtaMode, SiteConfig};
 
     #[test]
     fn lifetime_mode_defaults_to_in_app() {
@@ -227,11 +176,7 @@ mod tests {
     fn site_config_can_carry_in_app_mode() {
         let config = SiteConfig {
             cta_mode: CtaMode::TrialDownload,
-            trial_url: Some(DEFAULT_DMG_URL),
-            zip_url: DEFAULT_ZIP_URL,
-            checksums_url: DEFAULT_CHECKSUMS_URL,
-            release_url: DEFAULT_RELEASE_URL,
-            release_version: DEFAULT_RELEASE_VERSION,
+            trial_url: Some("/downloads/WindowDrop-1.1.0.dmg"),
             download_page_url: "/download",
             waitlist_url: None,
             store_url: None,
