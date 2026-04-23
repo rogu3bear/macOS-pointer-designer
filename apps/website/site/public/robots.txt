@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://windowdrop.pro/sitemap.xml
