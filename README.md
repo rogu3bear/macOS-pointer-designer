@@ -30,3 +30,13 @@ This monorepo is now the canonical home for website changes; the former standalo
 cd apps/website/site
 ./scripts/build-release.sh
 ```
+
+## Verification
+
+Run the product checks from the monorepo root:
+
+```bash
+./scripts/check-monorepo-references.sh
+swift test --package-path apps/macos
+cd apps/website/site && ./verify.sh
+```

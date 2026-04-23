@@ -59,8 +59,7 @@ trunk serve          # Dev server at localhost:8080
 
 ```bash
 cd site
-trunk build --release
-cargo build --release --bin windowdrop-server --features ssr
+./scripts/build-release.sh
 ```
 
 ## 🔧 Deployment

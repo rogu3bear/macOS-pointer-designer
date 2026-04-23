@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # WindowDrop Site Verification Script
 # Runs all automated checks to verify the site builds correctly
 
-set -e
+set -euo pipefail
+
+cd "$(dirname "$0")"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -13,7 +15,7 @@ echo ""
 
 # 1. Cargo check
 echo "1/4 Running cargo check..."
-if cargo check 2>&1 | tail -5; then
+if cargo check --features ssr --all-targets; then
     echo -e "${GREEN}✓ Compilation check passed${NC}"
 else
     echo -e "${RED}✗ Compilation check failed${NC}"
@@ -33,7 +35,7 @@ echo ""
 
 # 3. Cargo clippy
 echo "3/4 Running cargo clippy..."
-if cargo clippy -- -D warnings 2>&1 | tail -10; then
+if cargo clippy --features ssr --all-targets -- -D warnings; then
     echo -e "${GREEN}✓ Clippy check passed${NC}"
 else
     echo -e "${RED}✗ Clippy check failed${NC}"
@@ -41,9 +43,9 @@ else
 fi
 echo ""
 
-# 4. Trunk build
-echo "4/4 Running trunk build --release..."
-if trunk build --release 2>&1 | tail -5; then
+# 4. Release build
+echo "4/4 Running ./scripts/build-release.sh..."
+if ./scripts/build-release.sh; then
     echo -e "${GREEN}✓ Production build succeeded${NC}"
 else
     echo -e "${RED}✗ Production build failed${NC}"

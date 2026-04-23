@@ -49,11 +49,8 @@ The Axum server (`src/bin/server.rs`) handles:
 ## Building for Production
 
 ```bash
-# Build WASM assets
-trunk build --release
-
-# Build server binary
-cargo build --release --features ssr
+# Build WASM assets and server binary
+./scripts/build-release.sh
 
 # Binary location
 ./target/release/windowdrop-server

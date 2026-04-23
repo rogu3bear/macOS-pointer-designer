@@ -14,9 +14,9 @@ This directory contains the WindowDrop website surface inside the Cursor Designe
 
 - Setup: `cd site && ./scripts/setup.sh`
 - Dev: `cd site && ./scripts/run.sh`
-- Build: `cd site && trunk build --release`
-- Server build: `cd site && cargo build --release --bin windowdrop-server --features ssr`
-- Verify: `./ops/verify.sh`
+- Build: `cd site && ./scripts/build-release.sh`
+- Check: `cd site && cargo check --features ssr --all-targets`
+- Verify: `cd site && ./verify.sh`
 
 ## Guardrails
 

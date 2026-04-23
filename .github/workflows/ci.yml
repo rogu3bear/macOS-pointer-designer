@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  monorepo-guardrails:
+    name: Monorepo guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check retired website references
+        run: ./scripts/check-monorepo-references.sh
+
+  macos:
+    name: macOS app
+    runs-on: macos-14
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Test Swift package
+        run: swift test --package-path apps/macos
+
+  website:
+    name: Website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install Trunk
+        run: cargo install trunk --locked
+
+      - name: Check website
+        working-directory: apps/website/site
+        run: cargo check --features ssr --all-targets
+
+      - name: Build website release artifacts
+        working-directory: apps/website/site
+        run: ./scripts/build-release.sh

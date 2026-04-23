@@ -16,8 +16,7 @@ COPY site ./site
 
 # Build SPA assets and SSR server
 RUN cd site \
-  && trunk build --release \
-  && cargo build --release --bin windowdrop-server --features ssr
+  && ./scripts/build-release.sh
 
 FROM debian:bookworm-slim AS runtime
 

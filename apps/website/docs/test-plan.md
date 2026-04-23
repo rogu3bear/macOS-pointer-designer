@@ -1,10 +1,10 @@
 # Test Plan
 
 ## Automated Checks
-1. **Compilation**: `cargo check` in `site/` directory.
+1. **Compilation**: `cargo check --features ssr --all-targets` in `site/` directory.
 2. **Formatting**: `cargo fmt -- --check`.
-3. **Clippy**: `cargo clippy -- -D warnings`.
-4. **Build**: `trunk build --release`.
+3. **Clippy**: `cargo clippy --features ssr --all-targets -- -D warnings`.
+4. **Build**: `./scripts/build-release.sh`.
 
 ## Manual Verification
 1. **Navigation**: Click all header/footer links. Verify URL changes and content updates without reload.
