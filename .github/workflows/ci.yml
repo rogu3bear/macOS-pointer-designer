@@ -38,7 +38,13 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
 
       - name: Install Trunk
-        run: cargo install trunk --locked
+        env:
+          TRUNK_VERSION: 0.21.14
+        run: |
+          curl -fsSL "https://github.com/trunk-rs/trunk/releases/download/v${TRUNK_VERSION}/trunk-x86_64-unknown-linux-gnu.tar.gz" -o /tmp/trunk.tar.gz
+          tar -xzf /tmp/trunk.tar.gz -C /tmp
+          install /tmp/trunk "$HOME/.cargo/bin/trunk"
+          trunk --version
 
       - name: Check website
         working-directory: apps/website/site
