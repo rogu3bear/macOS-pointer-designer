@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SITE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-PROJECT_ROOT="$(cd "$SITE_DIR/.." && pwd)"
-cd "$SITE_DIR"
+cd "$(dirname "$0")/.."
 
 echo "=== WindowDrop Setup ==="
 
@@ -32,17 +29,12 @@ else
     echo "wasm32-unknown-unknown target: installed"
 fi
 
-# Create the canonical monorepo .env if missing, with site/.env as fallback.
-if [ ! -f "$PROJECT_ROOT/.env" ] && [ -f "$PROJECT_ROOT/.env.example" ]; then
-    cp "$PROJECT_ROOT/.env.example" "$PROJECT_ROOT/.env"
-    echo "Created $PROJECT_ROOT/.env from $PROJECT_ROOT/.env.example"
-elif [ -f "$PROJECT_ROOT/.env" ]; then
-    echo "$PROJECT_ROOT/.env already exists"
-elif [ ! -f .env ] && [ -f .env.example ]; then
+# Create .env from example if missing
+if [ ! -f .env ] && [ -f .env.example ]; then
     cp .env.example .env
-    echo "Created site/.env from site/.env.example"
+    echo "Created .env from .env.example"
 elif [ -f .env ]; then
-    echo "site/.env already exists"
+    echo ".env already exists"
 fi
 
 # Verify build works (quick check)

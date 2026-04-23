@@ -35,10 +35,11 @@ MODE="${1:-prod}"
 
 case "$MODE" in
     dev)
-        port_free 8080
+        port_free 3411
         echo "Starting WindowDrop in development mode (trunk serve)..."
-        echo "  -> http://127.0.0.1:8080"
+        echo "  -> http://127.0.0.1:3411"
         echo ""
+        # Avoid trunk --no-color parse error when env has NO_COLOR=1
         unset TRUNK_NO_COLOR NO_COLOR 2>/dev/null || true
         exec trunk serve
         ;;
@@ -56,6 +57,6 @@ case "$MODE" in
         fi
 
         # Run the server
-        exec cargo run --release --features ssr --bin windowdrop-server
+        cargo run --release --features ssr --bin windowdrop-server
         ;;
 esac

@@ -17,7 +17,7 @@ const FAQ_ITEMS: [FaqItem; 4] = [
     },
     FaqItem {
         question: "Which apps work with WindowDrop?",
-        answer: "Currently, WindowDrop works with Finder and Safari. Support for more apps is planned.",
+        answer: "WindowDrop supports Finder, Safari, Chrome, Firefox, Terminal, Mail, Xcode, VS Code, and 20+ more across browsers, terminals, mail clients, and IDEs. Enable or disable apps in WindowDrop settings.",
     },
     FaqItem {
         question: "Does WindowDrop access my data?",
@@ -25,7 +25,7 @@ const FAQ_ITEMS: [FaqItem; 4] = [
     },
     FaqItem {
         question: "What macOS versions are supported?",
-        answer: "WindowDrop requires macOS 11 (Big Sur) or later.",
+        answer: "WindowDrop requires macOS 13 (Ventura) or later.",
     },
 ];
 

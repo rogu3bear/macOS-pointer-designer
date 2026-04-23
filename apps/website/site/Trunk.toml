@@ -7,5 +7,5 @@ public_url = "/"
 ignore = ["target"]
 
 [serve]
-port = 8080
+port = 3411
 open = false

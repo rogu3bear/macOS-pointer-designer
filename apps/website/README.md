@@ -42,9 +42,6 @@ apps/website/
 │   ├── assets/           # Images
 │   ├── public/           # robots.txt, sitemap
 │   └── Cargo.toml
-├── docs/
-├── ops/
-├── scripts/
 └── README.md
 ```
 
@@ -52,8 +49,10 @@ apps/website/
 
 ```bash
 cd site
-trunk serve          # Dev server at localhost:8080
+./scripts/run.sh dev  # Kills port 3411 if occupied, then trunk serve
 ```
+
+Or `trunk serve` directly. `run.sh dev` frees the port first.
 
 ## 📦 Production Build
 
@@ -106,14 +105,10 @@ The site supports multiple CTA modes configured in `src/config.rs`:
 
 ### Changing CTA Mode
 
-Edit `src/config.rs`:
+Lifetime pricing mode is compile-time config in `src/config.rs`:
 
 ```rust
-pub const CONFIG: SiteConfig = SiteConfig {
-    cta_mode: CtaMode::NotifyMe,  // Change this
-    trial_url: Some("https://..."),
-    // ...
-};
+let lifetime_cta_mode = LifetimeCtaMode::from_env(option_env!("SITE_LIFETIME_MODE"));
 ```
 
 ### Pre-launch (Current)
@@ -126,6 +121,13 @@ When ready to monetize:
 1. Update `cta_mode` to `TrialDownload` or `AppStoreLink`
 2. Set the appropriate URL
 3. Rebuild and deploy
+
+For pricing-page lifetime checkout:
+- Default to `SITE_LIFETIME_MODE=in-app` so `/pricing` routes lifetime purchases to `/download`.
+- Set `SITE_LIFETIME_MODE=web` at build time to route `/pricing` to `/checkout/lifetime`.
+- Web mode requires the Axum server runtime plus `STRIPE_API_KEY` and `WINDOWDROP_WEB_LICENSE_PRIVATE_KEY_PATH`.
+- The success flow verifies the Stripe session and returns a signed activation token; the recovery flow re-issues that token by checkout email.
+- Static-only Pages hosting can serve `in-app` mode, but it cannot serve the web checkout, purchase verification, or recovery APIs.
 
 ## 📄 License
 

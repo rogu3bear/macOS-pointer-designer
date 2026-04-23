@@ -1,6 +1,12 @@
-use crate::components::icons::{IconCheckCircle, IconClock, IconStar, IconTag, IconZap};
+use crate::components::cta::CtaPrimary;
+use crate::components::icons::{IconCheckCircle, IconClock, IconStar, IconTag};
 use crate::seo::meta::SeoMeta;
 use leptos::*;
+
+const CURRENT_RELEASE_VERSION: &str = match option_env!("WINDOWDROP_RELEASE_VERSION") {
+    Some(version) => version,
+    None => "1.1.0",
+};
 
 #[component]
 pub fn Changelog() -> impl IntoView {
@@ -28,45 +34,61 @@ pub fn Changelog() -> impl IntoView {
             <section class="section changelog-timeline">
                 <div class="container container-narrow">
 
-                    // Coming Soon
-                    <div class="changelog-entry changelog-entry-upcoming">
+                    // Current release
+                    <div class="changelog-entry">
                         <div class="changelog-entry-header">
-                            <span class="changelog-version">"0.2.0"</span>
-                            <span class="changelog-badge changelog-badge-soon">"Coming Soon"</span>
+                            <span class="changelog-version">{CURRENT_RELEASE_VERSION}</span>
+                            <span class="changelog-date">"Current downloadable release"</span>
+                            <span class="changelog-badge changelog-badge-current">"Current"</span>
                         </div>
                         <div class="changelog-entry-content">
-                            <h3 class="changelog-entry-title">"Mail Support & More Apps"</h3>
+                            <h3 class="changelog-entry-title">"Release Truth + Download Update"</h3>
+                            <p class="changelog-entry-description">
+                                "The current public release aligns versioned downloads, pricing copy, release notes, and support guidance around the safe in-app purchase path."
+                            </p>
+                            <h4 class="changelog-section-title">"Highlights"</h4>
                             <ul class="changelog-list">
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Mail.app support"</span>
+                                    <span>"Download page now publishes versioned DMG, ZIP, and checksum files for the current release"</span>
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Calendar.app support"</span>
+                                    <span>"Pricing and download pages now keep the public lifetime path on the app/download flow by default"</span>
                                 </li>
-                                <li class="changelog-item changelog-item-improved">
-                                    <IconZap size=16 />
-                                    <span>"Improved detection for dialogs and sheets"</span>
+                                <li class="changelog-item changelog-item-new">
+                                    <IconStar size=16 />
+                                    <span>"Release notes and support copy now match the downloadable build version and the current selectable placement modes"</span>
+                                </li>
+                                <li class="changelog-item changelog-item-new">
+                                    <IconStar size=16 />
+                                    <span>"Finder stays free, while browsers, terminals, mail apps, and IDEs remain part of the one-time lifetime unlock"</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
 
-                    // Version 0.1.0
+                    // Version 1.0.3
                     <div class="changelog-entry">
                         <div class="changelog-entry-header">
-                            <span class="changelog-version">"0.1.0"</span>
-                            <span class="changelog-date">"Preview Release"</span>
-                            <span class="changelog-badge changelog-badge-current">"Current"</span>
+                            <span class="changelog-version">"1.0.3"</span>
+                            <span class="changelog-date">"February 2026"</span>
                         </div>
                         <div class="changelog-entry-content">
-                            <h3 class="changelog-entry-title">"First Public Preview"</h3>
+                            <h3 class="changelog-entry-title">"Pricing + Access Update"</h3>
                             <p class="changelog-entry-description">
-                                "The first release of WindowDrop, bringing intelligent window positioning to macOS."
+                                "Free Finder tier and in-app lifetime unlock for all supported apps."
                             </p>
                             <h4 class="changelog-section-title">"Features"</h4>
                             <ul class="changelog-list">
+                                <li class="changelog-item changelog-item-new">
+                                    <IconStar size=16 />
+                                    <span>"Free mode now includes Finder support with no subscription"</span>
+                                </li>
+                                <li class="changelog-item changelog-item-new">
+                                    <IconStar size=16 />
+                                    <span>"One-time lifetime unlock ($7.99) for all supported apps"</span>
+                                </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
                                     <span>"One-shot mode: Arm once, position one window"</span>
@@ -85,22 +107,26 @@ pub fn Changelog() -> impl IntoView {
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Preview support"</span>
+                                    <span>"Chrome, Firefox, Edge, Brave, Arc support"</span>
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"TextEdit support"</span>
+                                    <span>"Terminal, iTerm2, Warp, WezTerm support"</span>
                                 </li>
                                 <li class="changelog-item changelog-item-new">
                                     <IconStar size=16 />
-                                    <span>"Notes support"</span>
+                                    <span>"Mail, Outlook, Spark, Mimestream support"</span>
+                                </li>
+                                <li class="changelog-item changelog-item-new">
+                                    <IconStar size=16 />
+                                    <span>"Xcode, VS Code, Cursor, IntelliJ support"</span>
                                 </li>
                             </ul>
                             <h4 class="changelog-section-title">"Placement Modes"</h4>
                             <ul class="changelog-list">
                                 <li class="changelog-item">
                                     <IconCheckCircle size=16 />
-                                    <span>"Cursor: Window top-left at mouse position"</span>
+                                    <span>"Cursor + Close Button: Close button under cursor (default)"</span>
                                 </li>
                                 <li class="changelog-item">
                                     <IconCheckCircle size=16 />
@@ -108,7 +134,7 @@ pub fn Changelog() -> impl IntoView {
                                 </li>
                                 <li class="changelog-item">
                                     <IconCheckCircle size=16 />
-                                    <span>"Title Bar: Window title bar at cursor for easy dragging"</span>
+                                    <span>"Titlebar Grab Zone: Title bar at cursor for easy dragging"</span>
                                 </li>
                             </ul>
                         </div>
@@ -117,14 +143,17 @@ pub fn Changelog() -> impl IntoView {
                 </div>
             </section>
 
-            // Subscribe
+            // Download CTA
             <section class="section changelog-subscribe">
                 <div class="container container-narrow text-center">
                     <IconTag size=32 />
-                    <h2 class="subscribe-title">"Stay Updated"</h2>
+                    <h2 class="subscribe-title">"Get WindowDrop"</h2>
                     <p class="subscribe-description">
-                        "Join our mailing list to get notified about new releases."
+                        "Try it free, then unlock with a one-time purchase."
                     </p>
+                    <div class="changelog-subscribe-cta">
+                        <CtaPrimary />
+                    </div>
                 </div>
             </section>
         </div>

@@ -21,7 +21,9 @@ WindowDrop.pro site - a Rust/Leptos CSR (client-side rendered) application with 
 ./scripts/run.sh
 ```
 
-Development server: http://127.0.0.1:8080
+On boot, `run.sh` kills any process already on the target port (3411 dev, 3410 prod) before starting. Use `./scripts/port-free.sh <port>` standalone if needed.
+
+Development server: http://127.0.0.1:3411
 Production server: http://127.0.0.1:3410
 
 ## Configuration
@@ -65,19 +67,22 @@ PORT=3410 ./target/release/windowdrop-server
 apps/website/site/
 ├── src/
 │   ├── main.rs          # CSR app entry (WASM)
-│   ├── lib.rs           # Component library
-│   └── bin/
-│       └── server.rs    # Production Axum server
+│   ├── bin/
+│   │   └── server.rs    # Production Axum server
+│   ├── components/      # UI components
+│   ├── pages/           # Page components
+│   └── ...
 ├── dist/                # Built assets (gitignored)
 ├── assets/              # Source assets
-├── public/              # Static files
+├── public/              # Static files (robots.txt, sitemap.xml)
 ├── styles/              # CSS
 ├── index.html           # Trunk entry point
 ├── Trunk.toml           # Trunk configuration
 ├── scripts/
 │   ├── setup.sh         # Initial setup
-│   └── run.sh           # Development/production runner
-├── .env.example         # Environment template
+│   ├── run.sh           # Development/production runner (frees port on boot)
+│   └── port-free.sh     # Kill process on given port
+├── .env.example         # Environment template (local dev only)
 └── STANDALONE.md        # This file
 ```
 

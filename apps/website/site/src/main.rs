@@ -7,6 +7,7 @@ mod content;
 mod pages;
 mod routes;
 mod seo;
+mod web_license;
 
 use app::App;
 

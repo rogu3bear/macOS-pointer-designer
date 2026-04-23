@@ -1,9 +1,11 @@
 pub mod accessibility;
 pub mod changelog;
+pub mod checkout_recover;
+pub mod checkout_success;
 pub mod download;
 pub mod home;
 pub mod not_found;
+pub mod pricing;
 pub mod privacy;
 pub mod privacy_choices;
 pub mod support;
-pub mod terms;

@@ -1,0 +1,227 @@
+/* Responsive: 320px → 4K+ (3840px)
+   =========================================
+   Full viewport coverage. Mobile-first,
+   scales up for 2K/4K displays.
+   ========================================= */
+
+/* --- Small phones (320px min) --- */
+@media (min-width: 320px) {
+  .container {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+}
+
+/* --- Tablet and up (768px) --- */
+@media (min-width: 768px) {
+  :root {
+    --max-width: 1200px;
+    --max-width-narrow: 800px;
+  }
+}
+
+/* --- Desktop (1280px) --- */
+@media (min-width: 1280px) {
+  :root {
+    --max-width: 1320px;
+    --max-width-narrow: 880px;
+    --spacing-2xl: 7rem;
+  }
+
+  body {
+    font-size: 18px;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 5vw, 5rem);
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+}
+
+/* --- Large desktop / 2K (1920px) --- */
+@media (min-width: 1920px) {
+  :root {
+    --max-width: 1500px;
+    --max-width-narrow: 960px;
+    --spacing-xl: 4.5rem;
+    --spacing-2xl: 8rem;
+  }
+
+  body {
+    font-size: 19px;
+  }
+
+  .hero {
+    min-height: 65vh;
+    padding: var(--spacing-2xl) 0;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 4vw, 5.5rem);
+  }
+
+  .hero-subhead {
+    font-size: clamp(1.125rem, 1.5vw, 1.75rem);
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 3.5vw, 4rem);
+  }
+
+  .hero-animation {
+    max-width: 1100px;
+  }
+}
+
+/* --- 2K+ (2560px) --- */
+@media (min-width: 2560px) {
+  :root {
+    --max-width: 1700px;
+    --max-width-narrow: 1080px;
+    --spacing-xl: 5rem;
+    --spacing-2xl: 9rem;
+  }
+
+  body {
+    font-size: 20px;
+  }
+
+  .hero {
+    min-height: 70vh;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 3.5vw, 6rem);
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 3vw, 4.5rem);
+  }
+
+  .hero-animation {
+    max-width: 1200px;
+  }
+
+  .section-subtitle {
+    font-size: 1.35rem;
+  }
+}
+
+/* --- 4K (3840px) --- */
+@media (min-width: 3840px) {
+  /* Taller header at 4K - increase anchor scroll offset */
+  [id] {
+    scroll-margin-top: 6rem;
+  }
+
+  /* Softer gradient scaling at 4K - prevent over-stretched backgrounds */
+  .site-layout::before {
+    background-size: 100% 100%, 150% 150%, 130% 130%, 100% 100%;
+  }
+
+  :root {
+    --max-width: 2000px;
+    --max-width-narrow: 1280px;
+    --spacing-xl: 5.5rem;
+    --spacing-2xl: 10rem;
+    --radius-lg: 1.125rem;
+    --radius-xl: 1.75rem;
+  }
+
+  body {
+    font-size: 22px;
+  }
+
+  .hero {
+    min-height: 70vh;
+    padding: var(--spacing-2xl) 0;
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 3vw, 7rem);
+  }
+
+  .hero-subhead {
+    font-size: clamp(1.125rem, 1.2vw, 2rem);
+  }
+
+  .section-title {
+    font-size: clamp(2rem, 2.5vw, 5rem);
+  }
+
+  .section-subtitle {
+    font-size: 1.5rem;
+    max-width: 720px;
+  }
+
+  .hero-animation {
+    max-width: 1400px;
+  }
+
+  .hero-animation-caption {
+    font-size: 1.35rem;
+  }
+
+  .how-it-works-steps {
+    max-width: 720px;
+  }
+
+  .step-title {
+    font-size: 1.25rem;
+  }
+
+  .step-description {
+    font-size: 1.05rem;
+  }
+
+  .container {
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+
+  .apps-grid {
+    gap: var(--spacing-xl);
+  }
+
+  .app-card {
+    padding: var(--spacing-xl);
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .site-nav a {
+    font-size: 1.1rem;
+  }
+}
+
+/* --- Mobile: tighter spacing on very small screens --- */
+@media (max-width: 480px) {
+  .hero-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-cta .btn {
+    width: 100%;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cta-buttons .btn {
+    width: 100%;
+  }
+}
+
+/* --- Ensure min width for layout stability --- */
+html {
+  min-width: 320px;
+}

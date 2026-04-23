@@ -24,6 +24,7 @@ tail -f ~/.logs/windowdrop-web/*.log
 | LaunchAgent | `com.windowdrop.server` |
 | Binary | `site/target/release/windowdrop-server` |
 | Health endpoint | `/healthz` |
+| Tunnel | `fe7d370f-93aa-4f87-9cf3-1ef0c7b2bf94` |
 
 ## Build & Deploy
 
@@ -39,6 +40,20 @@ launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
 # Verify
 curl http://localhost:3410/healthz
 ```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Server port (default: 3410) |
+| `RUST_LOG` | No | Log level (default: `info`) |
+| `STRIPE_API_KEY` | Yes | Stripe secret key for checkout |
+| `WINDOWDROP_WEB_LICENSE_PRIVATE_KEY_PATH` | Yes | Path to P-256 PKCS#8 PEM for token signing |
+| `WINDOWDROP_SITE_URL` | No | Override base URL (default: `https://windowdrop.pro`) |
+| `SITE_LIFETIME_MODE` | No | `web` (Stripe checkout) or `in-app` (App Store) — default: `web` |
+| `RESEND_API_KEY` | No | Resend API key for license email delivery |
+| `RESEND_FROM_EMAIL` | No | Sender address (default: `WindowDrop <licenses@windowdrop.pro>`) |
+| `WINDOWDROP_DMG_URL` | No | Override the default versioned DMG download URL |
 
 ## Common Issues
 

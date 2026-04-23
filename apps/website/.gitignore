@@ -40,7 +40,8 @@ npm-debug.log*
 
 # Rust
 **/*.rs.bk
-Cargo.lock
+check.log
+site/target-cli/
 
 # AI / tooling (do not commit)
 .serena/

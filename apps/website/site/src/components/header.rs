@@ -12,8 +12,8 @@ pub fn Header() -> impl IntoView {
                 </A>
                 <nav class="site-nav" aria-label="Main Navigation">
                     <A href="/" exact=true active_class="active">"Home"</A>
-                    <A href="/download" active_class="active">"Download"</A>
-                    <A href="/privacy" active_class="active">"Privacy"</A>
+                    <A href="/download" active_class="active">"Download Free"</A>
+                    <A href="/pricing" active_class="active">"Pricing"</A>
                     <A href="/support" active_class="active">"Support"</A>
                     <A href="/changelog" active_class="active">"Changelog"</A>
                 </nav>

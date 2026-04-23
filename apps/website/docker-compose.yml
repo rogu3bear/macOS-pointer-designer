@@ -11,3 +11,15 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: windowdrop-web-tunnel
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${TUNNEL_TOKEN}"]
+    env_file: .env
+    depends_on:
+      app:
+        condition: service_healthy
+    profiles:
+      - tunnel

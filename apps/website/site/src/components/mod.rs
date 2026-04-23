@@ -6,6 +6,7 @@ pub mod faq_section;
 pub mod footer;
 pub mod header;
 pub mod hero_animation;
+pub mod hero_demo_block;
 pub mod icons;
 pub mod liquid_background;
 pub mod section;

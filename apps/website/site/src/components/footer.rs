@@ -12,22 +12,21 @@ pub fn Footer() -> impl IntoView {
                 <div class="footer-copyright">
                     {format!("© {} WindowDrop", year)}
                 </div>
-                <nav class="footer-nav">
+                <nav class="footer-nav" aria-label="Footer navigation">
                     <A href="/">"Home"</A>
-                    <A href="/download">"Download"</A>
+                    <A href="/download">"Download Free"</A>
                     <A href="/privacy">"Privacy"</A>
                     <A href="/privacy-choices">"Privacy Choices"</A>
-                    <A href="/terms">"Terms"</A>
                     <A href="/accessibility">"Accessibility"</A>
                     <A href="/support">"Support"</A>
                     <A href="/changelog">"Changelog"</A>
                 </nav>
             </div>
-            <div class="container" style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--color-text-muted);">
+            <div class="container footer-meta">
                 "Site by "
-                <a href="https://jkca.me" style="color: var(--color-text-muted);">"James KC Auchterlonie"</a>
+                <a href="https://jkca.me">"James KC Auchterlonie"</a>
                 " · "
-                <a href="https://mlnavigator.com" style="color: var(--color-text-muted);">"MLNavigator"</a>
+                <a href="https://mlnavigator.com">"MLNavigator"</a>
             </div>
         </footer>
     }

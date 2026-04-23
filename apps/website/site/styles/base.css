@@ -27,10 +27,13 @@
      TEXT HIERARCHY
      Warm blacks, WCAG AA compliant
      =========================================== */
-  --color-text: #1D1D1F;
-  --color-text-secondary: #48484A;
-  --color-text-muted: #86868B;
-  --color-text-light: #AEAEB2;
+  --color-text: #171A22;
+  --color-text-secondary: #323949;
+  --color-text-muted: #4A566F;
+  --color-text-light: #69758D;
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
 
   /* ===========================================
      BACKGROUNDS
@@ -164,16 +167,21 @@
     -apple-system, blinkmacsystemfont, "SF Pro Display", "SF Pro Text",
     system-ui, "Segoe UI", roboto, oxygen, ubuntu, cantarell,
     "Helvetica Neue", arial, sans-serif;
-  --font-family-mono: "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono", 
+  --font-family-mono: "SF Mono", "Monaco", "Cascadia Code", "Roboto Mono",
     "Courier New", monospace;
+  --font-size-h1: clamp(2.4rem, 5vw, 4rem);
+  --font-size-h2: clamp(1.95rem, 4vw, 3rem);
+  --font-size-h3: clamp(1.35rem, 3vw, 1.9rem);
+  --font-size-body: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --font-size-small: 0.95rem;
 
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 2rem;
-  --spacing-xl: 4rem;
-  --spacing-2xl: 6rem;
+  --spacing-xl: 3.25rem;
+  --spacing-2xl: 5rem;
 
   /* Layout */
   --max-width: 1200px;
@@ -202,12 +210,17 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Anchor scroll offset for sticky header - prevents content hiding under header */
+[id] {
+  scroll-margin-top: 5rem;
+}
+
 body {
   font-family: var(--font-family);
-  color: var(--color-text);
+  color: var(--text-primary);
   background-color: var(--color-bg);
-  line-height: 1.7;
-  font-size: 18px;
+  line-height: 1.62;
+  font-size: var(--font-size-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -215,34 +228,38 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  line-height: 1.2;
+  line-height: 1.18;
   margin-bottom: var(--spacing-md);
-  font-weight: 700;
+  font-weight: 750;
   letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 h1 {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-size: var(--font-size-h1);
   font-weight: 800;
 }
 
 h2 {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: var(--font-size-h2);
 }
 
 h3 {
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-size: var(--font-size-h3);
 }
 
 p {
   margin-bottom: var(--spacing-md);
   max-width: 65ch;
+  color: var(--text-secondary);
 }
 
 a {
   color: inherit;
   text-decoration: none;
-  transition: color var(--animation-duration-fast);
+  transition:
+    color var(--animation-duration-fast),
+    opacity var(--animation-duration-fast);
 }
 
 a:hover {
@@ -284,8 +301,16 @@ code {
   text-align: center;
 }
 
+/* Section notes and captions - centered by default (codebase-wide) */
+.how-it-works-note,
+.email-capture-privacy,
+.download-hero-note,
+.hero-animation-caption {
+  text-align: center;
+}
+
 .text-muted {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .text-gradient {
@@ -338,6 +363,17 @@ code {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Focus styles - WCAG 2.1 visible focus requirement */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-primary-dark);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(90, 200, 250, 0.3);
+  border-radius: var(--radius-sm);
 }
 
 /* Reduced Motion */

@@ -4,6 +4,8 @@
 //! allowing the site to adapt to different monetization phases without
 //! code changes.
 
+use std::sync::LazyLock;
+
 /// The active CTA mode determines button labels and actions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
@@ -18,18 +20,65 @@ pub enum CtaMode {
     AppStoreLink,
 }
 
+/// The lifetime purchase route rendered on `/pricing`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LifetimeCtaMode {
+    /// Route users into the app/download flow and keep StoreKit as source of truth.
+    InApp,
+    /// Route users through the server-backed Stripe checkout and web-license flow.
+    Web,
+}
+
+impl LifetimeCtaMode {
+    pub fn from_env(raw: Option<&'static str>) -> Self {
+        match raw {
+            Some("web") => Self::Web,
+            Some("in-app") | Some("in_app") | Some("app") => Self::InApp,
+            _ => Self::InApp,
+        }
+    }
+
+    pub fn href(self) -> &'static str {
+        match self {
+            Self::InApp => "/download",
+            Self::Web => "/checkout/lifetime",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::InApp => "Buy Lifetime in App",
+            Self::Web => "Buy Lifetime",
+        }
+    }
+
+    pub fn secure_note(self) -> &'static str {
+        match self {
+            Self::InApp => "One-time lifetime unlock in app. No subscription.",
+            Self::Web => "Secure Stripe checkout. Download the app and activate your lifetime unlock after payment.",
+        }
+    }
+}
+
 /// Site-wide configuration.
 #[derive(Debug, Clone)]
 pub struct SiteConfig {
     /// Current CTA mode
     pub cta_mode: CtaMode,
-    /// URL for trial download (if available)
+    /// Direct URL for the DMG download (usually /downloads/, optionally overridden)
     pub trial_url: Option<&'static str>,
+    /// Path to the download page (always "/download")
+    pub download_page_url: &'static str,
     /// URL for waitlist signup (if available)
     #[allow(dead_code)]
     pub waitlist_url: Option<&'static str>,
     /// URL for App Store (if available)
     pub store_url: Option<&'static str>,
+    /// The effective lifetime checkout mode.
+    #[allow(dead_code)]
+    pub lifetime_cta_mode: LifetimeCtaMode,
+    /// URL for the lifetime CTA target
+    pub lifetime_cta_href: &'static str,
     /// Whether animations are enabled
     pub animation_enabled: bool,
     /// Whether email capture is enabled
@@ -37,23 +86,35 @@ pub struct SiteConfig {
 }
 
 /// Default configuration.
-///
-/// Currently set to `NotifyMe` mode since no download URLs exist yet.
-/// Update these values when trial/store links become available.
-pub const CONFIG: SiteConfig = SiteConfig {
-    cta_mode: CtaMode::NotifyMe,
-    trial_url: None,
-    waitlist_url: None,
-    store_url: None,
-    animation_enabled: true,
-    email_capture_enabled: true,
-};
+pub static CONFIG: LazyLock<SiteConfig> = LazyLock::new(|| {
+    let lifetime_cta_mode = LifetimeCtaMode::from_env(option_env!("SITE_LIFETIME_MODE"));
+
+    let trial_url = option_env!("WINDOWDROP_DMG_URL")
+        .map(str::to_string)
+        .or_else(|| {
+            option_env!("WINDOWDROP_RELEASE_VERSION")
+                .map(|version| format!("/downloads/WindowDrop-{version}.dmg"))
+        })
+        .map(|url| Box::leak(url.into_boxed_str()) as &'static str);
+
+    SiteConfig {
+        cta_mode: CtaMode::TrialDownload,
+        trial_url,
+        download_page_url: "/download",
+        waitlist_url: None,
+        store_url: option_env!("APP_STORE_URL"),
+        lifetime_cta_mode,
+        lifetime_cta_href: lifetime_cta_mode.href(),
+        animation_enabled: true,
+        email_capture_enabled: true,
+    }
+});
 
 impl SiteConfig {
     /// Returns the primary CTA label based on the current mode.
     pub fn primary_cta_label(&self) -> &'static str {
         match self.cta_mode {
-            CtaMode::TrialDownload => "Download WindowDrop",
+            CtaMode::TrialDownload => "Download Free",
             CtaMode::EarlyAccess => "Get Early Access",
             CtaMode::NotifyMe => "Get Notified",
             CtaMode::AppStoreLink => "Download on App Store",
@@ -61,9 +122,13 @@ impl SiteConfig {
     }
 
     /// Returns the primary CTA URL, or None if unavailable.
+    ///
+    /// For download modes this points to the `/download` page (not the direct
+    /// DMG URL) so the user lands on the page with system requirements and
+    /// installation steps.
     pub fn primary_cta_url(&self) -> Option<&'static str> {
         match self.cta_mode {
-            CtaMode::TrialDownload | CtaMode::EarlyAccess => self.trial_url,
+            CtaMode::TrialDownload | CtaMode::EarlyAccess => Some(self.download_page_url),
             CtaMode::NotifyMe => None, // Uses email capture instead
             CtaMode::AppStoreLink => self.store_url,
         }
@@ -79,5 +144,50 @@ impl SiteConfig {
     #[allow(dead_code)]
     pub fn has_functional_cta(&self) -> bool {
         self.primary_cta_url().is_some() || self.email_capture_enabled
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CtaMode, LifetimeCtaMode, SiteConfig};
+
+    #[test]
+    fn lifetime_mode_defaults_to_in_app() {
+        assert_eq!(LifetimeCtaMode::from_env(None), LifetimeCtaMode::InApp);
+        assert_eq!(
+            LifetimeCtaMode::from_env(Some("bogus")),
+            LifetimeCtaMode::InApp
+        );
+    }
+
+    #[test]
+    fn in_app_mode_ignores_checkout_url() {
+        assert_eq!(LifetimeCtaMode::InApp.href(), "/download");
+        assert_eq!(LifetimeCtaMode::InApp.label(), "Buy Lifetime in App");
+    }
+
+    #[test]
+    fn web_mode_routes_to_checkout_endpoint() {
+        assert_eq!(LifetimeCtaMode::Web.href(), "/checkout/lifetime");
+        assert_eq!(LifetimeCtaMode::Web.label(), "Buy Lifetime");
+    }
+
+    #[test]
+    fn site_config_can_carry_in_app_mode() {
+        let config = SiteConfig {
+            cta_mode: CtaMode::TrialDownload,
+            trial_url: Some("/downloads/WindowDrop-1.1.0.dmg"),
+            download_page_url: "/download",
+            waitlist_url: None,
+            store_url: None,
+            lifetime_cta_mode: LifetimeCtaMode::InApp,
+            lifetime_cta_href: LifetimeCtaMode::InApp.href(),
+            animation_enabled: true,
+            email_capture_enabled: true,
+        };
+
+        assert_eq!(config.lifetime_cta_mode, LifetimeCtaMode::InApp);
+        assert_eq!(config.lifetime_cta_href, "/download");
+        assert_eq!(crate::web_license::WEB_LICENSE_PRICE_LABEL, "$7.99");
     }
 }

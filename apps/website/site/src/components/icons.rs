@@ -702,29 +702,3 @@ pub fn IconTag(
         </svg>
     }
 }
-
-#[component]
-pub fn IconAccessibility(
-    #[prop(default = 24)] size: u32,
-    #[prop(default = "currentColor")] color: &'static str,
-) -> impl IntoView {
-    view! {
-        <svg
-            width=size
-            height=size
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke=color
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="icon icon-accessibility"
-        >
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="7.5" r="1.5" fill=color stroke="none"/>
-            <path d="M7 11h10"/>
-            <path d="M12 11v4"/>
-            <path d="M10 19l2-4 2 4"/>
-        </svg>
-    }
-}
