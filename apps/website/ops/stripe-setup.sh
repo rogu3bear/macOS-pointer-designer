@@ -2,7 +2,7 @@
 # Create Stripe pricing artifacts for WindowDrop:
 # - Lifetime one-time unlock: $7.99
 #
-# Run from drop-web root: ./ops/stripe-setup.sh
+# Run from apps/website: ./ops/stripe-setup.sh
 #
 # Prerequisites:
 # - stripe CLI authenticated (stripe login) or STRIPE_API_KEY env

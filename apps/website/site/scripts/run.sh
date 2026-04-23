@@ -6,6 +6,11 @@ SITE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT_ROOT="$(cd "$SITE_DIR/.." && pwd)"
 cd "$SITE_DIR"
 
+if [[ -f "$PROJECT_ROOT/ops/release-env.sh" ]]; then
+    # shellcheck source=../../ops/release-env.sh
+    source "$PROJECT_ROOT/ops/release-env.sh"
+fi
+
 load_dotenv() {
     local env_file="$1"
     [[ -f "$env_file" ]] || return 0

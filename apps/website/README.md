@@ -12,6 +12,8 @@ The former standalone `drop-web` repo is retired; all website changes should lan
 - Logs: `~/.logs/windowdrop-web/`
 - Dev: `cd site && trunk serve`
 - Build: `cd site && ./scripts/build-release.sh`
+- Current public app release: WindowDrop `1.0.1` from `rogu3bear/windowdrop`
+- Canonical release metadata: `ops/release-env.sh`
 
 ## 🌐 Live Site
 
@@ -21,10 +23,9 @@ The former standalone `drop-web` repo is retired; all website changes should lan
 
 - **Framework**: [Leptos](https://github.com/leptos-rs/leptos) 0.6 (CSR)
 - **Build**: [Trunk](https://trunkrs.dev/) + WebAssembly
-- **Server**: Axum (static files, port 3410)
-- **Proxy**: Caddy (local reverse proxy)
-- **Tunnel**: Cloudflare Tunnel (remote config)
-- **Service**: macOS launchd
+- **Production host**: Cloudflare Pages project `windowdrop`
+- **Local/optional server**: Axum (static files, port 3410; web checkout endpoints only when enabled)
+- **Service**: macOS launchd for local production preview
 
 ## 🏗️ Project Structure
 
@@ -64,14 +65,16 @@ cd site
 ## 🔧 Deployment
 
 ```bash
-# Rebuild and restart
-cd site && ./scripts/build-release.sh
+# Build with current release metadata
+cd site
+./scripts/build-release.sh
+
+# Deploy Cloudflare Pages through the shared control plane
+cd ..
+./ops/deploy-pages.sh
+
+# Optional local production preview
 launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
-
-# Canonical local service entrypoint from apps/website/
-./site/scripts/run.sh prod
-
-# Verify
 curl http://127.0.0.1:3410/healthz
 ```
 
@@ -91,6 +94,8 @@ curl http://127.0.0.1:3410/healthz
 
 - **Service**: `com.windowdrop.server` (launchd)
 - **Port**: 3410
+- **Release metadata**: `ops/release-env.sh`
+- **Public checkout mode**: `SITE_LIFETIME_MODE=in-app` unless web checkout proxy is verified live
 
 ## 🎯 CTA Configuration
 
@@ -98,9 +103,9 @@ The site supports multiple CTA modes configured in `src/config.rs`:
 
 | Mode | Label | Behavior |
 |------|-------|----------|
-| `TrialDownload` | "Download WindowDrop" | Links to `trial_url` |
+| `TrialDownload` | "Download Free" | Links to the download page and current release asset |
 | `EarlyAccess` | "Get Early Access" | Links to `trial_url` |
-| `NotifyMe` | "Get Notified" | Email capture form (default) |
+| `NotifyMe` | "Get Notified" | Email capture form |
 | `AppStoreLink` | "Download on App Store" | Links to `store_url` |
 
 ### Changing CTA Mode
@@ -111,16 +116,15 @@ Lifetime pricing mode is compile-time config in `src/config.rs`:
 let lifetime_cta_mode = LifetimeCtaMode::from_env(option_env!("SITE_LIFETIME_MODE"));
 ```
 
-### Pre-launch (Current)
+### Current Public Posture
 
-The site defaults to `NotifyMe` mode with email capture enabled. This captures user intent without committing to pricing.
+The public site is in release/download mode. `ops/release-env.sh` points the build to the latest verified public release assets:
 
-### Post-launch
+- `WINDOWDROP_RELEASE_VERSION=1.0.1`
+- `WINDOWDROP_DMG_URL=https://github.com/rogu3bear/windowdrop/releases/download/v1.0.1/WindowDrop-1.0.1.dmg`
+- matching ZIP and checksums URLs on the same GitHub release
 
-When ready to monetize:
-1. Update `cta_mode` to `TrialDownload` or `AppStoreLink`
-2. Set the appropriate URL
-3. Rebuild and deploy
+Override those values only when a newer public release is published and verified.
 
 For pricing-page lifetime checkout:
 - Default to `SITE_LIFETIME_MODE=in-app` so `/pricing` routes lifetime purchases to `/download`.

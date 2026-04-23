@@ -1,44 +1,45 @@
 # Deployment
 
-## Primary: Axum + Cloudflare Tunnel
+## Canonical: Cloudflare Pages (`SITE_LIFETIME_MODE=in-app`)
 
-Production uses the Axum static file server on port 3410, behind Caddy, exposed via Cloudflare Tunnel.
+Production serves the public marketing, pricing, changelog, support, and download site from the Cloudflare Pages project `windowdrop`.
 
-1. Build: `cd site && ./scripts/build-release.sh`
-2. Runtime environment (see `.env.example` for all vars):
-   - `SITE_LIFETIME_MODE=web` to route the pricing CTA to `/checkout/lifetime`
-   - `STRIPE_API_KEY` for server-side Stripe Checkout session creation and Stripe purchase lookup
-   - `WINDOWDROP_WEB_LICENSE_PRIVATE_KEY_PATH` for signing the activation token returned by `/api/web-license/*`
-   - `WINDOWDROP_SITE_URL` (optional) to override the default `https://windowdrop.pro` redirect base
-   - `RESEND_API_KEY` + `RESEND_FROM_EMAIL` for license email delivery via Resend
-   - `WINDOWDROP_DMG_URL` (optional) to override the default versioned `/downloads/WindowDrop-<version>.dmg` link
-3. Run: `PORT=3410 ./target/release/windowdrop-server` (or via launchd / Docker)
-4. Health: `curl http://127.0.0.1:3410/healthz`
-5. Smoke test:
-   - `curl -I http://127.0.0.1:3410/checkout/lifetime`
-   - With runtime secrets configured: expect `302 Found` redirecting to Stripe Checkout
-   - Without runtime secrets: expect `503 Service Unavailable` JSON explaining which checkout env is missing
+1. Confirm the latest public release in `ops/release-env.sh`.
+2. Build and deploy through the Cloudflare control plane:
 
-See `README.md` and `Dockerfile` for Docker and launchd setup.
+   ```bash
+   ./ops/deploy-pages.sh
+   ```
 
-This runtime is required when `SITE_LIFETIME_MODE=web`, because the Rust server owns:
+3. Ensure `windowdrop.pro` and `www.windowdrop.pro` are attached as Pages custom domains.
+4. Verify:
+   - `curl -I https://windowdrop.pro`
+   - `curl -I https://windowdrop.pro/download`
+   - `curl -I https://windowdrop.pro/pricing`
+
+The current public release assets are hosted on GitHub Releases in `rogu3bear/windowdrop`:
+- DMG: `WindowDrop-1.0.1.dmg`
+- ZIP: `WindowDrop-1.0.1.zip`
+- Checksums: `WindowDrop-1.0.1-checksums.txt`
+
+## Optional: Axum Web Checkout Runtime
+
+Use the Axum runtime only when intentionally enabling website checkout with `SITE_LIFETIME_MODE=web`. It owns:
 - `GET /checkout/lifetime`
 - `GET /api/web-license/session`
 - `POST /api/web-license/activate`
 - `POST /api/web-license/recover`
 
-## Alternative: Cloudflare Pages (`SITE_LIFETIME_MODE=in-app`)
+Runtime environment (see `.env.example` for all vars):
+   - `SITE_LIFETIME_MODE=web` to route the pricing CTA to `/checkout/lifetime`
+   - `STRIPE_API_KEY` for server-side Stripe Checkout session creation and Stripe purchase lookup
+   - `WINDOWDROP_WEB_LICENSE_PRIVATE_KEY_PATH` for signing the activation token returned by `/api/web-license/*`
+   - `WINDOWDROP_SITE_URL` (optional) to override the default `https://windowdrop.pro` redirect base
+   - `RESEND_API_KEY` + `RESEND_FROM_EMAIL` for license email delivery via Resend
 
-For the marketing site, waitlist capture, and app downloads without the Axum runtime:
+Smoke test:
+   - `curl -I http://127.0.0.1:3410/checkout/lifetime`
+   - With runtime secrets configured: expect `302 Found` redirecting to Stripe Checkout
+   - Without runtime secrets: expect `503 Service Unavailable` JSON explaining which checkout env is missing
 
-1. Run the root deploy script: `./ops/deploy-pages.sh`
-2. Ensure the Cloudflare Pages project `windowdrop` has these production secrets:
-   - `RESEND_API_KEY`
-   - `RESEND_AUDIENCE_ID`
-   - optional: `NOTIFY_EMAIL`, `TURNSTILE_SECRET`
-3. Ensure `windowdrop.pro` and `www.windowdrop.pro` are attached as Pages custom domains.
-4. Verify:
-   - `curl -I https://windowdrop.pro`
-   - `curl -sS -X POST https://windowdrop.pro/api/subscribe -H 'Origin: https://windowdrop.pro' -H 'Content-Type: application/json' --data '{"email":"invalid"}'`
-
-The repo-backed Pages Function lives at [`functions/api/subscribe.js`](/Users/star/Dev/windowdrop/functions/api/subscribe.js). Pages hosting covers the email capture flow, but the Stripe checkout redirect, session verification, activation exchange, and purchase recovery still require the Axum runtime above.
+Do not switch the public Pages build to `SITE_LIFETIME_MODE=web` until the custom-domain proxy is verified live for checkout and recovery.

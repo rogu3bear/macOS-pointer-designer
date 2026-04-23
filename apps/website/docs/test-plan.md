@@ -2,7 +2,7 @@
 
 ## Automated Checks
 
-Run from `drop-web root`: `./ops/verify.sh`
+Run from `apps/website`: `./ops/verify.sh`
 
 Or manually in `site/`:
 1. **Compilation**: `cargo check`
@@ -11,7 +11,7 @@ Or manually in `site/`:
 4. **Clippy**: `cargo clippy -- -D warnings`
 5. **Server clippy**: `cargo clippy --features ssr --bin windowdrop-server -- -D warnings`
 6. **Tests**: `cargo test --features ssr`
-7. **Build**: `trunk build --release`
+7. **Build**: `./scripts/build-release.sh` (sources `../ops/release-env.sh`)
 
 ## Manual Verification
 1. **Navigation**: Click all header/footer links. Verify URL changes and content updates without reload.
@@ -22,7 +22,7 @@ Or manually in `site/`:
 4. **Assets**: Verify Logo and Favicon load.
 5. **Routes**:
    - `/`: Check Hero, "How it works", and "Works with" (Finder, Safari, Terminal, Mail, Chrome/Firefox/Xcode & more).
-   - `/download`: In pre-launch mode: email capture, "When Released" section; in release mode: download links, Alternative Downloads, Verify. Check requirements and installation steps.
+   - `/download`: Check the current release version, GitHub release DMG, ZIP, and checksums links. Check requirements and installation steps.
    - `/pricing`: Check free Finder (`$0`) and lifetime unlock (`$7.99 one-time`) cards, free CTA ("Download Free"), and lifetime CTA:
      - Default/release-safe mode: CTA is "Buy Lifetime in App" to `/download`.
      - Web checkout mode: CTA is "Buy Lifetime" to `/checkout/lifetime` only when `SITE_LIFETIME_MODE=web` and the live Pages proxy is verified healthy.
@@ -30,5 +30,5 @@ Or manually in `site/`:
    - `/checkout/recover`: In web mode, verify email-based recovery flow and activation code rendering.
    - `/privacy`: Check promise cards and bullets.
    - `/support`: Check FAQ, troubleshooting (current placement modes: Cursor + Close Button, Titlebar Grab Zone), and supported-apps text.
-   - `/changelog`: Check the "Current" entry matches `WINDOWDROP_RELEASE_VERSION` / the downloadable DMG version, verify the release notes mention download + activation truthfully, and confirm historical entries still cover placement modes, app coverage (browsers, terminals, mail, IDEs), and the Stay Updated CTA.
+   - `/changelog`: Check the "Current" entry matches `ops/release-env.sh` / the downloadable DMG version, verify the release notes mention download + activation truthfully, and confirm historical entries still cover placement modes, app coverage (browsers, terminals, mail, IDEs), and the Get WindowDrop CTA.
    - `/404`: Visit a random URL to verify Not Found page.

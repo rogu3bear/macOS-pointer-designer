@@ -1,7 +1,7 @@
 #!/bin/bash
 # WindowDrop Site Verification Script
 # Runs all automated checks to verify the site builds correctly.
-# Run from drop-web root: ./ops/verify.sh
+# Run from apps/website: ./ops/verify.sh
 
 set -euo pipefail
 
@@ -11,8 +11,10 @@ NC='\033[0m' # No Color
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 SITE_DIR="$(cd "$(dirname "$0")/../site" && pwd)"
-if [[ -x "$ROOT_DIR/ops/release-version.sh" ]]; then
-    export WINDOWDROP_RELEASE_VERSION="${WINDOWDROP_RELEASE_VERSION:-$("$ROOT_DIR/ops/release-version.sh")}"
+WEBSITE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+if [[ -f "$WEBSITE_DIR/ops/release-env.sh" ]]; then
+    # shellcheck source=release-env.sh
+    source "$WEBSITE_DIR/ops/release-env.sh"
 fi
 cd "$SITE_DIR"
 

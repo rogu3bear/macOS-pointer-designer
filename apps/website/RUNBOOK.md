@@ -1,8 +1,10 @@
 # WindowDrop Website Runbook
 
-> **Domain:** windowdrop.pro | **Port:** 3410 | **Stack:** Rust/Leptos 0.6 CSR
+> **Domain:** windowdrop.pro | **Port:** 3410 local preview | **Stack:** Rust/Leptos 0.6 CSR
 
 Canonical checkout: `/Users/star/dev/macOS-pointer-designer/apps/website`
+Production host: Cloudflare Pages project `windowdrop`
+Current public release: WindowDrop `1.0.1` from `rogu3bear/windowdrop`
 
 ## Quick Commands
 
@@ -24,17 +26,21 @@ tail -f ~/.logs/windowdrop-web/*.log
 | LaunchAgent | `com.windowdrop.server` |
 | Binary | `site/target/release/windowdrop-server` |
 | Health endpoint | `/healthz` |
-| Tunnel | `fe7d370f-93aa-4f87-9cf3-1ef0c7b2bf94` |
+| Pages project | `windowdrop` |
+| Release metadata | `ops/release-env.sh` |
 
 ## Build & Deploy
 
 ```bash
-cd site
+cd /Users/star/dev/macOS-pointer-designer/apps/website
 
-# Build WASM + server
-./scripts/build-release.sh
+# Build WASM + server using the current release metadata
+cd site && ./scripts/build-release.sh
 
-# Restart
+# Deploy the public Pages site through the shared Cloudflare control plane
+cd .. && ./ops/deploy-pages.sh
+
+# Optional local preview restart
 launchctl kickstart -k gui/$(id -u)/com.windowdrop.server
 
 # Verify
@@ -50,10 +56,12 @@ curl http://localhost:3410/healthz
 | `STRIPE_API_KEY` | Yes | Stripe secret key for checkout |
 | `WINDOWDROP_WEB_LICENSE_PRIVATE_KEY_PATH` | Yes | Path to P-256 PKCS#8 PEM for token signing |
 | `WINDOWDROP_SITE_URL` | No | Override base URL (default: `https://windowdrop.pro`) |
-| `SITE_LIFETIME_MODE` | No | `web` (Stripe checkout) or `in-app` (App Store) — default: `web` |
+| `SITE_LIFETIME_MODE` | No | `web` (Stripe checkout) or `in-app` (download/app purchase flow) — default: `in-app` |
 | `RESEND_API_KEY` | No | Resend API key for license email delivery |
 | `RESEND_FROM_EMAIL` | No | Sender address (default: `WindowDrop <licenses@windowdrop.pro>`) |
-| `WINDOWDROP_DMG_URL` | No | Override the default versioned DMG download URL |
+| `WINDOWDROP_DMG_URL` | No | Override the current GitHub release DMG URL from `ops/release-env.sh` |
+| `WINDOWDROP_ZIP_URL` | No | Override the current GitHub release ZIP URL from `ops/release-env.sh` |
+| `WINDOWDROP_CHECKSUMS_URL` | No | Override the current GitHub release checksums URL from `ops/release-env.sh` |
 
 ## Common Issues
 
@@ -63,11 +71,17 @@ curl http://localhost:3410/healthz
 2. If missing, rebuild: `cd site && ./scripts/build-release.sh`
 3. Check logs: `tail -50 ~/.logs/windowdrop-web/*.log`
 
-### 502 from Cloudflare
+### Public site mismatch
 
-1. Verify service running: `lsof -i :3410`
-2. Verify the Pages deployment and custom-domain state in Cloudflare
-3. Test locally: `curl http://localhost:3410/healthz`
+1. Confirm `ops/release-env.sh` points at the latest verified release.
+2. Rebuild and deploy with `./ops/deploy-pages.sh`.
+3. Verify `https://windowdrop.pro/download` and `https://windowdrop.pro/changelog`.
+
+### Web checkout mismatch
+
+1. Keep public Pages in `SITE_LIFETIME_MODE=in-app` unless the web checkout proxy is verified live.
+2. For web mode, verify the Axum origin is healthy and `/checkout/lifetime` redirects to Stripe.
+3. If the public site is static-only, do not advertise website checkout recovery as live.
 
 ## Development
 
@@ -80,4 +94,4 @@ trunk serve  # Dev server at localhost:8080
 
 - CSR only (no SSR hydration) - uses Trunk, not cargo-leptos
 - Actual app in `site/` subfolder
-- WASM must be rebuilt with `trunk build` before server restart
+- WASM must be rebuilt with current release metadata before deploy/restart
