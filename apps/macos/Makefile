@@ -103,7 +103,7 @@ release-metadata-check:
 
 # Verify notarization credentials before spending time building a release candidate.
 notary-profile-check:
-	@xcrun notarytool history --keychain-profile "$(NOTARY_PROFILE)" >/dev/null
+	@./Scripts/notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)"
 
 # Code signing (requires valid Developer ID)
 sign: release

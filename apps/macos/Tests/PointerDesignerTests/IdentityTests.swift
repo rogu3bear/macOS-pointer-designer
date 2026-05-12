@@ -379,12 +379,16 @@ final class IdentityTests: XCTestCase {
 
     func testNotarizeTargetDoesNotRebuildAfterSigning() throws {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let notaryProfileCheck = try loadText(relativeToThisFile: "../../Scripts/notary-profile-check.sh")
 
         XCTAssertTrue(makefile.contains("dmg: release create-dmg"))
         XCTAssertTrue(makefile.contains("signed-dmg: sign create-dmg sign-dmg"))
         XCTAssertTrue(makefile.contains("sign-dmg:"))
         XCTAssertTrue(makefile.contains("notary-profile-check:"))
-        XCTAssertTrue(makefile.contains(#"notarytool history --keychain-profile "$(NOTARY_PROFILE)""#))
+        XCTAssertTrue(makefile.contains(#"notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)""#))
+        XCTAssertTrue(notaryProfileCheck.contains("notarytool history --keychain-profile"))
+        XCTAssertTrue(notaryProfileCheck.contains("notarytool store-credentials"))
+        XCTAssertTrue(notaryProfileCheck.contains("Do not commit Apple IDs"))
         XCTAssertTrue(makefile.contains("notarize: notary-profile-check signed-dmg"))
         XCTAssertTrue(makefile.contains("release-artifact-readiness:"))
         XCTAssertTrue(makefile.contains("--skip-release-metadata"))
