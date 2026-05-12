@@ -11,18 +11,34 @@ SKIP_RELEASE_METADATA=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --app)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --app requires a path" >&2
+                exit 2
+            fi
             APP_PATH="$2"
             shift 2
             ;;
         --dmg)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --dmg requires a path" >&2
+                exit 2
+            fi
             DMG_PATH="$2"
             shift 2
             ;;
         --notary-profile)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --notary-profile requires a name" >&2
+                exit 2
+            fi
             NOTARY_PROFILE="$2"
             shift 2
             ;;
         --repo)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --repo requires OWNER/REPO" >&2
+                exit 2
+            fi
             REPO="$2"
             shift 2
             ;;

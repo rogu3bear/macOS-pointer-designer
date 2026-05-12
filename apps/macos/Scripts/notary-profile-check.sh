@@ -6,6 +6,10 @@ NOTARY_PROFILE="notarization"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --notary-profile)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --notary-profile requires a name" >&2
+                exit 2
+            fi
             NOTARY_PROFILE="$2"
             shift 2
             ;;
