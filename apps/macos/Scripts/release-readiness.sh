@@ -6,6 +6,7 @@ DMG_PATH="CursorDesigner.dmg"
 NOTARY_PROFILE="notarization"
 REPO="rogu3bear/macOS-pointer-designer"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SKIP_RELEASE_METADATA=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -25,8 +26,12 @@ while [[ $# -gt 0 ]]; do
             REPO="$2"
             shift 2
             ;;
+        --skip-release-metadata)
+            SKIP_RELEASE_METADATA=true
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME] [--repo OWNER/REPO]"
+            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME] [--repo OWNER/REPO] [--skip-release-metadata]"
             exit 0
             ;;
         *)
@@ -36,11 +41,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "=== Cursor Designer Release Readiness ==="
+if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
+    echo "=== Cursor Designer Release Artifact Readiness ==="
+else
+    echo "=== Cursor Designer Release Readiness ==="
+fi
 echo "App:             $APP_PATH"
 echo "DMG:             $DMG_PATH"
 echo "Notary profile:  $NOTARY_PROFILE"
 echo "Release repo:    $REPO"
+if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
+    echo "Release metadata: skipped"
+fi
 echo ""
 
 failures=()
@@ -160,8 +172,14 @@ fi
 run_check "notarytool credential profile is available" \
     xcrun notarytool history --keychain-profile "$NOTARY_PROFILE"
 
-run_check "Stable release metadata includes CursorDesigner.dmg" \
-    "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO" --dmg "$DMG_PATH"
+if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
+    echo ""
+    echo ">>> Stable release metadata includes CursorDesigner.dmg"
+    echo "SKIP: Stable release metadata check deferred until public release verification."
+else
+    run_check "Stable release metadata includes CursorDesigner.dmg" \
+        "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO" --dmg "$DMG_PATH"
+fi
 
 echo ""
 if [[ ${#failures[@]} -gt 0 ]]; then
@@ -173,4 +191,9 @@ if [[ ${#failures[@]} -gt 0 ]]; then
     exit 1
 fi
 
-echo "Release readiness passed."
+if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
+    echo "Release artifact readiness passed."
+    echo "Run make release-readiness after publishing stable release metadata."
+else
+    echo "Release readiness passed."
+fi
