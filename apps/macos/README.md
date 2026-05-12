@@ -20,22 +20,21 @@ This package lives in `apps/macos` inside the Cursor Designer monorepo.
 - macOS 13.0 (Ventura) or later
 - Apple Silicon or Intel Mac
 
-## Installation
+## Installation Status
 
-### Homebrew (Recommended)
+Cursor Designer is not advertised as a stable public download yet.
 
-```bash
-brew tap rogu3bear/cursor-designer-osx
-brew install --cask cursor-designer-osx
-```
+For local evaluation:
 
-### Manual Installation
+1. Build and verify the app from source with `make preflight`.
+2. Create a local DMG with `make dmg`.
+3. Open the generated `CursorDesigner.dmg`.
+4. Drag `CursorDesigner.app` to your Applications folder.
+5. Launch from Applications and open Preferences to choose pointer colors,
+   presets, contrast behavior, and launch-at-login.
 
-1. Download the latest [CursorDesigner.dmg](https://github.com/rogu3bear/cursor-designer-osx/releases/latest)
-2. Open the DMG file
-3. Drag `CursorDesigner.app` to your Applications folder
-4. Launch from Applications
-5. Open Preferences to choose pointer colors, presets, contrast behavior, and launch-at-login
+Do not treat Homebrew, signing, notarization, or public release downloads as
+available until those paths are verified and documented here.
 
 ## Usage
 

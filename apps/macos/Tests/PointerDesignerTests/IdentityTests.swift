@@ -244,6 +244,23 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testAppReadmeDoesNotAdvertiseUnverifiedDownloadChannels() throws {
+        let readme = try loadText(relativeToThisFile: "../../README.md")
+        let forbiddenClaims = [
+            "brew tap rogu3bear/cursor-designer-osx",
+            "brew install --cask cursor-designer-osx",
+            "cursor-designer-osx/releases/latest",
+            "Homebrew (Recommended)"
+        ]
+
+        for claim in forbiddenClaims {
+            XCTAssertFalse(
+                readme.localizedCaseInsensitiveContains(claim),
+                "README must not advertise unverified download channel: \(claim)"
+            )
+        }
+    }
+
     func testNorthStarDefinesProductionReadinessBar() throws {
         let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
         let requiredSections = [
