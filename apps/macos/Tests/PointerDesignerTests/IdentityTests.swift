@@ -981,7 +981,8 @@ final class IdentityTests: XCTestCase {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let script = try loadText(relativeToThisFile: "../../Scripts/launch-smoke.sh")
 
-        XCTAssertTrue(makefile.contains("launch-smoke: release"))
+        XCTAssertTrue(makefile.contains("launch-smoke:"))
+        XCTAssertTrue(makefile.contains("This intentionally does not rebuild"))
         XCTAssertTrue(script.contains("open -n"))
         XCTAssertTrue(script.contains("pgrep -x"))
         XCTAssertTrue(script.contains("PointerDesigner"))

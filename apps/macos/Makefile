@@ -55,8 +55,9 @@ preflight: clean release
 	@echo ""
 	@echo "=== Preflight Complete ✓ ==="
 
-# Launch the built app and verify it stays alive long enough for a menu bar smoke test.
-launch-smoke: release
+# Launch the existing app bundle and verify it stays alive long enough for a menu bar smoke test.
+# This intentionally does not rebuild, so it cannot overwrite a signed release candidate.
+launch-smoke:
 	@./Scripts/launch-smoke.sh --app "$(APP_BUNDLE)"
 
 # Clean build artifacts
