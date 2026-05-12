@@ -160,6 +160,7 @@ proof for another.
 - Product boundary: `./scripts/check-monorepo-references.sh`
 - Current website boundary: `./scripts/check-website-boundary.sh`
 - Current public distribution boundary: `./scripts/check-distribution-boundary.sh`
+- Current compatibility boundary: `./scripts/check-compatibility-boundary.sh`
 - Local-first app surface: `./scripts/check-local-first.sh`
 - App UI truth: `./scripts/check-app-ui-contract.sh`
 - Core macOS behavior: `swift test --package-path apps/macos`

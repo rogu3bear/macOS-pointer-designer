@@ -26,6 +26,9 @@ jobs:
       - name: Check distribution boundary
         run: ./scripts/check-distribution-boundary.sh
 
+      - name: Check compatibility boundary
+        run: ./scripts/check-compatibility-boundary.sh
+
       - name: Check local-first app boundary
         run: ./scripts/check-local-first.sh
 

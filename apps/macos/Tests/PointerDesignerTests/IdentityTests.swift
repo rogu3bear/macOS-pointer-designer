@@ -256,6 +256,7 @@ final class IdentityTests: XCTestCase {
             "./scripts/check-monorepo-references.sh",
             "./scripts/check-website-boundary.sh",
             "./scripts/check-distribution-boundary.sh",
+            "./scripts/check-compatibility-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "swift test --package-path apps/macos"
@@ -342,6 +343,32 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(rootReadme.contains("./scripts/check-distribution-boundary.sh"))
     }
 
+    func testCompatibilityBoundaryGuardPreservesMacOSSupportStory() throws {
+        let script = try loadText(relativeToThisFile: "../../../../scripts/check-compatibility-boundary.sh")
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+        let package = try loadText(relativeToThisFile: "../../Package.swift")
+        let infoPlist = try loadText(relativeToThisFile: "../../Sources/PointerDesigner/Resources/Info.plist")
+        let appReadme = try loadText(relativeToThisFile: "../../README.md")
+        let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
+        let info = try loadPlist(relativeToThisFile: "../../Sources/PointerDesigner/Resources/Info.plist")
+
+        XCTAssertTrue(script.contains(".macOS(.v13)"))
+        XCTAssertTrue(script.contains("LSMinimumSystemVersion"))
+        XCTAssertTrue(script.contains("macOS 13.0 (Ventura) or later"))
+        XCTAssertTrue(script.contains("Cursor Designer compatibility-boundary check passed."))
+        XCTAssertTrue(workflow.contains("./scripts/check-compatibility-boundary.sh"))
+        XCTAssertTrue(northStar.contains("./scripts/check-compatibility-boundary.sh"))
+        XCTAssertTrue(requirements.contains("./scripts/check-compatibility-boundary.sh"))
+        XCTAssertTrue(rootReadme.contains("./scripts/check-compatibility-boundary.sh"))
+        XCTAssertTrue(package.contains(".macOS(.v13)"))
+        XCTAssertTrue(infoPlist.contains("LSMinimumSystemVersion"))
+        XCTAssertTrue(infoPlist.contains("13.0"))
+        XCTAssertEqual(info["LSMinimumSystemVersion"] as? String, "13.0")
+        XCTAssertTrue(appReadme.contains("macOS 13.0 (Ventura) or later"))
+    }
+
     func testWebsiteBoundaryGuardPreventsPrematureWebsiteSurface() throws {
         let script = try loadText(relativeToThisFile: "../../../../scripts/check-website-boundary.sh")
         let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
@@ -379,6 +406,7 @@ final class IdentityTests: XCTestCase {
             "apps/macos/MANUAL_RELEASE_CHECKS.md",
             "./scripts/check-website-boundary.sh",
             "./scripts/check-distribution-boundary.sh",
+            "./scripts/check-compatibility-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "make launch-smoke",
@@ -428,6 +456,7 @@ final class IdentityTests: XCTestCase {
             "stable release tag matches app version",
             "./scripts/check-website-boundary.sh",
             "./scripts/check-distribution-boundary.sh",
+            "./scripts/check-compatibility-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "Dynamic contrast is active",
@@ -468,8 +497,10 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("release-metadata-check"))
         XCTAssertTrue(script.contains("check-website-boundary.sh"))
         XCTAssertTrue(script.contains("check-distribution-boundary.sh"))
+        XCTAssertTrue(script.contains("check-compatibility-boundary.sh"))
         XCTAssertTrue(script.contains("Website boundary"))
         XCTAssertTrue(script.contains("Distribution boundary"))
+        XCTAssertTrue(script.contains("Compatibility boundary"))
         XCTAssertTrue(script.contains("manual-release-evidence-check.sh"))
         XCTAssertTrue(script.contains("Manual release evidence"))
         XCTAssertTrue(script.contains("not mass-production ready"))
