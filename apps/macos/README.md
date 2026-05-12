@@ -72,9 +72,6 @@ swift build
 # Run the app
 .build/debug/PointerDesigner
 
-# Optional: run the helper in a separate terminal while developing helper internals
-.build/debug/PointerDesignerHelper
-
 # Note: Executable names remain PointerDesigner/PointerDesignerHelper for compatibility
 ```
 
@@ -126,11 +123,11 @@ apps/macos/
 │   │   ├── DisplayManager.swift       # Multi-monitor handling, DPI, HDR detection
 │   │   ├── PermissionManager.swift    # Screen recording permission checks
 │   │   ├── SettingsManager.swift      # Persistence with backup/migration
-│   │   ├── HelperToolManager.swift    # XPC communication with helper
+│   │   ├── HelperToolManager.swift    # Capability-gated helper scaffold
 │   │   ├── LaunchAtLoginManager.swift # SMAppService integration
 │   │   └── SystemIntegrationManager.swift  # Sleep/wake, appearance changes
 │   │
-│   └── PointerDesignerHelper/     # Privileged helper (module name preserved)
+│   └── PointerDesignerHelper/     # Helper source scaffold (not packaged in current app builds)
 │       └── main.swift             # Helper executable scaffold
 │
 ├── Tests/
