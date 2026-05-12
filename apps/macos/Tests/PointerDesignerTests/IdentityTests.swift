@@ -299,6 +299,20 @@ final class IdentityTests: XCTestCase {
         )
     }
 
+    func testWebsiteBoundaryGuardPreventsPrematureWebsiteSurface() throws {
+        let script = try loadText(relativeToThisFile: "../../../../scripts/check-website-boundary.sh")
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
+
+        XCTAssertTrue(script.contains("apps/website"))
+        XCTAssertTrue(script.contains("No canonical Cursor Designer website exists"))
+        XCTAssertTrue(script.contains("Cursor Designer website boundary check passed."))
+        XCTAssertTrue(workflow.contains("./scripts/check-website-boundary.sh"))
+        XCTAssertTrue(northStar.contains("A public website must not exist until"))
+        XCTAssertTrue(rootReadme.contains("There is no canonical Cursor Designer website"))
+    }
+
     func testNorthStarDefinesProductionReadinessBar() throws {
         let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
         let requiredSections = [
