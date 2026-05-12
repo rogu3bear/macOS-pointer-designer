@@ -67,4 +67,16 @@ if ! grep -Fxq "$EXPECTED_DMG" <<<"$ASSET_NAMES"; then
     exit 3
 fi
 
+DMG_DIGEST=$(gh release view "$STABLE_TAG" \
+    --repo "$REPO" \
+    --json assets \
+    --jq ".assets[] | select(.name == \"$EXPECTED_DMG\") | .digest // \"\"")
+
+if [[ ! "$DMG_DIGEST" =~ ^sha256:[0-9a-fA-F]{64}$ ]]; then
+    echo "ERROR: Stable release $STABLE_TAG does not expose a SHA-256 digest for $EXPECTED_DMG" >&2
+    echo "Digest: ${DMG_DIGEST:-<missing>}" >&2
+    exit 5
+fi
+
 echo "Stable release includes $EXPECTED_DMG."
+echo "Stable release DMG digest: $DMG_DIGEST"
