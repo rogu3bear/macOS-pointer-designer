@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check notary-profile-check release-artifact-readiness release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check signing-identity-check notary-profile-check release-artifact-readiness release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -84,7 +84,7 @@ create-dmg:
 	@echo "DMG created: $(DMG_NAME)"
 
 # Code sign the generated DMG for distribution.
-sign-dmg:
+sign-dmg: signing-identity-check
 	@echo "Signing DMG..."
 	@codesign --force --verify --verbose \
 		--sign "$(SIGN_IDENTITY)" \
@@ -101,12 +101,16 @@ dmg-install-check:
 release-metadata-check:
 	@./Scripts/release-metadata-check.sh --repo "$(GITHUB_REPO)" --dmg "$(DMG_NAME)"
 
+# Verify the selected Developer ID signing identity before spending time building.
+signing-identity-check:
+	@./Scripts/signing-identity-check.sh --sign-identity "$(SIGN_IDENTITY)"
+
 # Verify notarization credentials before spending time building a release candidate.
 notary-profile-check:
 	@./Scripts/notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)"
 
 # Code signing (requires valid Developer ID)
-sign: release
+sign: signing-identity-check release
 	@echo "Signing app bundle..."
 	@codesign --deep --force --verify --verbose \
 		--options runtime \
@@ -115,7 +119,7 @@ sign: release
 		"$(APP_BUNDLE)"
 
 # Notarize for distribution (requires Apple Developer account)
-notarize: notary-profile-check signed-dmg
+notarize: notary-profile-check signing-identity-check signed-dmg
 	@echo "Notarizing..."
 	@xcrun notarytool submit $(DMG_NAME) \
 		--keychain-profile "$(NOTARY_PROFILE)" \
