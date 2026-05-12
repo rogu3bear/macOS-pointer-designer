@@ -407,6 +407,15 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("XPC Mach Service:"))
     }
 
+    func testTrustCheckUsesStrictShellModeAndValidatesOptions() throws {
+        let trustCheck = try loadText(relativeToThisFile: "../../Scripts/trust-check.sh")
+
+        XCTAssertTrue(trustCheck.contains("set -euo pipefail"))
+        XCTAssertTrue(trustCheck.contains("ERROR: --app requires a path"))
+        XCTAssertTrue(trustCheck.contains("exit 2"))
+        XCTAssertTrue(trustCheck.contains("Unknown option: $1"))
+    }
+
     func testHelperScaffoldDoesNotAcceptUnverifiedClients() throws {
         let helper = try loadText(relativeToThisFile: "../../Sources/PointerDesignerHelper/main.swift")
 
