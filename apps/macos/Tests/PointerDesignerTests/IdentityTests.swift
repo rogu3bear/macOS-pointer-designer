@@ -389,7 +389,9 @@ final class IdentityTests: XCTestCase {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let script = try loadText(relativeToThisFile: "../../Scripts/release-readiness.sh")
 
-        XCTAssertTrue(makefile.contains("release-readiness: dmg-install-check"))
+        XCTAssertTrue(makefile.contains("release-readiness:"))
+        XCTAssertTrue(script.contains("dmg-install-check.sh"))
+        XCTAssertTrue(script.contains("--require-signature"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("stapler validate"))
@@ -404,6 +406,10 @@ final class IdentityTests: XCTestCase {
         let script = try loadText(relativeToThisFile: "../../Scripts/dmg-install-check.sh")
 
         XCTAssertTrue(makefile.contains("dmg-install-check:"))
+        XCTAssertTrue(makefile.contains(#"dmg-install-check.sh --dmg "$(DMG_NAME)""#))
+        XCTAssertFalse(makefile.contains(#"dmg-install-check.sh --dmg "$(DMG_NAME)" --require-signature"#))
+        XCTAssertTrue(script.contains("--require-signature"))
+        XCTAssertTrue(script.contains("Use --require-signature for signed release-candidate artifacts."))
         XCTAssertTrue(script.contains("hdiutil verify"))
         XCTAssertTrue(script.contains("hdiutil attach"))
         XCTAssertTrue(script.contains("CursorDesigner.app"))

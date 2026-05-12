@@ -4,6 +4,7 @@ set -euo pipefail
 APP_PATH=".build/release/CursorDesigner.app"
 DMG_PATH="CursorDesigner.dmg"
 NOTARY_PROFILE="notarization"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -76,6 +77,9 @@ if [[ -d "$APP_PATH" ]]; then
 fi
 
 if [[ -f "$DMG_PATH" ]]; then
+    run_check "DMG install surface and mounted app signature verify" \
+        "$SCRIPT_DIR/dmg-install-check.sh" --dmg "$DMG_PATH" --require-signature
+
     run_check "Stapled notarization ticket validates" \
         xcrun stapler validate "$DMG_PATH"
 fi
