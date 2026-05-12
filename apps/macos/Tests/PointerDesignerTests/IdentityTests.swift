@@ -229,7 +229,9 @@ final class IdentityTests: XCTestCase {
             "system-wide upgrade path",
             "System-wide Helper",
             "system-wide cursor changes",
-            "Cursor not changing system-wide"
+            "Cursor not changing system-wide",
+            "Automatically restores system cursor",
+            "cursor is stuck"
         ]
 
         for file in checkedFiles {
