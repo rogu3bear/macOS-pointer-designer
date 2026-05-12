@@ -336,6 +336,7 @@ final class IdentityTests: XCTestCase {
             "make release-artifact-readiness",
             "make release-readiness",
             "make release-metadata-check",
+            "stable release tag matches app version",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "Dynamic contrast is active",
@@ -566,10 +567,14 @@ final class IdentityTests: XCTestCase {
         let script = try loadText(relativeToThisFile: "../../Scripts/release-metadata-check.sh")
 
         XCTAssertTrue(makefile.contains("release-metadata-check:"))
+        XCTAssertTrue(makefile.contains(#"--app "$(APP_BUNDLE)""#))
         XCTAssertTrue(makefile.contains(#"--dmg "$(DMG_NAME)""#))
         XCTAssertTrue(script.contains("gh release list"))
         XCTAssertTrue(script.contains("isPrerelease"))
         XCTAssertTrue(script.contains("CursorDesigner.dmg"))
+        XCTAssertTrue(script.contains("CFBundleShortVersionString"))
+        XCTAssertTrue(script.contains("EXPECTED_TAG=\"v$APP_VERSION\""))
+        XCTAssertTrue(script.contains("Stable release tag matches app version."))
         XCTAssertTrue(script.contains("sha256:"))
         XCTAssertTrue(script.contains("shasum -a 256"))
         XCTAssertTrue(script.contains("Local DMG digest matches stable release."))

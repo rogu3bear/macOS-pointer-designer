@@ -194,7 +194,7 @@ if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
     echo "SKIP: Stable release metadata check deferred until public release verification."
 else
     run_check "Stable release metadata includes CursorDesigner.dmg" \
-        "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO" --dmg "$DMG_PATH"
+        "$SCRIPT_DIR/release-metadata-check.sh" --app "$APP_PATH" --repo "$REPO" --dmg "$DMG_PATH"
 fi
 
 echo ""
