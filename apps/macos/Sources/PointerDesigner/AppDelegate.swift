@@ -40,13 +40,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        menuBarController = MenuBarController(statusItem: statusItem)
-        menuBarController?.onPreferencesClicked = { [weak self] in
-            self?.showPreferences()
-        }
-        menuBarController?.onQuitClicked = {
-            NSApplication.shared.terminate(nil)
-        }
+        menuBarController = MenuBarController(
+            statusItem: statusItem,
+            preferencesTarget: self,
+            preferencesAction: #selector(openPreferencesFromMenu(_:)),
+            quitTarget: self,
+            quitAction: #selector(quitFromMenu(_:))
+        )
     }
 
     private func setupCursorEngine() {
@@ -87,6 +87,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSLog("AppDelegate: Making Preferences window key and visible")
         preferencesWindowController?.window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func openPreferencesFromMenu(_ sender: Any?) {
+        showPreferences()
+    }
+
+    @objc private func quitFromMenu(_ sender: Any?) {
+        NSApplication.shared.terminate(nil)
     }
 
     // MARK: - Cleanup

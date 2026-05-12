@@ -60,6 +60,10 @@ preferences_text=(
 
 menu_text=(
   "final class MenuBarController: NSObject"
+  "preferencesTarget"
+  "preferencesAction"
+  "quitTarget"
+  "quitAction"
   "Enabled"
   "Disabled"
   "Contrast Mode"

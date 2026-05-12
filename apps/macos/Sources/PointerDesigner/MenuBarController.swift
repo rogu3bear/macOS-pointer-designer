@@ -12,13 +12,25 @@ final class MenuBarController: NSObject {
     private let stateController: CursorStateController
     private let iconGenerator = MenuBarIconGenerator.shared
     private var cancellables = Set<AnyCancellable>()
+    private weak var preferencesTarget: AnyObject?
+    private let preferencesAction: Selector
+    private weak var quitTarget: AnyObject?
+    private let quitAction: Selector
 
-    var onPreferencesClicked: (() -> Void)?
-    var onQuitClicked: (() -> Void)?
-
-    init(statusItem: NSStatusItem, stateController: CursorStateController = .shared) {
+    init(
+        statusItem: NSStatusItem,
+        stateController: CursorStateController = .shared,
+        preferencesTarget: AnyObject? = nil,
+        preferencesAction: Selector = #selector(openPreferences),
+        quitTarget: AnyObject? = nil,
+        quitAction: Selector = #selector(quit)
+    ) {
         self.statusItem = statusItem
         self.stateController = stateController
+        self.preferencesTarget = preferencesTarget
+        self.preferencesAction = preferencesAction
+        self.quitTarget = quitTarget
+        self.quitAction = quitAction
         super.init()
         menu.autoenablesItems = false // Prevent auto-disabling menu items
         setupStatusItem()
@@ -206,8 +218,8 @@ final class MenuBarController: NSObject {
         menu.addItem(NSMenuItem.separator())
 
         // Preferences - Edge case #70: Standard Cmd+, shortcut
-        let prefsItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ",")
-        prefsItem.target = self
+        let prefsItem = NSMenuItem(title: "Preferences...", action: preferencesAction, keyEquivalent: ",")
+        prefsItem.target = preferencesTarget ?? self
         prefsItem.isEnabled = true
         prefsItem.setAccessibilityLabel("Open Preferences Window")
         menu.addItem(prefsItem)
@@ -215,8 +227,8 @@ final class MenuBarController: NSObject {
         menu.addItem(NSMenuItem.separator())
 
         // Quit - Edge case #70: Standard Cmd+Q shortcut
-        let quitItem = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
-        quitItem.target = self
+        let quitItem = NSMenuItem(title: "Quit", action: quitAction, keyEquivalent: "q")
+        quitItem.target = quitTarget ?? self
         quitItem.setAccessibilityLabel("Quit Cursor Designer")
         menu.addItem(quitItem)
     }
@@ -250,10 +262,10 @@ final class MenuBarController: NSObject {
     }
 
     @objc private func openPreferences() {
-        onPreferencesClicked?()
+        NSApplication.shared.sendAction(preferencesAction, to: preferencesTarget, from: self)
     }
 
     @objc private func quit() {
-        onQuitClicked?()
+        NSApplication.shared.sendAction(quitAction, to: quitTarget, from: self)
     }
 }
