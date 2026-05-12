@@ -17,7 +17,7 @@ either verified by live evidence or explicitly marked blocked.
 | APP-4 | Make dynamic contrast honest with and without Screen Recording permission. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; Preferences UI must show active, inactive, or permission-required state. | Controller and Preferences contract verified; real permission flow still needs release-candidate manual proof. |
 | APP-5 | Hide, disable, or mark unsupported helper and system-wide replacement paths unavailable. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter IdentityTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-monorepo-references.sh` | Locally verified; system-wide replacement remains unsupported. |
 | APP-6 | Produce a validated app bundle and DMG from the repo-local macOS package. | `make preflight`; `make dmg`; `make dmg-install-check` | Locally verified when the gates pass on the candidate artifact. |
-| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, and install instructions before public distribution. | `make signing-identity-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check` | Signing identity, app signing, hardened runtime, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release checks, and stable release metadata exist. |
+| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, and install instructions before public distribution. | `make signing-identity-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check` | Signing identity, app signing, hardened runtime, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release checks, and stable release metadata exist. `make release-metadata-check` also verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. |
 | APP-8 | Keep wrong-product language, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `./scripts/check-local-first.sh`; `swift test --package-path apps/macos --filter IdentityTests` | Guarded locally; repeat before release. |
 
 ## Release-Candidate Proof
@@ -73,8 +73,8 @@ these are true:
 - Helper installation is scaffolded but not a user-facing capability.
 - The DMG is unsigned, unstapled, unnotarized, or rejected by Gatekeeper.
 - notarytool profile credentials are missing or notarization fails.
-- There is no verified stable GitHub release metadata with a SHA-256 digest
-  matching the local DMG for public downloads.
+- There is no verified stable GitHub release metadata with a tag matching the
+  app version and a SHA-256 digest matching the local DMG for public downloads.
 - Homebrew install instructions or casks are not backed by a verified stable
   artifact.
 

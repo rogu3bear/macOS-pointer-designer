@@ -4,9 +4,18 @@ set -euo pipefail
 REPO="rogu3bear/macOS-pointer-designer"
 EXPECTED_DMG="CursorDesigner.dmg"
 DMG_PATH="CursorDesigner.dmg"
+APP_PATH=".build/release/CursorDesigner.app"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --app)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --app requires a path" >&2
+                exit 2
+            fi
+            APP_PATH="$2"
+            shift 2
+            ;;
         --repo)
             if [[ $# -lt 2 || "$2" == --* ]]; then
                 echo "ERROR: --repo requires OWNER/REPO" >&2
@@ -25,7 +34,7 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         -h|--help)
-            echo "Usage: $0 [--repo OWNER/REPO] [--dmg PATH]"
+            echo "Usage: $0 [--app PATH] [--repo OWNER/REPO] [--dmg PATH]"
             exit 0
             ;;
         *)
@@ -37,6 +46,7 @@ done
 
 echo "=== Cursor Designer Release Metadata Check ==="
 echo "Repository: $REPO"
+echo "App:        $APP_PATH"
 echo "DMG:        $DMG_PATH"
 echo ""
 
@@ -67,6 +77,28 @@ if [[ -z "$STABLE_TAG" ]]; then
     echo "Release metadata is not ready for stable download claims." >&2
     exit 4
 fi
+
+INFO_PLIST="$APP_PATH/Contents/Info.plist"
+if [[ ! -f "$INFO_PLIST" ]]; then
+    echo "ERROR: App Info.plist not found for release tag comparison: $INFO_PLIST" >&2
+    exit 8
+fi
+
+APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST" 2>/dev/null || true)
+if [[ -z "$APP_VERSION" ]]; then
+    echo "ERROR: CFBundleShortVersionString missing from $INFO_PLIST" >&2
+    exit 9
+fi
+
+EXPECTED_TAG="v$APP_VERSION"
+if [[ "$STABLE_TAG" != "$EXPECTED_TAG" ]]; then
+    echo "ERROR: Stable release tag does not match app version." >&2
+    echo "Stable tag:   $STABLE_TAG" >&2
+    echo "Expected tag: $EXPECTED_TAG" >&2
+    exit 10
+fi
+
+echo "Stable release tag matches app version."
 
 echo ""
 echo ">>> Inspecting stable release: $STABLE_TAG"
