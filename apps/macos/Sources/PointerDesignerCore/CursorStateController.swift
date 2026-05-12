@@ -12,6 +12,12 @@ public enum CursorStateControllerError: Error, Equatable, LocalizedError {
     }
 }
 
+public enum DynamicContrastStatus: Equatable {
+    case inactive
+    case active
+    case permissionRequired
+}
+
 /// Business logic controller for cursor state management
 /// Extracts logic from UI layer for better testability and separation of concerns
 public final class CursorStateController: ObservableObject {
@@ -39,6 +45,15 @@ public final class CursorStateController: ObservableObject {
     @Published public private(set) var hasScreenRecordingPermission: Bool = false
     @Published public private(set) var isHelperInstalled: Bool = false
     @Published public private(set) var supportsSystemWidePointerReplacement: Bool = false
+
+    public var dynamicContrastStatus: DynamicContrastStatus {
+        guard currentSettings.contrastMode != .none else { return .inactive }
+        return hasScreenRecordingPermission ? .active : .permissionRequired
+    }
+
+    public var isBackgroundSamplingActive: Bool {
+        dynamicContrastStatus == .active
+    }
 
     /// Initializer for dependency injection (testing)
     public init(
@@ -106,6 +121,7 @@ public final class CursorStateController: ObservableObject {
 
     /// Set the contrast mode
     public func setContrastMode(_ mode: ContrastMode) {
+        refreshPermissionState()
         var settings = currentSettings
         settings.contrastMode = mode
         updateSettings(settings)

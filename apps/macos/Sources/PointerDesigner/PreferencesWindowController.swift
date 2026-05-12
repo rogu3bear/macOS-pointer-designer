@@ -156,6 +156,7 @@ final class PreferencesView: NSView {
     private var scaleSlider: NSSlider?
     private var scaleLabel: NSTextField?
     private var permissionStatusLabel: NSTextField?
+    private var dynamicContrastStatusLabel: NSTextField?
     private var permissionButton: NSButton?
     private var helperStatusLabel: NSTextField?
     private var helperButton: NSButton?
@@ -343,9 +344,10 @@ final class PreferencesView: NSView {
         permissionRow.addArrangedSubview(openSettingsButton)
         permissionSection.addArrangedSubview(permissionRow)
 
-        let permissionNote = NSTextField(labelWithString: "Required for Auto-Invert and Outline contrast modes")
+        let permissionNote = NSTextField(labelWithString: "")
         permissionNote.font = NSFont.systemFont(ofSize: 10)
         permissionNote.textColor = .secondaryLabelColor
+        dynamicContrastStatusLabel = permissionNote
         permissionSection.addArrangedSubview(permissionNote)
         stackView.addArrangedSubview(permissionSection)
 
@@ -482,6 +484,24 @@ final class PreferencesView: NSView {
             permissionStatusLabel?.textColor = .systemOrange
             permissionButton?.isHidden = false
         }
+
+        switch stateController.dynamicContrastStatus {
+        case .inactive:
+            dynamicContrastStatusLabel?.stringValue = "Dynamic contrast is off for contrast mode None."
+            dynamicContrastStatusLabel?.textColor = .secondaryLabelColor
+            samplingRateSlider?.isEnabled = false
+            samplingRateSlider?.setAccessibilityHelp("Background sampling is inactive while contrast mode is None")
+        case .active:
+            dynamicContrastStatusLabel?.stringValue = "Dynamic contrast is active for Auto-Invert and Outline."
+            dynamicContrastStatusLabel?.textColor = .secondaryLabelColor
+            samplingRateSlider?.isEnabled = true
+            samplingRateSlider?.setAccessibilityHelp("Adjust how often Cursor Designer samples the local background. Range: 15 to 120 Hz")
+        case .permissionRequired:
+            dynamicContrastStatusLabel?.stringValue = "Dynamic contrast is paused until Screen Recording is granted."
+            dynamicContrastStatusLabel?.textColor = .systemOrange
+            samplingRateSlider?.isEnabled = false
+            samplingRateSlider?.setAccessibilityHelp("Background sampling is paused until Screen Recording is granted")
+        }
     }
 
     private func updateHelperStatus() {
@@ -572,6 +592,7 @@ final class PreferencesView: NSView {
         default: return
         }
         stateController.setContrastMode(mode)
+        updatePermissionStatus()
     }
 
     @objc private func outlineWidthChanged() {
