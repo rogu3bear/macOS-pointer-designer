@@ -261,6 +261,19 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testStaleHomebrewCaskIsNotShippedWithoutVerifiedRelease() {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let caskURL = testFile
+            .deletingLastPathComponent()
+            .appendingPathComponent("../../Casks/cursor-designer-osx.rb")
+            .standardizedFileURL
+
+        XCTAssertFalse(
+            FileManager.default.fileExists(atPath: caskURL.path),
+            "Do not ship a Homebrew cask until release URL, checksum, notarization, and install behavior are verified"
+        )
+    }
+
     func testNorthStarDefinesProductionReadinessBar() throws {
         let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
         let requiredSections = [
