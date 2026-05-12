@@ -695,6 +695,7 @@ final class IdentityTests: XCTestCase {
 
     func testAppUIContractGuardChecksPreferencesAndMenuTruth() throws {
         let script = try loadText(relativeToThisFile: "../../../../scripts/check-app-ui-contract.sh")
+        let preferences = try loadText(relativeToThisFile: "../../Sources/PointerDesigner/PreferencesWindowController.swift")
         let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
         let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
         let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
@@ -714,6 +715,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("Check for Updates"))
         XCTAssertTrue(script.contains("grep -Fq"))
         XCTAssertTrue(script.contains("Cursor Designer app UI contract check passed."))
+        XCTAssertTrue(preferences.contains("updateOutlineWidthAccessibilityValue()"))
+        XCTAssertTrue(preferences.contains("updateSamplingRateAccessibilityValue()"))
         XCTAssertTrue(workflow.contains("./scripts/check-app-ui-contract.sh"))
         XCTAssertTrue(rootReadme.contains("./scripts/check-app-ui-contract.sh"))
         XCTAssertTrue(requirements.contains("./scripts/check-app-ui-contract.sh"))

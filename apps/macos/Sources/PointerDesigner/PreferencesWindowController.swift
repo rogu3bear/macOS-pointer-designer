@@ -520,6 +520,8 @@ final class PreferencesView: NSView {
 
         outlineWidthSlider?.doubleValue = Double(settings.outlineWidth)
         samplingRateSlider?.doubleValue = Double(settings.samplingRate)
+        updateOutlineWidthAccessibilityValue()
+        updateSamplingRateAccessibilityValue()
         launchAtLoginCheckbox?.state = stateController.isLaunchAtLoginEnabled ? .on : .off
         internetUpdateCheckbox?.state = settings.allowsInternetUpdateChecks ? .on : .off
         updateUpdateCheckStatus()
@@ -592,6 +594,14 @@ final class PreferencesView: NSView {
         scaleLabel?.stringValue = "\(Int(scale * 100))%"
     }
 
+    private func updateOutlineWidthAccessibilityValue() {
+        outlineWidthSlider?.setAccessibilityValue("\(Int(outlineWidthSlider?.doubleValue ?? 2)) pixels")
+    }
+
+    private func updateSamplingRateAccessibilityValue() {
+        samplingRateSlider?.setAccessibilityValue("\(Int(samplingRateSlider?.doubleValue ?? 60)) Hz")
+    }
+
     @objc private func colorChanged() {
         guard let color = colorWell?.color else { return }
         // Edge case #51: Convert to sRGB color space before extracting components
@@ -657,15 +667,13 @@ final class PreferencesView: NSView {
 
     @objc private func outlineWidthChanged() {
         let width = Float(outlineWidthSlider?.doubleValue ?? 2)
-        // Edge case #69: Update accessibility value for VoiceOver
-        outlineWidthSlider?.setAccessibilityValue("\(Int(outlineWidthSlider?.doubleValue ?? 2)) pixels")
+        updateOutlineWidthAccessibilityValue()
         stateController.setOutlineWidth(width)
     }
 
     @objc private func samplingRateChanged() {
         let rate = Int(samplingRateSlider?.doubleValue ?? 60)
-        // Edge case #69: Update accessibility value for VoiceOver
-        samplingRateSlider?.setAccessibilityValue("\(rate) Hz")
+        updateSamplingRateAccessibilityValue()
         stateController.setSamplingRate(rate)
     }
 
