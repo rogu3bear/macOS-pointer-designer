@@ -32,7 +32,8 @@ human-only macOS permission, Finder, and installed-app behavior.
 ## Evidence To Keep With The Release
 
 - macOS version and hardware architecture.
-- Release tag, DMG filename, SHA-256 digest, and mounted app identity.
+- Release tag, DMG filename, SHA-256 digest, and mounted app identity. The
+  release tag must match the mounted app version as `v<version>`.
 - Mounted app bundle ID, version, build, and executable SHA-256 digest.
 - Screen Recording denied and granted observations.
 - Finder or LaunchServices launch result.
