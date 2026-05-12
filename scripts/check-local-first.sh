@@ -29,6 +29,10 @@ forbidden_patterns=(
   "Mixpanel"
   "Amplitude"
   "Segment"
+  "TelemetryDeck"
+  ".package(url:"
+  "http://"
+  "https://"
 )
 
 rg_args=(
