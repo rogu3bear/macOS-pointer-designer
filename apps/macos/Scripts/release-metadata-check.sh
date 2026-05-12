@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO="rogu3bear/macOS-pointer-designer"
 EXPECTED_DMG="CursorDesigner.dmg"
+DMG_PATH="CursorDesigner.dmg"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -10,8 +11,13 @@ while [[ $# -gt 0 ]]; do
             REPO="$2"
             shift 2
             ;;
+        --dmg)
+            DMG_PATH="$2"
+            EXPECTED_DMG="$(basename "$2")"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--repo OWNER/REPO]"
+            echo "Usage: $0 [--repo OWNER/REPO] [--dmg PATH]"
             exit 0
             ;;
         *)
@@ -23,6 +29,7 @@ done
 
 echo "=== Cursor Designer Release Metadata Check ==="
 echo "Repository: $REPO"
+echo "DMG:        $DMG_PATH"
 echo ""
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -78,5 +85,20 @@ if [[ ! "$DMG_DIGEST" =~ ^sha256:[0-9a-fA-F]{64}$ ]]; then
     exit 5
 fi
 
+if [[ ! -f "$DMG_PATH" ]]; then
+    echo "ERROR: Local DMG not found for digest comparison: $DMG_PATH" >&2
+    exit 6
+fi
+
+LOCAL_DIGEST="sha256:$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
+
+if [[ "$LOCAL_DIGEST" != "$DMG_DIGEST" ]]; then
+    echo "ERROR: Stable release digest does not match local $DMG_PATH" >&2
+    echo "Release digest: $DMG_DIGEST" >&2
+    echo "Local digest:   $LOCAL_DIGEST" >&2
+    exit 7
+fi
+
 echo "Stable release includes $EXPECTED_DMG."
 echo "Stable release DMG digest: $DMG_DIGEST"
+echo "Local DMG digest matches stable release."
