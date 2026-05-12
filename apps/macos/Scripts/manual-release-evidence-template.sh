@@ -47,6 +47,12 @@ if [[ ! -f "$DMG_PATH" ]]; then
     exit 1
 fi
 
+if [[ -z "$RELEASE_TAG" ]]; then
+    echo "ERROR: RELEASE_TAG is required for artifact-bound manual release evidence" >&2
+    echo "Run: make manual-release-evidence-template RELEASE_TAG=\"v<app-version>\"" >&2
+    exit 2
+fi
+
 DMG_FILENAME="$(basename "$DMG_PATH")"
 DMG_SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
 MOUNT_DIR=""
