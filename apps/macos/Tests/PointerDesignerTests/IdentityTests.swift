@@ -383,6 +383,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(makefile.contains("notarize: sign dmg"))
         XCTAssertTrue(makefile.contains("SIGN_IDENTITY ?="))
         XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
+        XCTAssertTrue(makefile.contains("--options runtime"))
+        XCTAssertTrue(makefile.contains("--timestamp"))
     }
 
     func testReleaseReadinessGateChecksSigningAndNotarization() throws {
@@ -396,6 +398,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("--require-signature"))
         XCTAssertTrue(script.contains("--repo"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
+        XCTAssertTrue(script.contains("check_hardened_runtime"))
+        XCTAssertTrue(script.contains("Runtime Version"))
+        XCTAssertTrue(script.contains("Hardened runtime is enabled"))
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("stapler validate"))
         XCTAssertTrue(script.contains("notarytool history"))
