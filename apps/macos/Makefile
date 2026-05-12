@@ -1,10 +1,12 @@
-.PHONY: all build release clean test install uninstall dmg preflight
+.PHONY: all build release clean test install uninstall dmg create-dmg preflight
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
 RELEASE_DIR = $(BUILD_DIR)/release
 APP_BUNDLE = $(RELEASE_DIR)/$(PRODUCT_NAME).app
 DMG_NAME = $(PRODUCT_NAME).dmg
+SIGN_IDENTITY ?= Developer ID Application
+NOTARY_PROFILE ?= notarization
 
 # Build configuration
 SWIFT_BUILD_FLAGS = -c release --arch arm64 --arch x86_64
@@ -66,8 +68,12 @@ uninstall:
 	@rm -rf "/Applications/$(PRODUCT_NAME).app"
 	@echo "Uninstalled successfully"
 
-# Create DMG for distribution
-dmg: release
+# Create DMG for distribution from a fresh release build
+dmg: release create-dmg
+
+# Create DMG from the current app bundle without rebuilding it.
+# Used by notarize after signing so release does not overwrite signed code.
+create-dmg:
 	@echo "Creating DMG..."
 	@./Scripts/create-dmg.sh
 	@echo "DMG created: $(DMG_NAME)"
@@ -76,13 +82,13 @@ dmg: release
 sign: release
 	@echo "Signing app bundle..."
 	@codesign --deep --force --verify --verbose \
-		--sign "Developer ID Application" \
+		--sign "$(SIGN_IDENTITY)" \
 		"$(APP_BUNDLE)"
 
 # Notarize for distribution (requires Apple Developer account)
-notarize: sign dmg
+notarize: sign create-dmg
 	@echo "Notarizing..."
 	@xcrun notarytool submit $(DMG_NAME) \
-		--keychain-profile "notarization" \
+		--keychain-profile "$(NOTARY_PROFILE)" \
 		--wait
 	@xcrun stapler staple $(DMG_NAME)
