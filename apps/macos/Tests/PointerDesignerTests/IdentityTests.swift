@@ -311,6 +311,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(workflow.contains("./scripts/check-website-boundary.sh"))
         XCTAssertTrue(northStar.contains("A public website must not exist until"))
         XCTAssertTrue(rootReadme.contains("There is no canonical Cursor Designer website"))
+        XCTAssertTrue(rootReadme.contains("./scripts/check-website-boundary.sh"))
     }
 
     func testNorthStarDefinesProductionReadinessBar() throws {
