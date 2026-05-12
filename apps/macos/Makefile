@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check dmg-artifact-match-check release-metadata-check signing-identity-check notary-profile-check manual-release-evidence-check north-star-audit release-artifact-readiness release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check dmg-artifact-match-check release-metadata-check signing-identity-check notary-profile-check manual-release-evidence-template manual-release-evidence-check north-star-audit release-artifact-readiness release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -9,6 +9,7 @@ SIGN_IDENTITY ?= Developer ID Application
 NOTARY_PROFILE ?= notarization
 GITHUB_REPO ?= rogu3bear/macOS-pointer-designer
 MANUAL_EVIDENCE ?= ReleaseEvidence/manual-release-evidence.txt
+RELEASE_TAG ?=
 
 # Build configuration
 SWIFT_BUILD_FLAGS = -c release --arch arm64 --arch x86_64
@@ -113,6 +114,10 @@ signing-identity-check:
 # Verify notarization credentials before spending time building a release candidate.
 notary-profile-check:
 	@./Scripts/notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)"
+
+# Print a prefilled manual release evidence template for the current DMG and commit.
+manual-release-evidence-template:
+	@./Scripts/manual-release-evidence-template.sh --dmg "$(DMG_NAME)" --release-tag "$(RELEASE_TAG)" --commit "$$(git rev-parse HEAD)"
 
 # Verify human-only release observations were recorded against the accepted DMG.
 manual-release-evidence-check:
