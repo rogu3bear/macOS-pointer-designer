@@ -683,6 +683,25 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checker.contains("Recorded commit does not match"))
     }
 
+    func testReleaseRunbookDrivesEndToEndReadinessWithoutClaimingAvailability() throws {
+        let runbook = try loadText(relativeToThisFile: "../../RELEASE_RUNBOOK.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+
+        XCTAssertTrue(requirements.contains("RELEASE_RUNBOOK.md"))
+        XCTAssertTrue(runbook.contains("# Cursor Designer Release Runbook"))
+        XCTAssertTrue(runbook.contains("not mass-production ready"))
+        XCTAssertTrue(runbook.contains("xcrun notarytool store-credentials"))
+        XCTAssertTrue(runbook.contains("make release-candidate"))
+        XCTAssertTrue(runbook.contains("make release-readiness"))
+        XCTAssertTrue(runbook.contains("make manual-release-evidence-check"))
+        XCTAssertTrue(runbook.contains("make north-star-audit"))
+        XCTAssertTrue(runbook.contains("MANUAL_RELEASE_CHECKS.md"))
+        XCTAssertTrue(runbook.contains("stable GitHub release"))
+        XCTAssertTrue(runbook.contains("Do not create or publish a website"))
+        XCTAssertTrue(runbook.contains("Do not commit Apple IDs"))
+        XCTAssertTrue(runbook.contains("Gatekeeper-accepted DMG"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
