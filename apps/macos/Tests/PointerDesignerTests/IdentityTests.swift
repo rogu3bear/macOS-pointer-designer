@@ -504,6 +504,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("spctl --assess --type open"))
         XCTAssertTrue(script.contains("Gatekeeper assessment accepts DMG"))
+        XCTAssertTrue(script.contains("DMG install surface, mounted app match, and mounted app signature verify"))
         XCTAssertTrue(script.contains("DMG signature verifies"))
         XCTAssertTrue(script.contains(#"codesign --verify --verbose=2 "$DMG_PATH""#))
         XCTAssertTrue(script.contains("stapler validate"))

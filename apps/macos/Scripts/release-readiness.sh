@@ -95,7 +95,7 @@ print_next_required_proof() {
 
     if has_failure "Code signature verifies" ||
        has_failure "Hardened runtime is enabled" ||
-       has_failure "DMG install surface and mounted app signature verify" ||
+       has_failure "DMG install surface, mounted app match, and mounted app signature verify" ||
        has_failure "DMG signature verifies"; then
         echo "- Build and sign the app with a Developer ID Application identity, recreate the DMG from that signed app, sign the DMG, then rerun this gate." >&2
     fi
@@ -172,7 +172,7 @@ if [[ -d "$APP_PATH" ]]; then
 fi
 
 if [[ -f "$DMG_PATH" ]]; then
-    run_check "DMG install surface and mounted app signature verify" \
+    run_check "DMG install surface, mounted app match, and mounted app signature verify" \
         "$SCRIPT_DIR/dmg-install-check.sh" --app "$APP_PATH" --dmg "$DMG_PATH" --require-signature
 
     run_check "DMG signature verifies" \
