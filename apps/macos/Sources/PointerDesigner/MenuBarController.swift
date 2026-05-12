@@ -12,9 +12,9 @@ final class MenuBarController: NSObject {
     private let stateController: CursorStateController
     private let iconGenerator = MenuBarIconGenerator.shared
     private var cancellables = Set<AnyCancellable>()
-    private weak var preferencesTarget: AnyObject?
+    private var preferencesTarget: AnyObject?
     private let preferencesAction: Selector
-    private weak var quitTarget: AnyObject?
+    private var quitTarget: AnyObject?
     private let quitAction: Selector
 
     init(

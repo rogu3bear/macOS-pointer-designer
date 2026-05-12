@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 PREFERENCES_SOURCE="apps/macos/Sources/PointerDesigner/PreferencesWindowController.swift"
 MENU_SOURCE="apps/macos/Sources/PointerDesigner/MenuBarController.swift"
 MAIN_SOURCE="apps/macos/Sources/PointerDesigner/main.swift"
+APP_DELEGATE_SOURCE="apps/macos/Sources/PointerDesigner/AppDelegate.swift"
 
 require_text() {
   local file="$1"
@@ -61,9 +62,9 @@ preferences_text=(
 
 menu_text=(
   "final class MenuBarController: NSObject"
-  "preferencesTarget"
+  "private var preferencesTarget"
   "preferencesAction"
-  "quitTarget"
+  "private var quitTarget"
   "quitAction"
   "Enabled"
   "Disabled"
@@ -83,5 +84,7 @@ for text in "${menu_text[@]}"; do
 done
 
 require_text "$MAIN_SOURCE" "withExtendedLifetime(delegate)"
+require_text "$APP_DELEGATE_SOURCE" "@objc func openPreferencesFromMenu"
+require_text "$APP_DELEGATE_SOURCE" "@objc func quitFromMenu"
 
 echo "Cursor Designer app UI contract check passed."

@@ -89,11 +89,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    @objc private func openPreferencesFromMenu(_ sender: Any?) {
+    @objc func openPreferencesFromMenu(_ sender: Any?) {
         showPreferences()
     }
 
-    @objc private func quitFromMenu(_ sender: Any?) {
+    @objc func quitFromMenu(_ sender: Any?) {
         NSApplication.shared.terminate(nil)
     }
 
