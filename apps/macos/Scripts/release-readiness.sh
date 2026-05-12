@@ -110,6 +110,9 @@ if [[ -f "$DMG_PATH" ]]; then
     run_check "DMG signature verifies" \
         codesign --verify --verbose=2 "$DMG_PATH"
 
+    run_check "Gatekeeper assessment accepts DMG" \
+        spctl --assess --type open --verbose=4 "$DMG_PATH"
+
     run_check "Stapled notarization ticket validates" \
         xcrun stapler validate "$DMG_PATH"
 fi
