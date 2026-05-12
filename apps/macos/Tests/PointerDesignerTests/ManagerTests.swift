@@ -406,7 +406,7 @@ final class ManagerTests: XCTestCase {
         engine.stop()
     }
 
-    func testCursorEngineStopRestoresCursor() {
+    func testCursorEngineStopDoesNotCallUnsupportedHelperRestore() {
         let mockDisplay = MockDisplayService()
         let mockPermission = MockPermissionService()
         let mockHelper = MockHelperService()
@@ -420,8 +420,25 @@ final class ManagerTests: XCTestCase {
         engine.start()
         engine.stop()
 
-        // Helper should have received restore call
-        XCTAssertGreaterThan(mockHelper.restoreCursorCallCount, 0, "Cursor should be restored on stop")
+        XCTAssertEqual(mockHelper.restoreCursorCallCount, 0, "Unsupported helper path should not receive restore calls")
+    }
+
+    func testCursorEngineStopRestoresCursorThroughSupportedHelper() {
+        let mockDisplay = MockDisplayService()
+        let mockPermission = MockPermissionService()
+        let mockHelper = MockHelperService()
+        mockHelper.supportsSystemWidePointerReplacement = true
+
+        let engine = CursorEngine(
+            displayService: mockDisplay,
+            permissionService: mockPermission,
+            helperService: mockHelper
+        )
+
+        engine.start()
+        engine.stop()
+
+        XCTAssertGreaterThan(mockHelper.restoreCursorCallCount, 0, "Supported helper path should restore cursor on stop")
     }
 
     // MARK: - Integration Tests

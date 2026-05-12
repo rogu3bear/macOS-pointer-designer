@@ -208,6 +208,34 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(description.localizedCaseInsensitiveContains("system-wide cursor customization"))
     }
 
+    func testUserFacingDocsDoNotAdvertiseUnsupportedSystemWideCursorChanges() throws {
+        let checkedFiles = [
+            "../../../../NORTH_STAR.md",
+            "../../../../ANCHOR.md",
+            "../../../../AGENTS.md",
+            "../../README.md",
+            "../../Sources/PointerDesigner/PreferencesWindowController.swift"
+        ]
+        let forbiddenClaims = [
+            "optional system-wide helper support",
+            "system-wide upgrade path",
+            "System-wide Helper",
+            "system-wide cursor changes",
+            "Cursor not changing system-wide"
+        ]
+
+        for file in checkedFiles {
+            let text = try loadText(relativeToThisFile: file)
+
+            for claim in forbiddenClaims {
+                XCTAssertFalse(
+                    text.localizedCaseInsensitiveContains(claim),
+                    "\(file) must not advertise unsupported pointer capability: \(claim)"
+                )
+            }
+        }
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
@@ -217,5 +245,14 @@ final class IdentityTests: XCTestCase {
         let data = try Data(contentsOf: plistURL)
         let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
         return try XCTUnwrap(plist as? [String: Any])
+    }
+
+    private func loadText(relativeToThisFile relativePath: String) throws -> String {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let fileURL = testFile
+            .deletingLastPathComponent()
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+        return try String(contentsOf: fileURL, encoding: .utf8)
     }
 }

@@ -33,7 +33,8 @@ and boundary checks.
 - Swift and AppKit first.
 - The menu bar app and preferences preview should remain useful without a
   helper installed.
-- System-wide cursor behavior goes through the explicit helper path.
+- Do not claim system-wide pointer replacement unless the helper path is
+  supported, tested, and exposed through the app capability model.
 - Screen recording permission handling must stay honest; do not imply dynamic
   background sampling works without real permission.
 - Keep crash recovery, signal handling, orphan cleanup, and cursor restore paths

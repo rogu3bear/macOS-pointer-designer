@@ -13,9 +13,9 @@ If a proposal conflicts with these anchors, the burden is on the proposal.
 - The primary product surface is the macOS app under `apps/macos`.
 - The app is menu bar first. It is not a dock-first design tool or a general
   system automation suite.
-- The helper is optional system-wide support. Preferences preview and ordinary
-  app behavior must remain understandable without pretending the helper is
-  always installed.
+- Preferences preview and ordinary app behavior must remain understandable
+  without a helper. Helper scaffolding must not be presented as system-wide
+  pointer replacement until the app has a supported, tested implementation.
 
 ## Identity Anchors
 
