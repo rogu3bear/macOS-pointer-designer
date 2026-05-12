@@ -1,6 +1,6 @@
 # Cursor Designer
 
-macOS cursor customization with dynamic contrast adaptation and optional system-wide helper support.
+macOS cursor customization with dynamic contrast adaptation, persistent settings, and pointer-focused accessibility presets.
 
 This package lives in `apps/macos` inside the Cursor Designer monorepo.
 
@@ -11,7 +11,7 @@ This package lives in `apps/macos` inside the Cursor Designer monorepo.
 - **Outline Mode**: Add a contrasting outline that adapts to the background
 - **Menu Bar App**: Quick access to settings from the menu bar
 - **Launch at Login**: Optionally start with your Mac
-- **Manual Helper Control**: Install the helper from Preferences when you want system-wide cursor changes
+- **Pointer Scope Status**: Shows whether this build enables any broader pointer replacement capability
 - **Multi-Monitor Support**: Handles different DPI scales and refresh rates per display
 - **Crash Recovery**: Automatically restores system cursor if app terminates unexpectedly
 
@@ -35,7 +35,7 @@ brew install --cask cursor-designer-osx
 2. Open the DMG file
 3. Drag `CursorDesigner.app` to your Applications folder
 4. Launch from Applications
-5. Open Preferences and install the helper tool if you want system-wide cursor changes
+5. Open Preferences to choose pointer colors, presets, contrast behavior, and launch-at-login
 
 ## Usage
 
@@ -60,7 +60,7 @@ Click the cursor icon in the menu bar to:
 - **Contrast Mode**: Select adaptation behavior
 - **Outline Width**: Adjust outline thickness (1-5px)
 - **Sampling Rate**: Background detection frequency (15-120 Hz)
-- **System-wide Helper**: See whether the helper is installed and install it manually when needed
+- **Pointer Scope**: Shows whether broader pointer replacement is enabled in this build
 - **Launch at Login**: Start automatically with macOS
 
 ## Quick Start (Personal Use)
@@ -72,13 +72,13 @@ swift build
 # Run the app
 .build/debug/PointerDesigner
 
-# Optional: run the helper in a separate terminal for development
+# Optional: run the helper in a separate terminal while developing helper internals
 .build/debug/PointerDesignerHelper
 
 # Note: Executable names remain PointerDesigner/PointerDesignerHelper for compatibility
 ```
 
-**Note**: The menu bar app and Preferences preview work without the helper. System-wide cursor changes require the helper to be installed or running.
+**Note**: The menu bar app and Preferences preview work without the helper. System-wide pointer replacement is not enabled in this build.
 
 ## Building from Source
 
@@ -131,7 +131,7 @@ apps/macos/
 │   │   └── SystemIntegrationManager.swift  # Sleep/wake, appearance changes
 │   │
 │   └── PointerDesignerHelper/     # Privileged helper (module name preserved)
-│       └── main.swift             # System-wide cursor application
+│       └── main.swift             # Helper executable scaffold
 │
 ├── Tests/
 │   └── PointerDesignerTests/
@@ -155,7 +155,7 @@ main.swift
         ├── setupSignalHandlers()       # SIGTERM/SIGINT handling
         ├── setupMenuBar()              # Create status item + menu
         ├── setupCursorEngine()         # Initialize core engine
-        └── show helper status in Preferences
+        └── show pointer scope status in Preferences
 ```
 
 ### Core Engine Pipeline
@@ -185,7 +185,7 @@ CursorEngine.start()
     │   │   ├── Draw cursor path with optional outline
     │   │   └── Cache rendered image
     │   ├── NSCursor.set() (in-app)
-    │   └── HelperToolManager.setCursor() (system-wide via XPC)
+    │   └── HelperToolManager.setCursor() only when a supported helper capability is enabled
 ```
 
 ### Settings Persistence
@@ -217,18 +217,17 @@ The application handles 70+ edge cases across these categories:
 
 Cursor Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
-- **Administrator Access**: Only when installing the helper for system-wide cursor changes
+- **Administrator Access**: Not required for the current app behavior. Do not grant admin access unless a future release clearly enables and explains a supported helper capability.
 
 No data is collected or transmitted. All processing happens locally.
 
 ## Troubleshooting
 
-### Cursor not changing system-wide
-1. Open Preferences and check the **System-wide Helper** status
-2. Install the helper tool if it is not installed
-3. If you are running a local development build, make sure the helper binary is running
-4. Grant Screen Recording permission
-5. Restart the app
+### Dynamic contrast is not updating
+1. Grant Screen Recording permission
+2. Open Preferences and check the selected contrast mode
+3. Lower the sampling rate if CPU usage is high
+4. Restart the app if display state changed while the app was running
 
 ### High CPU usage
 - Lower the sampling rate in Preferences (default: 60 Hz)

@@ -457,8 +457,9 @@ public final class CursorEngine: CursorService {
             )
         }
 
-        // For system-wide changes, communicate with helper
-        helperService.setCursor(cursorImage)
+        if helperService.supportsSystemWidePointerReplacement {
+            helperService.setCursor(cursorImage)
+        }
     }
 
     private func calculateInvertedColor(against background: CursorColor, settings: CursorSettings) -> CursorColor {
@@ -487,7 +488,9 @@ public final class CursorEngine: CursorService {
         DispatchQueue.main.async {
             NSCursor.arrow.set()
         }
-        helperService.restoreSystemCursor()
+        if helperService.supportsSystemWidePointerReplacement {
+            helperService.restoreSystemCursor()
+        }
         lastAppliedCursor = nil
     }
 

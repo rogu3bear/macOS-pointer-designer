@@ -90,16 +90,19 @@ public protocol HelperService: AnyObject {
     /// Check if helper tool is installed
     var isHelperInstalled: Bool { get }
 
+    /// Whether this build has a proven system-wide pointer replacement path.
+    var supportsSystemWidePointerReplacement: Bool { get }
+
     /// Install the helper tool
     func installHelper(completion: @escaping (Bool, Error?) -> Void)
 
     /// Uninstall the helper tool
     func uninstallHelper(completion: @escaping (Bool, Error?) -> Void)
 
-    /// Set system-wide cursor
+    /// Send a cursor image to the helper when a supported helper path is available.
     func setCursor(_ image: NSImage)
 
-    /// Restore system default cursor
+    /// Ask the helper to restore the system default cursor when a supported helper path is available.
     func restoreSystemCursor()
 }
 

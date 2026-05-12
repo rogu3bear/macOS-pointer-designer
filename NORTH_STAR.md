@@ -13,8 +13,8 @@ it, local-first, reversible, and respectful of macOS permission boundaries.
 - Let the user choose a cursor color and contrast behavior without making the
   Mac feel less native.
 - Adapt cursor visibility to the current background when the user enables it.
-- Keep the app useful without the helper, and make the helper an explicit
-  system-wide upgrade path rather than a surprise requirement.
+- Keep the app useful without a helper. Do not advertise system-wide pointer
+  replacement unless a supported, tested implementation actually enables it.
 - Restore cursor state after crashes, quits, and relaunches.
 - Keep processing local. Do not add telemetry, trackers, cloud processing, or
   hidden network dependency to the cursor loop.
@@ -38,8 +38,8 @@ Designer.
 
 - A user launches Cursor Designer from the menu bar.
 - They can enable or disable cursor customization quickly.
-- Preferences expose color, contrast mode, outline width, sampling rate, helper
-  status, and launch-at-login without implying unsafe automation.
+- Preferences expose color, contrast mode, outline width, sampling rate,
+  pointer scope, and launch-at-login without implying unsupported automation.
 - The cursor engine samples local background color only when needed and applies
   bounded, testable rendering behavior.
 - If screen recording permission, helper installation, display state, or stored
@@ -51,7 +51,7 @@ Designer.
 Prefer work that increases trust in the core utility:
 
 - clearer identity and packaging consistency
-- safer helper install and XPC behavior
+- safer helper and XPC behavior only when a real pointer capability requires it
 - better crash recovery and orphan cleanup
 - stronger display, color, and permission edge-case handling
 - focused local verification for app, helper, settings, and packaging paths
@@ -65,7 +65,7 @@ be.
 
 - Becoming a general macOS automation tool.
 - Importing another product's website, release flow, or deployment story.
-- Making the helper mandatory for ordinary preference preview behavior.
+- Making a helper mandatory for ordinary preference preview behavior.
 - Adding telemetry, trackers, surprise network calls, or hidden background
   services outside the documented app/helper model.
 - Rebranding compatibility identifiers without a migration plan and full

@@ -349,8 +349,8 @@ final class PreferencesView: NSView {
         permissionSection.addArrangedSubview(permissionNote)
         stackView.addArrangedSubview(permissionSection)
 
-        // Helper Status Section
-        let helperSection = createSection(title: "System-wide Helper")
+        // Pointer Scope Section
+        let helperSection = createSection(title: "Pointer Scope")
         let helperRow = NSStackView()
         helperRow.orientation = .horizontal
         helperRow.spacing = 10
@@ -363,14 +363,14 @@ final class PreferencesView: NSView {
         installHelperButton.bezelStyle = .rounded
         installHelperButton.controlSize = .small
         installHelperButton.setAccessibilityLabel("Install Helper Tool")
-        installHelperButton.setAccessibilityHelp("Install the helper required for system-wide cursor changes")
+        installHelperButton.setAccessibilityHelp("Install the helper when this build supports system-wide pointer replacement")
         helperButton = installHelperButton
 
         helperRow.addArrangedSubview(helperLabel)
         helperRow.addArrangedSubview(installHelperButton)
         helperSection.addArrangedSubview(helperRow)
 
-        let helperNote = NSTextField(labelWithString: "Preferences preview always works. System-wide cursor changes require the helper.")
+        let helperNote = NSTextField(labelWithString: "Custom pointer preview works in Cursor Designer. System-wide pointer replacement is not enabled in this build.")
         helperNote.font = NSFont.systemFont(ofSize: 10)
         helperNote.textColor = .secondaryLabelColor
         helperSection.addArrangedSubview(helperNote)
@@ -487,6 +487,14 @@ final class PreferencesView: NSView {
     private func updateHelperStatus() {
         stateController.refreshHelperState()
         let helperInstalled = stateController.isHelperInstalled
+        let supportsSystemWidePointerReplacement = stateController.supportsSystemWidePointerReplacement
+
+        guard supportsSystemWidePointerReplacement else {
+            helperStatusLabel?.stringValue = "Not enabled in this build"
+            helperStatusLabel?.textColor = .secondaryLabelColor
+            helperButton?.isHidden = true
+            return
+        }
 
         if helperInstalled {
             helperStatusLabel?.stringValue = "✓ Installed"
@@ -595,6 +603,15 @@ final class PreferencesView: NSView {
     }
 
     @objc private func installHelper() {
+        guard stateController.supportsSystemWidePointerReplacement else {
+            let alert = NSAlert()
+            alert.messageText = "Pointer Replacement Not Enabled"
+            alert.informativeText = "System-wide pointer replacement is not enabled in this build."
+            alert.alertStyle = .informational
+            alert.runModal()
+            return
+        }
+
         helperButton?.isEnabled = false
 
         stateController.installHelper { [weak self] success, error in

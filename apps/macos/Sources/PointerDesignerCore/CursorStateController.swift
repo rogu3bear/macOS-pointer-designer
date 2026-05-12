@@ -1,6 +1,17 @@
 import Foundation
 import Combine
 
+public enum CursorStateControllerError: Error, Equatable, LocalizedError {
+    case unsupportedSystemWidePointerReplacement
+
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedSystemWidePointerReplacement:
+            return "System-wide pointer replacement is not enabled in this build."
+        }
+    }
+}
+
 /// Business logic controller for cursor state management
 /// Extracts logic from UI layer for better testability and separation of concerns
 public final class CursorStateController: ObservableObject {
@@ -27,6 +38,7 @@ public final class CursorStateController: ObservableObject {
     @Published public private(set) var isLaunchAtLoginEnabled: Bool = false
     @Published public private(set) var hasScreenRecordingPermission: Bool = false
     @Published public private(set) var isHelperInstalled: Bool = false
+    @Published public private(set) var supportsSystemWidePointerReplacement: Bool = false
 
     /// Initializer for dependency injection (testing)
     public init(
@@ -46,6 +58,7 @@ public final class CursorStateController: ObservableObject {
         self.isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
         self.hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission
         self.isHelperInstalled = helperService.isHelperInstalled
+        self.supportsSystemWidePointerReplacement = helperService.supportsSystemWidePointerReplacement
 
         NotificationCenter.default.addObserver(
             self,
@@ -203,10 +216,19 @@ public final class CursorStateController: ObservableObject {
     /// Refresh helper installation state
     public func refreshHelperState() {
         isHelperInstalled = helperService.isHelperInstalled
+        supportsSystemWidePointerReplacement = helperService.supportsSystemWidePointerReplacement
     }
 
-    /// Attempt to install the system-wide helper tool
+    /// Attempt to install the helper tool when this build supports that capability.
     public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
+        guard helperService.supportsSystemWidePointerReplacement else {
+            refreshHelperState()
+            DispatchQueue.main.async {
+                completion(false, CursorStateControllerError.unsupportedSystemWidePointerReplacement)
+            }
+            return
+        }
+
         helperService.installHelper { [weak self] success, error in
             DispatchQueue.main.async {
                 self?.refreshHelperState()
@@ -242,6 +264,7 @@ public final class CursorStateController: ObservableObject {
         let launchAtLoginEnabled = launchAtLoginService.isEnabled
         isLaunchAtLoginEnabled = launchAtLoginEnabled
         isHelperInstalled = helperService.isHelperInstalled
+        supportsSystemWidePointerReplacement = helperService.supportsSystemWidePointerReplacement
 
         guard currentSettings.launchAtLogin != launchAtLoginEnabled else { return }
 

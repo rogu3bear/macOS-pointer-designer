@@ -2,7 +2,7 @@ import Foundation
 import AppKit
 import ServiceManagement
 
-/// Manages the privileged helper tool for system-wide cursor changes
+/// Manages helper wiring for cursor operations.
 public final class HelperToolManager: HelperService {
     public static let shared = HelperToolManager()
 
@@ -49,8 +49,9 @@ public final class HelperToolManager: HelperService {
     public func shutdown() {
         xpcQueue.sync {
             if let connection = xpcConnection {
-                // Restore cursor before closing connection
-                if let helper = connection.remoteObjectProxy as? PointerHelperProtocol {
+                // Restore cursor before closing connection when helper replacement is supported.
+                if supportsSystemWidePointerReplacement,
+                   let helper = connection.remoteObjectProxy as? PointerHelperProtocol {
                     helper.restoreCursor()
                 }
                 // Invalidate the connection to release resources
@@ -65,6 +66,11 @@ public final class HelperToolManager: HelperService {
     /// Check if helper tool is installed
     public var isHelperInstalled: Bool {
         FileManager.default.fileExists(atPath: Identity.helperToolPath)
+    }
+
+    /// This build does not currently have a public, distribution-safe system-wide pointer replacement path.
+    public var supportsSystemWidePointerReplacement: Bool {
+        false
     }
 
     /// Check if helper is responsive (health check)
@@ -161,8 +167,13 @@ public final class HelperToolManager: HelperService {
         }
     }
 
-    /// Install the helper tool (requires admin privileges)
+    /// Install the helper tool when this build enables a supported helper capability.
     public func installHelper(completion: @escaping (Bool, Error?) -> Void) {
+        guard supportsSystemWidePointerReplacement else {
+            completion(false, CursorStateControllerError.unsupportedSystemWidePointerReplacement)
+            return
+        }
+
         // For modern macOS (10.13+), use SMAppService for LaunchDaemons
         if #available(macOS 13.0, *) {
             installHelperModern(completion: completion)
@@ -214,8 +225,9 @@ public final class HelperToolManager: HelperService {
 
     // MARK: - XPC Communication
 
-    /// Set cursor system-wide via helper
+    /// Send cursor image data to the helper when a supported helper path is enabled.
     public func setCursor(_ image: NSImage) {
+        guard supportsSystemWidePointerReplacement else { return }
         guard isHelperInstalled else {
             // Fall back to app-level cursor only
             return
@@ -242,8 +254,9 @@ public final class HelperToolManager: HelperService {
         }
     }
 
-    /// Restore system cursor via helper
+    /// Restore system cursor via helper when a supported helper path is enabled.
     public func restoreSystemCursor() {
+        guard supportsSystemWidePointerReplacement else { return }
         guard isHelperInstalled else { return }
         sendToHelper(command: .restoreCursor, payload: nil)
     }

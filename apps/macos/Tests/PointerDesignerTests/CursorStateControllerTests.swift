@@ -265,13 +265,34 @@ final class CursorStateControllerTests: XCTestCase {
 
     func testRefreshHelperState() {
         mockHelper.isHelperInstalled = true
+        mockHelper.supportsSystemWidePointerReplacement = true
 
         controller.refreshHelperState()
 
         XCTAssertTrue(controller.isHelperInstalled)
+        XCTAssertTrue(controller.supportsSystemWidePointerReplacement)
+    }
+
+    func testSystemWidePointerReplacementDefaultsToUnsupported() {
+        XCTAssertFalse(controller.supportsSystemWidePointerReplacement)
+    }
+
+    func testInstallHelperRefusesUnsupportedSystemWidePointerReplacement() {
+        let expectation = expectation(description: "reject unsupported helper install")
+
+        controller.installHelper { success, error in
+            XCTAssertFalse(success)
+            XCTAssertEqual(error as? CursorStateControllerError, .unsupportedSystemWidePointerReplacement)
+            XCTAssertFalse(self.controller.isHelperInstalled)
+            XCTAssertEqual(self.mockHelper.installCallCount, 0)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testInstallHelperUpdatesState() {
+        mockHelper.supportsSystemWidePointerReplacement = true
         let expectation = expectation(description: "install helper")
 
         controller.installHelper { success, error in

@@ -131,6 +131,7 @@ public final class MockPermissionService: PermissionService {
 
 public final class MockHelperService: HelperService {
     public var isHelperInstalled = false
+    public var supportsSystemWidePointerReplacement = false
     public var installCallCount = 0
     public var uninstallCallCount = 0
     public var setCursorCallCount = 0

@@ -3,7 +3,7 @@ import AppKit
 import Security
 import PointerDesignerCore
 
-/// Privileged helper tool for system-wide cursor changes
+/// Helper executable scaffold for pointer operations.
 final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelperProtocol {
     private let listener: NSXPCListener
 
@@ -245,7 +245,7 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
     func setCursor(imageData: Data) {
         guard let image = NSImage(data: imageData) else { return }
 
-        // System-wide cursor setting using CoreGraphics private APIs
+        // Prototype cursor setting using CoreGraphics private APIs
         // This requires SIP to be partially disabled or proper entitlements
         DispatchQueue.main.async {
             self.applyCursorSystemWide(image)
