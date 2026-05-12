@@ -510,6 +510,7 @@ final class IdentityTests: XCTestCase {
             "make dmg-artifact-match-check",
             "mounted DMG app must match the release app",
             "make signing-identity-check",
+            "make release-source-state-check",
             "make setup-notary-profile",
             "make notary-profile-check",
             "make signed-dmg",
@@ -539,6 +540,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(rootReadme.contains("Cursor Designer is not advertised as a stable public download yet"))
         XCTAssertTrue(rootReadme.contains("make setup-notary-profile"))
         XCTAssertTrue(rootReadme.contains("make notary-profile-check"))
+        XCTAssertTrue(rootReadme.contains("make release-source-state-check"))
         XCTAssertTrue(rootReadme.contains("make release-candidate"))
         XCTAssertTrue(rootReadme.contains("make release-artifact-readiness"))
         XCTAssertTrue(rootReadme.contains("make release-readiness"))
@@ -573,6 +575,7 @@ final class IdentityTests: XCTestCase {
             "last-known permission posture",
             "persisted permission posture must not be presented",
             "make signing-identity-check",
+            "make release-source-state-check",
             "make setup-notary-profile",
             "make notary-profile-check",
             "make signed-dmg",
@@ -640,6 +643,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("cheap boundary smoke only"))
         XCTAssertTrue(script.contains("local macOS package, DMG, signing, notarization, permission-flow, and release-evidence gates remain authoritative"))
         XCTAssertTrue(script.contains("release-readiness"))
+        XCTAssertTrue(script.contains("release-source-state-check"))
         XCTAssertTrue(script.contains("setup-notary-profile"))
         XCTAssertTrue(script.contains("notary-profile-check"))
         XCTAssertTrue(script.contains("release-metadata-check"))
@@ -671,6 +675,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("command -v rg"))
         XCTAssertTrue(script.contains("apps/macos/Sources"))
         XCTAssertTrue(script.contains("URLSession"))
+        XCTAssertTrue(script.contains("UpdateChecker.swift"))
+        XCTAssertTrue(script.contains("allowsInternetAccess"))
         XCTAssertTrue(script.contains("NSURLConnection"))
         XCTAssertTrue(script.contains("NWConnection"))
         XCTAssertTrue(script.contains("SentrySDK"))
@@ -704,11 +710,50 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("Last checked: Screen Recording"))
         XCTAssertTrue(script.contains("Live macOS permission checks decide features."))
         XCTAssertTrue(script.contains("System-wide pointer replacement is not enabled in this build."))
+        XCTAssertTrue(script.contains("Allow internet access for update checks"))
+        XCTAssertTrue(script.contains("Check for Updates"))
         XCTAssertTrue(script.contains("grep -Fq"))
         XCTAssertTrue(script.contains("Cursor Designer app UI contract check passed."))
         XCTAssertTrue(workflow.contains("./scripts/check-app-ui-contract.sh"))
         XCTAssertTrue(rootReadme.contains("./scripts/check-app-ui-contract.sh"))
         XCTAssertTrue(requirements.contains("./scripts/check-app-ui-contract.sh"))
+    }
+
+    func testPointerPersistenceResearchDocumentsLeastPermissionBoundary() throws {
+        let research = try loadText(relativeToThisFile: "../../POINTER_PERSISTENCE_RESEARCH.md")
+        let cursorEngine = try loadText(relativeToThisFile: "../../Sources/PointerDesignerCore/CursorEngine.swift")
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+
+        XCTAssertTrue(research.contains("NSCursor.set()"))
+        XCTAssertTrue(research.contains("least-permission durable path starts with a supervised pointer"))
+        XCTAssertTrue(research.contains("Screen Recording is only justified for dynamic contrast"))
+        XCTAssertTrue(research.contains("Accessibility is only justified"))
+        XCTAssertTrue(research.contains("Private WindowServer/CGS cursor replacement should stay"))
+        XCTAssertTrue(research.contains("https://developer.apple.com/documentation/appkit/nscursor/set%28%29"))
+        XCTAssertTrue(research.contains("https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/MouseTrackingEvents/MouseTrackingEvents.html"))
+        XCTAssertTrue(cursorEngine.contains("startPersistenceSupervisor"))
+        XCTAssertTrue(cursorEngine.contains("NSEvent.addGlobalMonitorForEvents"))
+        XCTAssertTrue(cursorEngine.contains("NSWorkspace.didActivateApplicationNotification"))
+        XCTAssertTrue(northStar.contains("POINTER_PERSISTENCE_RESEARCH.md"))
+        XCTAssertTrue(requirements.contains("APP-10"))
+        XCTAssertTrue(requirements.contains("reapply supervisor"))
+    }
+
+    func testUpdateChecksAreExplicitlyInternetGated() throws {
+        let preferences = try loadText(relativeToThisFile: "../../Sources/PointerDesigner/PreferencesWindowController.swift")
+        let settings = try loadText(relativeToThisFile: "../../Sources/PointerDesignerCore/CursorSettings.swift")
+        let checker = try loadText(relativeToThisFile: "../../Sources/PointerDesignerCore/UpdateChecker.swift")
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+
+        XCTAssertTrue(preferences.contains("Allow internet access for update checks"))
+        XCTAssertTrue(preferences.contains("Check for Updates"))
+        XCTAssertTrue(settings.contains("allowsInternetUpdateChecks"))
+        XCTAssertTrue(checker.contains("guard allowsInternetAccess else"))
+        XCTAssertTrue(checker.contains("internetAccessNotAllowed"))
+        XCTAssertTrue(northStar.contains("Update checks are allowed only"))
+        XCTAssertTrue(requirements.contains("APP-9"))
     }
 
     func testTrustCheckDoesNotClaimCursorApplicationRequiresHelper() throws {
@@ -742,6 +787,7 @@ final class IdentityTests: XCTestCase {
             "../../Scripts/launch-smoke.sh": "ERROR: --app requires a path",
             "../../Scripts/setup-notary-profile.sh": "ERROR: --notary-profile requires a name",
             "../../Scripts/notary-profile-check.sh": "ERROR: --notary-profile requires a name",
+            "../../Scripts/release-source-state-check.sh": "ERROR: --app requires a path",
             "../../Scripts/release-metadata-check.sh": "ERROR: --repo requires OWNER/REPO",
             "../../Scripts/release-readiness.sh": "ERROR: --notary-profile requires a name",
             "../../Scripts/manual-release-evidence-check.sh": "ERROR: --evidence requires a path",
@@ -836,8 +882,11 @@ final class IdentityTests: XCTestCase {
     func testReleaseReadinessGateChecksSigningAndNotarization() throws {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let script = try loadText(relativeToThisFile: "../../Scripts/release-readiness.sh")
+        let sourceStateCheck = try loadText(relativeToThisFile: "../../Scripts/release-source-state-check.sh")
 
         XCTAssertTrue(makefile.contains("release-readiness:"))
+        XCTAssertTrue(makefile.contains("release-source-state-check:"))
+        XCTAssertTrue(makefile.contains("release-source-state-check.sh"))
         XCTAssertTrue(makefile.contains(#"--repo "$(GITHUB_REPO)""#))
         XCTAssertTrue(script.contains(#"--dmg "$DMG_PATH""#))
         XCTAssertTrue(script.contains("--skip-release-metadata"))
@@ -846,6 +895,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("dmg-install-check.sh"))
         XCTAssertTrue(script.contains("release-metadata-check.sh"))
         XCTAssertTrue(script.contains("Stable release metadata matches app version and DMG digest"))
+        XCTAssertTrue(script.contains("Release source tree is clean"))
+        XCTAssertTrue(script.contains("release-source-state-check.sh"))
+        XCTAssertTrue(script.contains("Commit the release tranche, rebuild/sign/notarize the DMG"))
         XCTAssertTrue(script.contains("--require-signature"))
         XCTAssertTrue(script.contains("--repo"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
@@ -872,6 +924,14 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains(#"output=$("$@" 2>&1)"#))
         XCTAssertTrue(script.contains("printf '%s\\n' \"$output\""))
         XCTAssertTrue(script.contains("failures=("))
+        XCTAssertTrue(sourceStateCheck.contains("git -C \"$ROOT_DIR\" status --porcelain=v1 --untracked-files=all -- ."))
+        XCTAssertTrue(sourceStateCheck.contains("git -C \"$ROOT_DIR\" show -s --format=%ct HEAD"))
+        XCTAssertTrue(sourceStateCheck.contains("stat -f %m \"$app_executable\""))
+        XCTAssertTrue(sourceStateCheck.contains("stat -f %m \"$DMG_PATH\""))
+        XCTAssertTrue(sourceStateCheck.contains("release readiness requires a clean committed tree"))
+        XCTAssertTrue(sourceStateCheck.contains("The signed app and DMG must be built from the same committed state"))
+        XCTAssertTrue(sourceStateCheck.contains("release app executable is not newer than the release commit"))
+        XCTAssertTrue(sourceStateCheck.contains("release DMG is not newer than the release commit"))
     }
 
     func testDMGInstallGateChecksMountedArtifactShape() throws {
@@ -986,7 +1046,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checklist.contains("privacy-preserving download routing"))
         XCTAssertTrue(checklist.contains("## Evidence Record Template"))
         XCTAssertFalse(checklist.contains("App executable SHA-256:\n  shasum -a 256 CursorDesigner.dmg"))
-        XCTAssertTrue(checklist.contains("spctl --assess --type open --verbose=4 CursorDesigner.dmg"))
+        XCTAssertTrue(checklist.contains("spctl --assess --type open --context context:primary-signature --verbose=4 CursorDesigner.dmg"))
         XCTAssertTrue(checklist.contains("xcrun stapler validate CursorDesigner.dmg"))
         XCTAssertTrue(checklist.contains("Pass/fail"))
         XCTAssertTrue(checklist.contains("Blocker disposition"))
@@ -1053,6 +1113,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(runbook.contains("does not expose a profile-list command"))
         XCTAssertTrue(runbook.contains("exact profile name you created with `store-credentials`"))
         XCTAssertTrue(runbook.contains("make release-candidate"))
+        XCTAssertTrue(runbook.contains("make release-source-state-check"))
         XCTAssertTrue(runbook.contains("make release-readiness"))
         XCTAssertTrue(runbook.contains("make manual-release-evidence-template"))
         XCTAssertTrue(runbook.contains("make manual-release-evidence-check"))
@@ -1074,6 +1135,7 @@ final class IdentityTests: XCTestCase {
         let executableScripts = [
             "../../Scripts/setup-notary-profile.sh",
             "../../Scripts/notary-profile-check.sh",
+            "../../Scripts/release-source-state-check.sh",
             "../../Scripts/release-readiness.sh",
             "../../Scripts/north-star-audit.sh",
             "../../Scripts/manual-release-evidence-check.sh",

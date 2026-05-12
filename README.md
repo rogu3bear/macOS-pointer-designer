@@ -40,7 +40,8 @@ metadata, and completed manual release evidence before any mass-production
 claim.
 
 From `apps/macos`, the release authority lane starts with
-`make setup-notary-profile` and `make notary-profile-check`, then proceeds
+`make setup-notary-profile` and `make notary-profile-check`, verifies the
+committed source state with `make release-source-state-check`, then proceeds
 through `make release-candidate`, `make release-artifact-readiness`, and
 `make release-readiness` against the same artifact.
 

@@ -264,7 +264,7 @@ public struct CursorColor: Codable, Equatable, Sendable {
 /// Fixes edge cases: #45 (corrupted data), #47 (migration), #48 (zero sampling), #49 (zero outline)
 public struct CursorSettings: Codable, Equatable, Sendable {
     /// Schema version for migration support (edge case #47)
-    public static let currentSchemaVersion = 3
+    public static let currentSchemaVersion = 4
 
     public var schemaVersion: Int
     public var isEnabled: Bool
@@ -276,6 +276,9 @@ public struct CursorSettings: Codable, Equatable, Sendable {
     public var launchAtLogin: Bool
     public var lastKnownScreenRecordingPermission: Bool?
     public var lastKnownAccessibilityPermission: Bool?
+    public var allowsInternetUpdateChecks: Bool
+    public var lastUpdateCheckDate: Date?
+    public var lastKnownLatestReleaseTag: String?
 
     // Advanced settings
     public var brightnessThreshold: Float // Edge case #14: configurable threshold
@@ -301,6 +304,9 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         launchAtLogin: Bool = false,
         lastKnownScreenRecordingPermission: Bool? = nil,
         lastKnownAccessibilityPermission: Bool? = nil,
+        allowsInternetUpdateChecks: Bool = false,
+        lastUpdateCheckDate: Date? = nil,
+        lastKnownLatestReleaseTag: String? = nil,
         brightnessThreshold: Float = 0.5,
         hysteresis: Float = 0.1,
         adaptiveScaling: Bool = true,
@@ -323,6 +329,9 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         self.launchAtLogin = launchAtLogin
         self.lastKnownScreenRecordingPermission = lastKnownScreenRecordingPermission
         self.lastKnownAccessibilityPermission = lastKnownAccessibilityPermission
+        self.allowsInternetUpdateChecks = allowsInternetUpdateChecks
+        self.lastUpdateCheckDate = lastUpdateCheckDate
+        self.lastKnownLatestReleaseTag = lastKnownLatestReleaseTag
         self.brightnessThreshold = max(0.1, min(0.9, brightnessThreshold))
         self.hysteresis = max(0.01, min(0.2, hysteresis))
         self.adaptiveScaling = adaptiveScaling
@@ -384,6 +393,9 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         self.launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? false
         self.lastKnownScreenRecordingPermission = try? container.decode(Bool.self, forKey: .lastKnownScreenRecordingPermission)
         self.lastKnownAccessibilityPermission = try? container.decode(Bool.self, forKey: .lastKnownAccessibilityPermission)
+        self.allowsInternetUpdateChecks = (try? container.decode(Bool.self, forKey: .allowsInternetUpdateChecks)) ?? false
+        self.lastUpdateCheckDate = try? container.decode(Date.self, forKey: .lastUpdateCheckDate)
+        self.lastKnownLatestReleaseTag = try? container.decode(String.self, forKey: .lastKnownLatestReleaseTag)
         self.brightnessThreshold = (try? container.decode(Float.self, forKey: .brightnessThreshold)) ?? 0.5
         self.hysteresis = (try? container.decode(Float.self, forKey: .hysteresis)) ?? 0.1
         self.adaptiveScaling = (try? container.decode(Bool.self, forKey: .adaptiveScaling)) ?? true
@@ -419,6 +431,11 @@ public struct CursorSettings: Codable, Equatable, Sendable {
             self.lastKnownScreenRecordingPermission = nil
             self.lastKnownAccessibilityPermission = nil
         }
+        if version < 4 {
+            self.allowsInternetUpdateChecks = false
+            self.lastUpdateCheckDate = nil
+            self.lastKnownLatestReleaseTag = nil
+        }
         self.schemaVersion = Self.currentSchemaVersion
     }
 
@@ -426,6 +443,7 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         case schemaVersion, isEnabled, cursorColor, contrastMode
         case outlineWidth, outlineColor, samplingRate, launchAtLogin
         case lastKnownScreenRecordingPermission, lastKnownAccessibilityPermission
+        case allowsInternetUpdateChecks, lastUpdateCheckDate, lastKnownLatestReleaseTag
         case brightnessThreshold, hysteresis, adaptiveScaling
         case preset, glowEnabled, glowColor, glowRadius, shadowEnabled, cursorScale
     }

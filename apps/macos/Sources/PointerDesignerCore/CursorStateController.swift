@@ -232,6 +232,21 @@ public final class CursorStateController: ObservableObject {
         return result
     }
 
+    /// Allow or deny network access for user-initiated update checks.
+    public func setAllowsInternetUpdateChecks(_ allowed: Bool) {
+        var settings = currentSettings
+        settings.allowsInternetUpdateChecks = allowed
+        updateSettings(settings)
+    }
+
+    /// Record the last release tag observed by the user-initiated update checker.
+    public func recordUpdateCheck(latestReleaseTag: String, checkedAt date: Date = Date()) {
+        var settings = currentSettings
+        settings.lastKnownLatestReleaseTag = latestReleaseTag
+        settings.lastUpdateCheckDate = date
+        updateSettings(settings)
+    }
+
     /// Refresh permission state
     public func refreshPermissionState() {
         hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission

@@ -15,6 +15,9 @@ final class CursorSettingsTests: XCTestCase {
         XCTAssertFalse(defaults.launchAtLogin)
         XCTAssertNil(defaults.lastKnownScreenRecordingPermission)
         XCTAssertNil(defaults.lastKnownAccessibilityPermission)
+        XCTAssertFalse(defaults.allowsInternetUpdateChecks)
+        XCTAssertNil(defaults.lastUpdateCheckDate)
+        XCTAssertNil(defaults.lastKnownLatestReleaseTag)
         XCTAssertEqual(defaults.schemaVersion, CursorSettings.currentSchemaVersion)
     }
 
@@ -119,7 +122,10 @@ final class CursorSettingsTests: XCTestCase {
             samplingRate: 30,
             launchAtLogin: true,
             lastKnownScreenRecordingPermission: true,
-            lastKnownAccessibilityPermission: false
+            lastKnownAccessibilityPermission: false,
+            allowsInternetUpdateChecks: true,
+            lastUpdateCheckDate: Date(timeIntervalSince1970: 1_000),
+            lastKnownLatestReleaseTag: "v1.0.1"
         )
 
         let encoded = try JSONEncoder().encode(original)
@@ -131,6 +137,8 @@ final class CursorSettingsTests: XCTestCase {
         XCTAssertEqual(original.samplingRate, decoded.samplingRate)
         XCTAssertEqual(original.lastKnownScreenRecordingPermission, decoded.lastKnownScreenRecordingPermission)
         XCTAssertEqual(original.lastKnownAccessibilityPermission, decoded.lastKnownAccessibilityPermission)
+        XCTAssertEqual(original.allowsInternetUpdateChecks, decoded.allowsInternetUpdateChecks)
+        XCTAssertEqual(original.lastKnownLatestReleaseTag, decoded.lastKnownLatestReleaseTag)
     }
 
     func testCorruptedDataFallback() throws {
@@ -165,6 +173,19 @@ final class CursorSettingsTests: XCTestCase {
 
         XCTAssertNil(decoded.lastKnownScreenRecordingPermission)
         XCTAssertNil(decoded.lastKnownAccessibilityPermission)
+        XCTAssertEqual(decoded.schemaVersion, CursorSettings.currentSchemaVersion)
+    }
+
+    func testUpdateCheckPermissionMigratesFromOlderSettingsAsDisabled() throws {
+        let v3JSON = """
+        {"schemaVersion": 3, "isEnabled": true, "contrastMode": "autoInvert"}
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(CursorSettings.self, from: v3JSON)
+
+        XCTAssertFalse(decoded.allowsInternetUpdateChecks)
+        XCTAssertNil(decoded.lastUpdateCheckDate)
+        XCTAssertNil(decoded.lastKnownLatestReleaseTag)
         XCTAssertEqual(decoded.schemaVersion, CursorSettings.currentSchemaVersion)
     }
 

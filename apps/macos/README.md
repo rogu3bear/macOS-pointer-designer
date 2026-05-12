@@ -14,6 +14,7 @@ For the app-side production checklist, proof gates, and release blockers, see
 - **Outline Mode**: Add a contrasting outline that adapts to the background
 - **Menu Bar App**: Quick access to settings from the menu bar
 - **Launch at Login**: Optionally start with your Mac
+- **Explicit Update Checks**: Settings-gated release checks; no internet access until the user allows it
 - **Pointer Scope Status**: Shows whether this build enables any broader pointer replacement capability
 - **Multi-Monitor Support**: Handles different DPI scales and refresh rates per display
 - **Crash Recovery**: Tracks app session state and recovers cleanly after unexpected termination
@@ -44,6 +45,7 @@ For release-candidate proof, use the repo gates instead of ad hoc notarization:
 ```bash
 make setup-notary-profile NOTARY_PROFILE="<notarytool profile>"
 make notary-profile-check NOTARY_PROFILE="<notarytool profile>"
+make release-source-state-check
 make release-candidate SIGN_IDENTITY="<Developer ID Application identity>" NOTARY_PROFILE="<notarytool profile>"
 make release-artifact-readiness NOTARY_PROFILE="<notarytool profile>"
 make release-readiness NOTARY_PROFILE="<notarytool profile>"
@@ -74,6 +76,7 @@ Click the cursor icon in the menu bar to:
 - **Sampling Rate**: Background detection frequency (15-120 Hz)
 - **Pointer Scope**: Shows whether broader pointer replacement is enabled in this build
 - **Launch at Login**: Start automatically with macOS
+- **Updates**: Allow internet access for update checks, then manually check verified release metadata
 
 ## Quick Start (Personal Use)
 
@@ -230,13 +233,20 @@ the signed, notarized release checklist before any stable download claim.
 
 Cursor Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
+- **Internet Access for Update Checks**: Off by default. The app only checks release metadata after you enable update-check internet access in Settings and press Check for Updates.
 - **Administrator Access**: Not required for the current app behavior. Do not grant admin access unless a future release clearly enables and explains a supported helper capability.
 
 The app may remember the last-known Screen Recording and Accessibility posture
 for continuity and diagnostics, but live macOS permission checks always decide
 what the app can do now.
 
-No data is collected or transmitted. All processing happens locally.
+No pointer data, settings, telemetry, or analytics are collected or transmitted.
+All cursor processing happens locally. Update checks contact verified release
+metadata only after explicit Settings consent.
+
+The current AppKit cursor path is best-effort outside Cursor Designer's own
+windows. For the research-backed persistence boundary and least-permission
+supervisor direction, see [`POINTER_PERSISTENCE_RESEARCH.md`](POINTER_PERSISTENCE_RESEARCH.md).
 
 ## Troubleshooting
 

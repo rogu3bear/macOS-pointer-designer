@@ -161,6 +161,9 @@ final class PreferencesView: NSView {
     private var permissionButton: NSButton?
     private var helperStatusLabel: NSTextField?
     private var helperButton: NSButton?
+    private var internetUpdateCheckbox: NSButton?
+    private var checkForUpdatesButton: NSButton?
+    private var updateStatusLabel: NSTextField?
 
     // Use CursorStateController for business logic
     private let stateController: CursorStateController
@@ -411,6 +414,34 @@ final class PreferencesView: NSView {
         launchAtLoginCheckbox = loginCheckbox
         stackView.addArrangedSubview(loginCheckbox)
 
+        let updateSection = createSection(title: "Updates")
+        let internetCheck = NSButton(checkboxWithTitle: "Allow internet access for update checks", target: self, action: #selector(internetUpdateAccessChanged))
+        internetCheck.setAccessibilityLabel("Allow Internet Access for Update Checks")
+        internetCheck.setAccessibilityHelp("Permit Cursor Designer to contact GitHub only when you check for updates.")
+        internetUpdateCheckbox = internetCheck
+        updateSection.addArrangedSubview(internetCheck)
+
+        let updateRow = NSStackView()
+        updateRow.orientation = .horizontal
+        updateRow.spacing = 10
+
+        let updateButton = NSButton(title: "Check for Updates", target: self, action: #selector(checkForUpdates))
+        updateButton.bezelStyle = .rounded
+        updateButton.controlSize = .small
+        updateButton.setAccessibilityLabel("Check for Updates")
+        updateButton.setAccessibilityHelp("Check the verified GitHub release metadata after internet access is allowed.")
+        checkForUpdatesButton = updateButton
+
+        let updateStatus = NSTextField(labelWithString: "Update checks are local-off until internet access is allowed.")
+        updateStatus.font = NSFont.systemFont(ofSize: 10)
+        updateStatus.textColor = .secondaryLabelColor
+        updateStatusLabel = updateStatus
+
+        updateRow.addArrangedSubview(updateButton)
+        updateRow.addArrangedSubview(updateStatus)
+        updateSection.addArrangedSubview(updateRow)
+        stackView.addArrangedSubview(updateSection)
+
         // Reset Button
         let resetButton = NSButton(title: "Reset to Defaults", target: self, action: #selector(resetToDefaults))
         // Edge case #69 & #70: Accessibility and keyboard shortcut
@@ -490,6 +521,8 @@ final class PreferencesView: NSView {
         outlineWidthSlider?.doubleValue = Double(settings.outlineWidth)
         samplingRateSlider?.doubleValue = Double(settings.samplingRate)
         launchAtLoginCheckbox?.state = stateController.isLaunchAtLoginEnabled ? .on : .off
+        internetUpdateCheckbox?.state = settings.allowsInternetUpdateChecks ? .on : .off
+        updateUpdateCheckStatus()
 
         // Update permission status
         updatePermissionStatus()
@@ -641,6 +674,66 @@ final class PreferencesView: NSView {
         stateController.setLaunchAtLogin(enabled)
     }
 
+    @objc private func internetUpdateAccessChanged() {
+        let allowed = internetUpdateCheckbox?.state == .on
+        stateController.setAllowsInternetUpdateChecks(allowed)
+        updateUpdateCheckStatus()
+    }
+
+    @objc private func checkForUpdates() {
+        guard stateController.currentSettings.allowsInternetUpdateChecks else {
+            updateStatusLabel?.stringValue = "Enable internet access before checking for updates."
+            updateStatusLabel?.textColor = .systemOrange
+            return
+        }
+
+        checkForUpdatesButton?.isEnabled = false
+        updateStatusLabel?.stringValue = "Checking verified release metadata..."
+        updateStatusLabel?.textColor = .secondaryLabelColor
+
+        UpdateChecker.shared.checkLatestRelease(
+            allowsInternetAccess: stateController.currentSettings.allowsInternetUpdateChecks,
+            currentVersion: Self.currentAppVersion
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.checkForUpdatesButton?.isEnabled = true
+
+                switch result {
+                case .success(.updateAvailable(let info)):
+                    self.stateController.recordUpdateCheck(latestReleaseTag: info.tagName)
+                    self.updateStatusLabel?.stringValue = "Update available: \(info.tagName). Opening release page..."
+                    self.updateStatusLabel?.textColor = .systemGreen
+                    NSWorkspace.shared.open(info.releaseURL)
+                case .success(.upToDate(let info)):
+                    self.stateController.recordUpdateCheck(latestReleaseTag: info.tagName)
+                    self.updateStatusLabel?.stringValue = "Up to date. Latest release: \(info.tagName)."
+                    self.updateStatusLabel?.textColor = .secondaryLabelColor
+                case .failure(let error):
+                    self.updateStatusLabel?.stringValue = error.localizedDescription
+                    self.updateStatusLabel?.textColor = .systemOrange
+                }
+            }
+        }
+    }
+
+    private func updateUpdateCheckStatus() {
+        let settings = stateController.currentSettings
+        checkForUpdatesButton?.isEnabled = settings.allowsInternetUpdateChecks
+
+        if settings.allowsInternetUpdateChecks {
+            if let tag = settings.lastKnownLatestReleaseTag {
+                updateStatusLabel?.stringValue = "Internet allowed for update checks. Last seen release: \(tag)."
+            } else {
+                updateStatusLabel?.stringValue = "Internet allowed for user-initiated update checks."
+            }
+            updateStatusLabel?.textColor = .secondaryLabelColor
+        } else {
+            updateStatusLabel?.stringValue = "Update checks are local-off until internet access is allowed."
+            updateStatusLabel?.textColor = .secondaryLabelColor
+        }
+    }
+
     @objc private func resetToDefaults() {
         stateController.resetToDefaults()
         loadSettings()
@@ -676,6 +769,10 @@ final class PreferencesView: NSView {
             alert.alertStyle = .warning
             alert.runModal()
         }
+    }
+
+    private static var currentAppVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }
 
     // Edge case #55: Refresh UI when settings change externally

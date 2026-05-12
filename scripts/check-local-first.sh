@@ -48,6 +48,15 @@ for pattern in "${forbidden_patterns[@]}"; do
   fi
 
   if [[ -n "$matches" ]]; then
+    if [[ "$pattern" == "URLSession" || "$pattern" == "https://" ]]; then
+      allowed_matches=$(printf '%s\n' "$matches" | grep -F "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" || true)
+      if [[ "$allowed_matches" == "$matches" ]] &&
+         grep -Fq "allowsInternetAccess" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" &&
+         grep -Fq "Internet access for update checks is disabled" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift"; then
+        continue
+      fi
+    fi
+
     printf '%s\n' "$matches"
     echo "Found network, telemetry, or tracking API in macOS app source: $pattern" >&2
     echo "Cursor Designer's pointer loop must remain local-first unless a reviewed exception is added." >&2

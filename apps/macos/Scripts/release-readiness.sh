@@ -114,6 +114,10 @@ print_next_required_proof() {
         echo "- Publish a stable GitHub release whose tag matches this app version and its SHA-256 digest matches this local DMG." >&2
     fi
 
+    if has_failure "Release source tree is clean"; then
+        echo "- Commit the release tranche, rebuild/sign/notarize the DMG from that commit, then rerun release-readiness." >&2
+    fi
+
     echo "- After this gate passes, complete MANUAL_RELEASE_CHECKS.md against the same Gatekeeper-accepted DMG." >&2
 }
 
@@ -167,6 +171,9 @@ if [[ ! -f "$DMG_PATH" ]]; then
     echo "ERROR: DMG not found: $DMG_PATH" >&2
     record_failure "DMG exists"
 fi
+
+run_check "Release source tree is clean" \
+    "$SCRIPT_DIR/release-source-state-check.sh" --app "$APP_PATH" --dmg "$DMG_PATH"
 
 if [[ -d "$APP_PATH" ]]; then
     run_check "Code signature verifies" \

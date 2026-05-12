@@ -24,15 +24,18 @@ public final class CursorEngine: CursorService {
     @Atomic private var lastActivityTime: CFAbsoluteTime = 0
     @Atomic private var movementThreshold: CGFloat = 2.0
     @Atomic private var lastCursorUpdateTime: CFAbsoluteTime = 0
+    @Atomic private var lastSupervisorReapplyTime: CFAbsoluteTime = 0
     @Atomic private var currentRefreshRate: Double = 60.0
 
     // Main thread only
     private var lastAppliedCursor: NSCursor?
     private var idleTimer: Timer?
+    private var globalMouseMonitor: Any?
 
     // Constants
     private let idleThreshold: TimeInterval = 5.0 // seconds
     private let minUpdateInterval: TimeInterval = 1.0 / 120.0 // Max 120 updates/sec
+    private let supervisorMinReapplyInterval: TimeInterval = 1.0 / 15.0
 
     // Thread safety
     private let updateQueue = DispatchQueue(label: Identity.cursorEngineQueueLabel, qos: .userInteractive)
@@ -111,6 +114,7 @@ public final class CursorEngine: CursorService {
         }
 
         startIdleTimer()
+        startPersistenceSupervisor()
         NSLog("CursorEngine: Calling initial applyCursor()")
         applyCursor()
     }
@@ -121,6 +125,7 @@ public final class CursorEngine: CursorService {
         isRunning = false
 
         stopIdleTimer()
+        stopPersistenceSupervisor()
         releaseDisplayLink()
         restoreSystemCursor()
     }
@@ -212,6 +217,13 @@ public final class CursorEngine: CursorService {
             object: nil
         )
 
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleWorkspaceAppActivation),
+            name: NSWorkspace.didActivateApplicationNotification,
+            object: nil
+        )
+
         // Edge case #32, #42: Handle sleep/wake
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
@@ -271,11 +283,16 @@ public final class CursorEngine: CursorService {
         if isRunning, let displayLink = displayLink {
             CVDisplayLinkStart(displayLink)
         }
+        reapplyCursorFromSupervisor(reason: "app became active")
     }
 
     @objc private func handleAppDidResignActive(_ notification: Notification) {
         // Edge case #36: Reduce updates when in background
         // Keep running but at reduced rate
+    }
+
+    @objc private func handleWorkspaceAppActivation(_ notification: Notification) {
+        reapplyCursorFromSupervisor(reason: "workspace app activation")
     }
 
     @objc private func handleSleepNotification(_ notification: Notification) {
@@ -310,6 +327,48 @@ public final class CursorEngine: CursorService {
     private func stopIdleTimer() {
         idleTimer?.invalidate()
         idleTimer = nil
+    }
+
+    private func startPersistenceSupervisor() {
+        stopPersistenceSupervisor()
+
+        let mask: NSEvent.EventTypeMask = [
+            .mouseMoved,
+            .leftMouseDragged,
+            .rightMouseDragged,
+            .otherMouseDragged
+        ]
+
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] _ in
+            self?.reapplyCursorFromSupervisor(reason: "global mouse event")
+        }
+    }
+
+    private func stopPersistenceSupervisor() {
+        if let monitor = globalMouseMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalMouseMonitor = nil
+        }
+    }
+
+    private func reapplyCursorFromSupervisor(reason: String) {
+        guard isRunning else { return }
+
+        let now = CFAbsoluteTimeGetCurrent()
+        guard now - lastSupervisorReapplyTime >= supervisorMinReapplyInterval else { return }
+        lastSupervisorReapplyTime = now
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.isRunning else { return }
+
+            if let cursor = self.lastAppliedCursor {
+                cursor.set()
+            } else {
+                self.applyCursor()
+            }
+
+            NSLog("CursorEngine: persistence supervisor reapplied cursor (%@)", reason)
+        }
     }
 
     private func checkIdle() {

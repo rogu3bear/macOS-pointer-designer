@@ -19,7 +19,8 @@ it, local-first, reversible, and respectful of macOS permission boundaries.
 - Preserve last-known permission posture for continuity and diagnostics while
   keeping live macOS permission checks authoritative.
 - Keep processing local. Do not add telemetry, trackers, cloud processing, or
-  hidden network dependency to the cursor loop.
+  hidden network dependency to the cursor loop. Update checks are allowed only
+  after the user explicitly enables internet access for update checks.
 
 ## Product Shape Today
 
@@ -50,6 +51,8 @@ Designer.
 - If screen recording permission, helper installation, display state, or stored
   settings are unavailable or invalid, the app fails safely and explains itself
   through UI state or diagnostics instead of doing surprising work.
+- If update checking is used, it is user-initiated from Settings and remains
+  off until the user explicitly allows internet access for that purpose.
 
 ## Pointer Capability Contract
 
@@ -72,6 +75,11 @@ Current supported contract:
   must stay hidden or explicitly marked unavailable unless a public,
   distribution-safe, tested implementation enables it through the app
   capability model.
+- AppKit cursor replacement is not a durable cross-application pointer
+  replacement guarantee. Other apps' cursor-update handling can reset it. The
+  current least-permission mitigation is a reapply supervisor; any stronger
+  persistence mechanism must come from a proven supervisor or helper capability
+  documented in `apps/macos/POINTER_PERSISTENCE_RESEARCH.md`.
 
 Unsupported claims:
 
@@ -88,6 +96,8 @@ Prefer work that increases trust in the core utility:
 
 - clearer identity and packaging consistency
 - safer helper and XPC behavior only when a real pointer capability requires it
+- a least-permission pointer supervisor that improves cross-app persistence
+  without private APIs, admin access, or broad Accessibility grants
 - better crash recovery and orphan cleanup
 - stronger display, color, and permission edge-case handling
 - focused local verification for app, helper, settings, and packaging paths
@@ -116,11 +126,13 @@ true from live evidence:
 6. Packaging scripts produce a validated app bundle and DMG from the repo-local
    macOS package.
 7. Signing, notarization, release metadata, and install instructions are
-   verified. Homebrew or cask distribution is optional and must remain absent
-   or explicitly blocked until its URL, checksum, notarization, and install
-   behavior are verified.
+   verified from a clean committed tree. Homebrew or cask distribution is optional
+   and must remain absent or explicitly blocked until its URL, checksum,
+   notarization, and install behavior are verified.
 8. The repo contains no wrong-product surfaces, stale WindowDrop language,
    telemetry, trackers, surprise network calls, or placeholder release claims.
+9. Update checks are unavailable until the user enables internet access for
+   update checks, and any update action is user-initiated from Settings.
 
 The phrase "mass production ready" means every item above has direct proof. A
 green test suite alone is not enough if packaging, signing, notarization,
@@ -141,8 +153,12 @@ These are intentional blockers, not polish notes:
   unavailable.
 - Helper installation remains scaffolded and must not be sold as a user-facing
   capability or required path until a supported pointer capability exists.
+- Cursor persistence across other applications is not considered solved by
+  `NSCursor.set()` alone. If the app claims stronger cross-app persistence, it
+  must ship a verified least-permission supervisor or supported helper path.
 - Release packaging, signing, notarization, stable release metadata, and DMG
-  install flow require live verification before any public launch claim.
+  install flow require live verification from a clean committed tree before any
+  public launch claim.
 - Current release-authority blockers are tracked in GitHub issue #71:
   https://github.com/rogu3bear/macOS-pointer-designer/issues/71. Keep that
   issue open until the final North Star audit passes against the same
@@ -203,6 +219,11 @@ proof for another.
   under assessment by identity, version, build, and executable digest; from
   `apps/macos`, `make dmg-artifact-match-check`
 - Signing identity: from `apps/macos`, `make signing-identity-check`
+- Release source state: from `apps/macos`, `make release-source-state-check`;
+  public release gates must run from a clean committed tree so the signed app,
+  DMG, release metadata, and manual evidence all refer to the same source
+  state. `make release-readiness` also requires the app executable and DMG to
+  be newer than the commit being certified.
 - Notarization credential setup and check: from `apps/macos`,
   `make setup-notary-profile` with private operator `NOTARY_*` inputs, then
   `make notary-profile-check`
@@ -232,5 +253,7 @@ explicit blocker.
 - Making a helper mandatory for ordinary preference preview behavior.
 - Adding telemetry, trackers, surprise network calls, or hidden background
   services outside the documented app/helper model.
+- Checking the internet for updates before the user enables update-check
+  internet access in Settings.
 - Rebranding compatibility identifiers without a migration plan and full
   identity verification.

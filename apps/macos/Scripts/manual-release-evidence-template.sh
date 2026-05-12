@@ -109,7 +109,7 @@ App executable SHA-256: $APP_EXECUTABLE_SHA256
 
 Machine gates:
 - make release-readiness:
-- spctl --assess --type open --verbose=4 CursorDesigner.dmg:
+- spctl --assess --type open --context context:primary-signature --verbose=4 CursorDesigner.dmg:
 - xcrun stapler validate CursorDesigner.dmg:
 
 Manual observations:
