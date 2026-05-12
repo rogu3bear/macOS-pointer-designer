@@ -116,7 +116,7 @@ notary-profile-check:
 
 # Verify human-only release observations were recorded against the accepted DMG.
 manual-release-evidence-check:
-	@./Scripts/manual-release-evidence-check.sh --evidence "$(MANUAL_EVIDENCE)"
+	@./Scripts/manual-release-evidence-check.sh --evidence "$(MANUAL_EVIDENCE)" --dmg "$(DMG_NAME)" --commit "$$(git rev-parse HEAD)"
 
 # Run the final North Star prompt-to-artifact audit. This fails until release-readiness passes.
 north-star-audit:

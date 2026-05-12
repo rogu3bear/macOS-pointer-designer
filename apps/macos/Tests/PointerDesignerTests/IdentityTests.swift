@@ -486,6 +486,10 @@ final class IdentityTests: XCTestCase {
             XCTAssertTrue(script.contains(requiredMessage), "\(scriptPath) must validate missing option values")
             XCTAssertTrue(script.contains("exit 2"), "\(scriptPath) must treat CLI usage errors as exit 2")
         }
+
+        let manualEvidenceCheck = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-check.sh")
+        XCTAssertTrue(manualEvidenceCheck.contains("ERROR: --dmg requires a path"))
+        XCTAssertTrue(manualEvidenceCheck.contains("ERROR: --commit requires a commit"))
     }
 
     func testHelperScaffoldDoesNotAcceptUnverifiedClients() throws {
@@ -669,10 +673,14 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checklist.contains("Pass/fail"))
         XCTAssertTrue(checklist.contains("Blocker disposition"))
         XCTAssertTrue(checker.contains("Release tag:"))
+        XCTAssertTrue(checker.contains("--dmg"))
+        XCTAssertTrue(checker.contains("--commit"))
         XCTAssertTrue(checker.contains("APP-1 menu bar launch:"))
         XCTAssertTrue(checker.contains("APP-8 local-first product truth:"))
         XCTAssertTrue(checker.contains("Manual release evidence is incomplete"))
         XCTAssertTrue(checker.contains("Pass/fail"))
+        XCTAssertTrue(checker.contains("Recorded DMG SHA-256 does not match"))
+        XCTAssertTrue(checker.contains("Recorded commit does not match"))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {

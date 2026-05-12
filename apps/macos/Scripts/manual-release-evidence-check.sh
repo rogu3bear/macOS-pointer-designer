@@ -2,6 +2,8 @@
 set -euo pipefail
 
 EVIDENCE_PATH="ReleaseEvidence/manual-release-evidence.txt"
+DMG_PATH="CursorDesigner.dmg"
+EXPECTED_COMMIT=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -13,8 +15,24 @@ while [[ $# -gt 0 ]]; do
             EVIDENCE_PATH="$2"
             shift 2
             ;;
+        --dmg)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --dmg requires a path" >&2
+                exit 2
+            fi
+            DMG_PATH="$2"
+            shift 2
+            ;;
+        --commit)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --commit requires a commit" >&2
+                exit 2
+            fi
+            EXPECTED_COMMIT="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--evidence PATH]"
+            echo "Usage: $0 [--evidence PATH] [--dmg PATH] [--commit COMMIT]"
             exit 0
             ;;
         *)
@@ -26,6 +44,10 @@ done
 
 echo "=== Cursor Designer Manual Release Evidence Check ==="
 echo "Evidence: $EVIDENCE_PATH"
+echo "DMG:      $DMG_PATH"
+if [[ -n "$EXPECTED_COMMIT" ]]; then
+    echo "Commit:   $EXPECTED_COMMIT"
+fi
 echo ""
 
 if [[ ! -f "$EVIDENCE_PATH" ]]; then
@@ -58,19 +80,45 @@ required_fields=(
 
 failures=()
 
+field_value() {
+    local field="$1"
+    local line
+    local value
+
+    line="$(grep -F "$field" "$EVIDENCE_PATH" | head -n 1)"
+    value="${line#*"$field"}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    echo "$value"
+}
+
 for field in "${required_fields[@]}"; do
     if ! grep -Fq "$field" "$EVIDENCE_PATH"; then
         failures+=("missing field: $field")
         continue
     fi
 
-    line="$(grep -F "$field" "$EVIDENCE_PATH" | head -n 1)"
-    value="${line#*"$field"}"
-    value="${value#"${value%%[![:space:]]*}"}"
+    value="$(field_value "$field")"
     if [[ -z "$value" ]]; then
         failures+=("empty field: $field")
     fi
 done
+
+if [[ -f "$DMG_PATH" ]]; then
+    recorded_digest="$(field_value "DMG SHA-256:")"
+    actual_digest="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
+    if [[ "$recorded_digest" != "$actual_digest" ]]; then
+        failures+=("Recorded DMG SHA-256 does not match $DMG_PATH")
+    fi
+else
+    failures+=("DMG not found for evidence digest check: $DMG_PATH")
+fi
+
+if [[ -n "$EXPECTED_COMMIT" ]]; then
+    recorded_commit="$(field_value "Commit:")"
+    if [[ "$recorded_commit" != "$EXPECTED_COMMIT" ]]; then
+        failures+=("Recorded commit does not match $EXPECTED_COMMIT")
+    fi
+fi
 
 if grep -Eq "Pass/fail|None, or list every blocker|expected results|TODO|TBD|FIXME" "$EVIDENCE_PATH"; then
     failures+=("template placeholder text remains")
