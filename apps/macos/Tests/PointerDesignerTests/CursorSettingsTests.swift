@@ -159,6 +159,34 @@ final class CursorSettingsTests: XCTestCase {
         XCTAssertTrue(ContrastMode.allCases.contains(.outline))
     }
 
+    // MARK: - Accessibility Presets
+
+    func testNegativePresetIsAvailableForAccessibility() {
+        XCTAssertTrue(CursorPreset.allCases.contains(.negative))
+        XCTAssertEqual(CursorPreset.negative.displayName, "Negative")
+    }
+
+    func testNegativePresetUsesHighContrastOutlineSettings() {
+        var settings = CursorSettings(
+            cursorColor: CursorColor(red: 0.2, green: 0.8, blue: 0.6),
+            contrastMode: .none,
+            outlineWidth: 1.0,
+            outlineColor: nil,
+            shadowEnabled: true,
+            cursorScale: 0.8
+        )
+
+        settings.applyPreset(.negative)
+
+        XCTAssertEqual(settings.cursorColor, .black)
+        XCTAssertEqual(settings.contrastMode, .outline)
+        XCTAssertEqual(settings.outlineColor, .white)
+        XCTAssertEqual(settings.outlineWidth, 3.0)
+        XCTAssertFalse(settings.glowEnabled)
+        XCTAssertFalse(settings.shadowEnabled)
+        XCTAssertEqual(settings.cursorScale, 1.25, accuracy: 0.01)
+    }
+
     // MARK: - Color Utilities
 
     func testColorInterpolation() {
