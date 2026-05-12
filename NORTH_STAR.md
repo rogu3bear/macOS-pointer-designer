@@ -175,6 +175,11 @@ proof for another.
   `make release-artifact-readiness`
 - Public distribution readiness: from `apps/macos`, `make release-readiness`
   and `make release-metadata-check`
+- Manual release evidence: from `apps/macos`,
+  `make manual-release-evidence-check`; the evidence must come from
+  `apps/macos/MANUAL_RELEASE_CHECKS.md` against the same Gatekeeper-accepted
+  DMG
+- Final app readiness audit: from `apps/macos`, `make north-star-audit`
 - Website: Leptos/Cloudflare template checks, browser-visible proof, and live
   download metadata verification after a real `apps/website` exists
 
