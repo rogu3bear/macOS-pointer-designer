@@ -121,7 +121,7 @@ run_check "notarytool credential profile is available" \
     xcrun notarytool history --keychain-profile "$NOTARY_PROFILE"
 
 run_check "Stable release metadata includes CursorDesigner.dmg" \
-    "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO"
+    "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO" --dmg "$DMG_PATH"
 
 echo ""
 if [[ ${#failures[@]} -gt 0 ]]; then

@@ -394,6 +394,7 @@ final class IdentityTests: XCTestCase {
 
         XCTAssertTrue(makefile.contains("release-readiness:"))
         XCTAssertTrue(makefile.contains(#"--repo "$(GITHUB_REPO)""#))
+        XCTAssertTrue(script.contains(#"--dmg "$DMG_PATH""#))
         XCTAssertTrue(script.contains("dmg-install-check.sh"))
         XCTAssertTrue(script.contains("release-metadata-check.sh"))
         XCTAssertTrue(script.contains("--require-signature"))
@@ -447,10 +448,15 @@ final class IdentityTests: XCTestCase {
         let script = try loadText(relativeToThisFile: "../../Scripts/release-metadata-check.sh")
 
         XCTAssertTrue(makefile.contains("release-metadata-check:"))
+        XCTAssertTrue(makefile.contains(#"--dmg "$(DMG_NAME)""#))
         XCTAssertTrue(script.contains("gh release list"))
         XCTAssertTrue(script.contains("isPrerelease"))
         XCTAssertTrue(script.contains("CursorDesigner.dmg"))
         XCTAssertTrue(script.contains("sha256:"))
+        XCTAssertTrue(script.contains("shasum -a 256"))
+        XCTAssertTrue(script.contains("Local DMG digest matches stable release."))
+        XCTAssertTrue(script.contains("exit 6"))
+        XCTAssertTrue(script.contains("exit 7"))
         XCTAssertTrue(script.contains("Stable release DMG digest"))
         XCTAssertTrue(script.contains("exit 5"))
         XCTAssertTrue(script.contains("No stable public release"))

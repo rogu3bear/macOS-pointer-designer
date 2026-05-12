@@ -96,7 +96,7 @@ dmg-install-check:
 
 # Verify public release metadata is truthful for the current distribution state.
 release-metadata-check:
-	@./Scripts/release-metadata-check.sh --repo "$(GITHUB_REPO)"
+	@./Scripts/release-metadata-check.sh --repo "$(GITHUB_REPO)" --dmg "$(DMG_NAME)"
 
 # Code signing (requires valid Developer ID)
 sign: release
