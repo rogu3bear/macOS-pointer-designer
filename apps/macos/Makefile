@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check dmg-artifact-match-check release-metadata-check signing-identity-check notary-profile-check release-artifact-readiness release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check dmg-artifact-match-check release-metadata-check signing-identity-check notary-profile-check north-star-audit release-artifact-readiness release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -112,6 +112,10 @@ signing-identity-check:
 # Verify notarization credentials before spending time building a release candidate.
 notary-profile-check:
 	@./Scripts/notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)"
+
+# Run the final North Star prompt-to-artifact audit. This fails until release-readiness passes.
+north-star-audit:
+	@./Scripts/north-star-audit.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)" --repo "$(GITHUB_REPO)"
 
 # Code signing (requires valid Developer ID)
 sign: signing-identity-check release

@@ -366,6 +366,21 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(workflow.contains("make -C apps/macos dmg && make -C apps/macos dmg-artifact-match-check"))
     }
 
+    func testNorthStarAuditGateBuildsPromptToArtifactChecklist() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let script = try loadText(relativeToThisFile: "../../Scripts/north-star-audit.sh")
+
+        XCTAssertTrue(makefile.contains("north-star-audit:"))
+        XCTAssertTrue(makefile.contains("north-star-audit.sh"))
+        XCTAssertTrue(script.contains("Prompt-to-artifact checklist"))
+        XCTAssertTrue(script.contains("APP-1"))
+        XCTAssertTrue(script.contains("APP-8"))
+        XCTAssertTrue(script.contains("release-readiness"))
+        XCTAssertTrue(script.contains("release-metadata-check"))
+        XCTAssertTrue(script.contains("not mass-production ready"))
+        XCTAssertTrue(script.contains("No canonical Cursor Designer website exists."))
+    }
+
     func testLocalFirstGuardChecksAppSourceForNetworkAndTelemetry() throws {
         let script = try loadText(relativeToThisFile: "../../../../scripts/check-local-first.sh")
         let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
