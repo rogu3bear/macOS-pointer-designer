@@ -377,6 +377,8 @@ final class IdentityTests: XCTestCase {
 
         XCTAssertTrue(script.contains("command -v rg"))
         XCTAssertTrue(script.contains("PreferencesWindowController.swift"))
+        XCTAssertTrue(script.contains("NSScrollView"))
+        XCTAssertTrue(script.contains("hasVerticalScroller"))
         XCTAssertTrue(script.contains("MenuBarController.swift"))
         XCTAssertTrue(script.contains("Cursor Designer Preferences"))
         XCTAssertTrue(script.contains("Background Sampling Rate"))
