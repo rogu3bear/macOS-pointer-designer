@@ -4,6 +4,9 @@ macOS cursor customization with dynamic contrast adaptation, persistent settings
 
 This package lives in `apps/macos` inside the Cursor Designer monorepo.
 
+For the app-side production checklist, proof gates, and release blockers, see
+[`REQUIREMENTS.md`](REQUIREMENTS.md).
+
 ## Features
 
 - **Custom Cursor Colors**: Choose any color for your cursor
