@@ -115,13 +115,14 @@ Machine gates:
 Manual observations:
 - APP-1 menu bar launch:
 - APP-2 persistence after quit/relaunch:
+- APP-2 last-known permission posture:
 - APP-2 recovery after force quit:
 - APP-3 Negative preset and custom color:
 - APP-4 Screen Recording denied:
 - APP-4 Screen Recording granted:
 - APP-5 unsupported helper/system-wide replacement unavailable:
 - APP-6 drag install from DMG:
-- APP-8 local-first and website-boundary product truth:
+- APP-8 local-first, website-boundary, and future Leptos/Cloudflare product truth:
 
 Blocker disposition:
 EOF

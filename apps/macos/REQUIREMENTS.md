@@ -12,12 +12,12 @@ either verified by live evidence or explicitly marked blocked.
 | ID | Requirement | Current proof path | Status |
 |----|-------------|--------------------|--------|
 | APP-1 | Launch as a menu bar utility on supported macOS versions without extra setup beyond documented permissions. | `make launch-smoke`; `./scripts/check-compatibility-boundary.sh`; `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos`; `make preflight` | Locally verified by launch smoke, compatibility boundary, UI contract, and package gates. |
-| APP-2 | Persist pointer settings across quit, relaunch, crash recovery, and migration from legacy app-support paths. | `swift test --package-path apps/macos --filter CursorStateControllerTests`; `swift test --package-path apps/macos --filter AppSupportMigratorTests`; `swift test --package-path apps/macos --filter CrashRecoveryManagerTests` | Unit verified; full UI persistence still needs release-candidate manual proof. |
+| APP-2 | Persist pointer settings, launch-at-login intent, and last-known permission posture across quit, relaunch, crash recovery, and migration from legacy app-support paths. | `swift test --package-path apps/macos --filter CursorStateControllerTests`; `swift test --package-path apps/macos --filter CursorSettingsTests`; `swift test --package-path apps/macos --filter AppSupportMigratorTests`; `swift test --package-path apps/macos --filter CrashRecoveryManagerTests` | Unit verified; full UI persistence still needs release-candidate manual proof. |
 | APP-3 | Keep the Negative preset and custom color path visible, saved, and tested. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorSettingsTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests` | Unit and UI-contract verified. |
 | APP-4 | Make dynamic contrast honest with and without Screen Recording permission. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; Preferences UI must show active, inactive, or permission-required state. | Controller and Preferences contract verified; real permission flow still needs release-candidate manual proof. |
 | APP-5 | Hide, disable, or mark unsupported helper and system-wide replacement paths unavailable. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter IdentityTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-monorepo-references.sh` | Locally verified; system-wide replacement remains unsupported. |
 | APP-6 | Produce a validated app bundle and DMG from the repo-local macOS package. | `make preflight`; `make dmg`; `make dmg-install-check`; `make dmg-artifact-match-check` | Locally verified when the gates pass on the candidate artifact. Public artifact gates additionally verify the mounted DMG app matches the release app under assessment. |
-| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, manual release evidence, and install instructions before public distribution. | `make signing-identity-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check`; `make manual-release-evidence-check`; `make north-star-audit` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release evidence, and stable release metadata exist. `make release-metadata-check` also verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. `make north-star-audit` fails until both `make release-readiness` and manual evidence validation pass. |
+| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, manual release evidence, and install instructions before public distribution. | `make signing-identity-check`; `make setup-notary-profile`; `make notary-profile-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check`; `make manual-release-evidence-check`; `make north-star-audit` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release evidence, and stable release metadata exist. `make setup-notary-profile` creates the private Keychain credential lane, `make notary-profile-check` verifies it, and `make release-metadata-check` verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. `make north-star-audit` fails until both `make release-readiness` and manual evidence validation pass. |
 | APP-8 | Keep wrong-product language, premature website surfaces, premature public distribution instructions, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `./scripts/check-website-boundary.sh`; `./scripts/check-distribution-boundary.sh`; `./scripts/check-local-first.sh`; `swift test --package-path apps/macos --filter IdentityTests` | Guarded locally; repeat before release. |
 
 ## Release-Candidate Proof
@@ -42,12 +42,14 @@ swift test --package-path apps/macos
 For public distribution, add the signed/notarized artifact gates:
 
 ```bash
+(cd apps/macos && make setup-notary-profile NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make notary-profile-check NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make signing-identity-check SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make sign SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make create-dmg)
 (cd apps/macos && make sign-dmg SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make signed-dmg SIGN_IDENTITY="<Developer ID Application identity>")
+(cd apps/macos && make dmg-artifact-match-check REQUIRE_SIGNATURE=1)
 (cd apps/macos && make release-candidate SIGN_IDENTITY="<Developer ID Application identity>" NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-artifact-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-readiness NOTARY_PROFILE="<notarytool profile>")
@@ -63,6 +65,9 @@ Do not substitute a green test suite for app signing, DMG signing, hardened
 runtime, Gatekeeper acceptance, notarization, DMG install, release metadata, or
 real permission-flow proof. `make release-readiness` must remain red until
 signed/notarized artifacts and stable GitHub release metadata are all verified.
+Hosted CI is intentionally limited to cheap product-boundary smoke checks; it
+is not a substitute for local macOS package, DMG, signing, notarization,
+Gatekeeper, permission-flow, or release-evidence proof.
 
 ## Manual Release-Candidate Checks
 
@@ -77,11 +82,18 @@ sampling can actually run.
 
 ## Blockers
 
+Permission persistence records the last-known Screen Recording and
+Accessibility posture for continuity and diagnostics. Live macOS permission
+checks remain authoritative; persisted permission posture must not be presented
+as a permanent grant.
+
 The app must stay explicitly not-ready for broad distribution while any of
 these are true:
 
-- System-wide pointer replacement is not implemented, supported, and proven.
-- Helper installation is scaffolded but not a user-facing capability.
+- System-wide pointer replacement is presented as available without an
+  implemented, supported, and proven path.
+- Helper installation is presented as required or user-facing before a
+  supported pointer capability exists.
 - The DMG is unsigned, unstapled, unnotarized, or rejected by Gatekeeper.
 - notarytool profile credentials are missing or notarization fails.
 - There is no verified stable GitHub release metadata with a tag matching the

@@ -255,10 +255,33 @@ final class CursorStateControllerTests: XCTestCase {
 
     func testRefreshPermissionState() {
         mockPermission.hasScreenRecordingPermission = false
+        mockPermission.hasAccessibilityPermission = false
 
         controller.refreshPermissionState()
 
         XCTAssertFalse(controller.hasScreenRecordingPermission)
+        XCTAssertFalse(controller.hasAccessibilityPermission)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.lastKnownScreenRecordingPermission, false)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.lastKnownAccessibilityPermission, false)
+    }
+
+    func testPermissionContinuitySummaryStartsUnknown() {
+        XCTAssertEqual(
+            controller.permissionContinuitySummary,
+            "Last checked: Screen Recording unknown; Accessibility unknown. Live macOS permission checks decide features."
+        )
+    }
+
+    func testPermissionContinuitySummaryUsesPersistedPostureAfterRefresh() {
+        mockPermission.hasScreenRecordingPermission = true
+        mockPermission.hasAccessibilityPermission = false
+
+        controller.refreshPermissionState()
+
+        XCTAssertEqual(
+            controller.permissionContinuitySummary,
+            "Last checked: Screen Recording granted; Accessibility not granted. Live macOS permission checks decide features."
+        )
     }
 
     func testDynamicContrastStatusActiveWhenContrastModeHasPermission() {

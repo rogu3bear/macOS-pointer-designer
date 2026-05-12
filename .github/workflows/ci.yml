@@ -14,9 +14,6 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Install guardrail tools
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
-
       - name: Check retired website references
         run: ./scripts/check-monorepo-references.sh
 
@@ -34,19 +31,3 @@ jobs:
 
       - name: Check app UI contract
         run: ./scripts/check-app-ui-contract.sh
-
-  macos:
-    name: macOS app
-    runs-on: macos-14
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Test Swift package
-        run: swift test --package-path apps/macos
-
-      - name: Run package preflight
-        run: make -C apps/macos preflight
-
-      - name: Verify DMG install surface
-        run: make -C apps/macos dmg && make -C apps/macos dmg-artifact-match-check

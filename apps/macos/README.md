@@ -39,6 +39,16 @@ For local evaluation:
 Do not treat Homebrew, signing, notarization, or public release downloads as
 available until those paths are verified and documented here.
 
+For release-candidate proof, use the repo gates instead of ad hoc notarization:
+
+```bash
+make setup-notary-profile NOTARY_PROFILE="<notarytool profile>"
+make notary-profile-check NOTARY_PROFILE="<notarytool profile>"
+make release-candidate SIGN_IDENTITY="<Developer ID Application identity>" NOTARY_PROFILE="<notarytool profile>"
+make release-artifact-readiness NOTARY_PROFILE="<notarytool profile>"
+make release-readiness NOTARY_PROFILE="<notarytool profile>"
+```
+
 ## Usage
 
 ### Menu Bar
@@ -195,6 +205,7 @@ SettingsManager
     ├── Backup storage: Separate key for crash recovery
     ├── Validation: Clamps values to valid ranges
     ├── Migration: Schema versioning for future updates
+    ├── Permission posture: Last-known Screen Recording and Accessibility state for continuity only
     └── Notifications: .settingsDidChange broadcast
 ```
 
@@ -220,6 +231,10 @@ the signed, notarized release checklist before any stable download claim.
 Cursor Designer requires:
 - **Screen Recording**: To sample background colors (System Settings → Privacy & Security → Screen Recording)
 - **Administrator Access**: Not required for the current app behavior. Do not grant admin access unless a future release clearly enables and explains a supported helper capability.
+
+The app may remember the last-known Screen Recording and Accessibility posture
+for continuity and diagnostics, but live macOS permission checks always decide
+what the app can do now.
 
 No data is collected or transmitted. All processing happens locally.
 

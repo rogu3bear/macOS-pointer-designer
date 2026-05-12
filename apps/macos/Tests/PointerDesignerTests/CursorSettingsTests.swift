@@ -13,6 +13,8 @@ final class CursorSettingsTests: XCTestCase {
         XCTAssertEqual(defaults.outlineWidth, 2.0)
         XCTAssertEqual(defaults.samplingRate, 60)
         XCTAssertFalse(defaults.launchAtLogin)
+        XCTAssertNil(defaults.lastKnownScreenRecordingPermission)
+        XCTAssertNil(defaults.lastKnownAccessibilityPermission)
         XCTAssertEqual(defaults.schemaVersion, CursorSettings.currentSchemaVersion)
     }
 
@@ -115,7 +117,9 @@ final class CursorSettingsTests: XCTestCase {
             contrastMode: .outline,
             outlineWidth: 3.0,
             samplingRate: 30,
-            launchAtLogin: true
+            launchAtLogin: true,
+            lastKnownScreenRecordingPermission: true,
+            lastKnownAccessibilityPermission: false
         )
 
         let encoded = try JSONEncoder().encode(original)
@@ -125,6 +129,8 @@ final class CursorSettingsTests: XCTestCase {
         XCTAssertEqual(original.contrastMode, decoded.contrastMode)
         XCTAssertEqual(original.outlineWidth, decoded.outlineWidth, accuracy: 0.01)
         XCTAssertEqual(original.samplingRate, decoded.samplingRate)
+        XCTAssertEqual(original.lastKnownScreenRecordingPermission, decoded.lastKnownScreenRecordingPermission)
+        XCTAssertEqual(original.lastKnownAccessibilityPermission, decoded.lastKnownAccessibilityPermission)
     }
 
     func testCorruptedDataFallback() throws {
@@ -148,6 +154,18 @@ final class CursorSettingsTests: XCTestCase {
         let decoded = try JSONDecoder().decode(CursorSettings.self, from: partialJSON)
         XCTAssertFalse(decoded.isEnabled)
         XCTAssertEqual(decoded.samplingRate, 60) // Default due to invalid value
+    }
+
+    func testPermissionPostureMigratesFromOlderSettingsAsUnknown() throws {
+        let v2JSON = """
+        {"schemaVersion": 2, "isEnabled": true, "contrastMode": "autoInvert"}
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(CursorSettings.self, from: v2JSON)
+
+        XCTAssertNil(decoded.lastKnownScreenRecordingPermission)
+        XCTAssertNil(decoded.lastKnownAccessibilityPermission)
+        XCTAssertEqual(decoded.schemaVersion, CursorSettings.currentSchemaVersion)
     }
 
     // MARK: - Contrast Mode Tests

@@ -39,6 +39,8 @@ and boundary checks.
   readiness bar is mapped to live evidence.
 - Screen recording permission handling must stay honest; do not imply dynamic
   background sampling works without real permission.
+- Persisted permission posture is continuity/diagnostics only; live macOS
+  permission checks remain authoritative.
 - Keep crash recovery, signal handling, orphan cleanup, and cursor restore paths
   conservative and locally testable.
 - Preserve the compatibility split: Cursor Designer is the product name, while
@@ -67,11 +69,21 @@ swift test
 make preflight
 make release
 make dmg
+make setup-notary-profile
+make notary-profile-check
+make release-candidate
+make release-artifact-readiness
+make release-readiness
 ```
 
 Use `make preflight` before release or packaging claims because it rebuilds,
 runs tests, and validates the generated app bundle with
 `Scripts/trust-check.sh`.
+
+Use the release authority targets only when the operator has supplied the
+private Apple/notary inputs required for the current release lane. Do not treat
+their presence in this file as permission to invent credentials, publish a
+release, or claim mass-production readiness.
 
 ## Documentation Rules
 
@@ -110,3 +122,5 @@ Every agent report should include:
 - Residual risk: any command skipped, blocked, or intentionally deferred.
 
 Prefer direct local proof over hosted CI narratives.
+Keep hosted CI cheap unless the operator explicitly authorizes a release-grade
+CI lane.

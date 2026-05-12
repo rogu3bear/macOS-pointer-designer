@@ -16,6 +16,8 @@ it, local-first, reversible, and respectful of macOS permission boundaries.
 - Keep the app useful without a helper. Do not advertise system-wide pointer
   replacement unless a supported, tested implementation actually enables it.
 - Restore cursor state after crashes, quits, and relaunches.
+- Preserve last-known permission posture for continuity and diagnostics while
+  keeping live macOS permission checks authoritative.
 - Keep processing local. Do not add telemetry, trackers, cloud processing, or
   hidden network dependency to the cursor loop.
 
@@ -29,6 +31,9 @@ This repository is a shallow monorepo for Cursor Designer.
 2. The root currently provides monorepo identity, boundary checks, and product
    documentation.
 3. There is no canonical Cursor Designer website in this repository yet.
+4. Hosted CI is intentionally cheap: it checks product boundaries. The macOS
+   package, DMG, signing, notarization, and release proof live in local app
+   gates where the required Apple tooling and credentials can be inspected.
 
 The package still uses `PointerDesigner` and `PointerDesignerHelper` executable
 and module names for compatibility. The user-facing product name is Cursor
@@ -100,7 +105,8 @@ true from live evidence:
 1. The app launches as a menu bar utility on supported macOS versions without
    extra setup beyond documented permissions.
 2. Pointer settings persist across quit, relaunch, crash recovery, and
-   migration from legacy app-support paths.
+   migration from legacy app-support paths, including last-known Screen
+   Recording and Accessibility posture for continuity.
 3. The Negative preset and custom color path are visible in the app, saved in
    settings, and covered by tests.
 4. Dynamic contrast behaves honestly with and without Screen Recording
@@ -109,8 +115,10 @@ true from live evidence:
    or explicitly unavailable in UI and docs.
 6. Packaging scripts produce a validated app bundle and DMG from the repo-local
    macOS package.
-7. Signing, notarization, Homebrew cask, release metadata, and install
-   instructions are either verified or explicitly marked not ready.
+7. Signing, notarization, release metadata, and install instructions are
+   verified. Homebrew or cask distribution is optional and must remain absent
+   or explicitly blocked until its URL, checksum, notarization, and install
+   behavior are verified.
 8. The repo contains no wrong-product surfaces, stale WindowDrop language,
    telemetry, trackers, surprise network calls, or placeholder release claims.
 
@@ -118,15 +126,30 @@ The phrase "mass production ready" means every item above has direct proof. A
 green test suite alone is not enough if packaging, signing, notarization,
 installer, permissions, or product claims were not exercised.
 
+The phrase "99% sure this product is ready to use for mass production" means
+the final North Star audit, public release readiness, and artifact-bound manual
+release evidence have all passed against the same signed, notarized, stapled,
+Gatekeeper-accepted DMG.
+
 ## Mass-Production Blockers
 
 These are intentional blockers, not polish notes:
 
-- Persistent system-wide pointer replacement is not implemented or proven.
+- Persistent system-wide pointer replacement is a blocker only if the app,
+  website, release notes, or install docs present it as available. In the
+  current build, the release-ready posture is to keep it hidden or explicitly
+  unavailable.
 - Helper installation remains scaffolded and must not be sold as a user-facing
-  capability until the supported pointer path exists.
-- Release packaging, signing, notarization, Homebrew cask behavior, and DMG
+  capability or required path until a supported pointer capability exists.
+- Release packaging, signing, notarization, stable release metadata, and DMG
   install flow require live verification before any public launch claim.
+- Current release-authority blockers are tracked in GitHub issue #71:
+  https://github.com/rogu3bear/macOS-pointer-designer/issues/71. Keep that
+  issue open until the final North Star audit passes against the same
+  notarized, stapled, Gatekeeper-accepted DMG.
+- Homebrew or cask distribution is not required for app readiness, but any
+  Homebrew claim or cask file is blocked until it is backed by the same
+  notarized artifact and digest evidence as the direct DMG path.
 - A public website must not exist until the product has a real release source,
   domain, download path, and truthful compatibility story.
 
@@ -139,6 +162,11 @@ When a Cursor Designer website is created:
 
 - Use the operator's Leptos Cloudflare template only as the technical base,
   not as a source of generic SaaS language or filler sections.
+- Use template capabilities only where they preserve product truth: static-first
+  Leptos UI, Cloudflare edge delivery, release metadata reads, digest display,
+  compatibility notes, and privacy-preserving download routing.
+- Do not add accounts, dashboards, analytics, server-side personalization, or
+  background jobs just because the template can support them.
 - The first viewport must make the pointer accessibility promise obvious:
   custom colors, Negative preset, local processing, and macOS compatibility.
 - Download and release data must come from verified GitHub release or package
@@ -156,6 +184,7 @@ Use the smallest gate that proves the claim, and do not substitute one kind of
 proof for another.
 
 - App proof map: `apps/macos/REQUIREMENTS.md`
+- Root orientation and doctrine map: `README.md`
 - Human-only release proof: `apps/macos/MANUAL_RELEASE_CHECKS.md`
 - Product boundary: `./scripts/check-monorepo-references.sh`
 - Current website boundary: `./scripts/check-website-boundary.sh`
@@ -163,6 +192,8 @@ proof for another.
 - Current compatibility boundary: `./scripts/check-compatibility-boundary.sh`
 - Local-first app surface: `./scripts/check-local-first.sh`
 - App UI truth: `./scripts/check-app-ui-contract.sh`
+- Hosted CI: cheap boundary smoke only; do not treat hosted CI as the release,
+  signing, notarization, DMG, permission-flow, or mass-production proof.
 - Core macOS behavior: `swift test --package-path apps/macos`
 - Package preflight: from `apps/macos`, `make preflight`
 - Launch smoke: from `apps/macos`, `make launch-smoke`
@@ -172,6 +203,9 @@ proof for another.
   under assessment by identity, version, build, and executable digest; from
   `apps/macos`, `make dmg-artifact-match-check`
 - Signing identity: from `apps/macos`, `make signing-identity-check`
+- Notarization credential setup and check: from `apps/macos`,
+  `make setup-notary-profile` with private operator `NOTARY_*` inputs, then
+  `make notary-profile-check`
 - Signed local DMG: from `apps/macos`, `make signed-dmg`
 - Signed and notarized local artifact: from `apps/macos`, `make release-candidate`
 - Artifact distribution readiness without public metadata: from `apps/macos`,

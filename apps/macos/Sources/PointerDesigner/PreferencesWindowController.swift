@@ -157,6 +157,7 @@ final class PreferencesView: NSView {
     private var scaleLabel: NSTextField?
     private var permissionStatusLabel: NSTextField?
     private var dynamicContrastStatusLabel: NSTextField?
+    private var permissionContinuityLabel: NSTextField?
     private var permissionButton: NSButton?
     private var helperStatusLabel: NSTextField?
     private var helperButton: NSButton?
@@ -367,6 +368,12 @@ final class PreferencesView: NSView {
         permissionNote.textColor = .secondaryLabelColor
         dynamicContrastStatusLabel = permissionNote
         permissionSection.addArrangedSubview(permissionNote)
+
+        let permissionContinuity = NSTextField(labelWithString: "Last checked: Screen Recording unknown; Accessibility unknown. Live macOS permission checks decide features.")
+        permissionContinuity.font = NSFont.systemFont(ofSize: 10)
+        permissionContinuity.textColor = .secondaryLabelColor
+        permissionContinuityLabel = permissionContinuity
+        permissionSection.addArrangedSubview(permissionContinuity)
         stackView.addArrangedSubview(permissionSection)
 
         // Pointer Scope Section
@@ -520,6 +527,8 @@ final class PreferencesView: NSView {
             samplingRateSlider?.isEnabled = false
             samplingRateSlider?.setAccessibilityHelp("Background sampling is paused until Screen Recording is granted")
         }
+
+        permissionContinuityLabel?.stringValue = stateController.permissionContinuitySummary
     }
 
     private func updateHelperStatus() {

@@ -42,5 +42,8 @@ echo "  xcrun notarytool store-credentials \"$NOTARY_PROFILE\" \\" >&2
 echo "    --apple-id <apple-id> \\" >&2
 echo "    --team-id <team-id>" >&2
 echo "" >&2
+echo "Omit --password so notarytool prompts instead of writing secrets to shell history." >&2
+echo "For an App Store Connect API key lane, use --key and --key-id from a private operator path; add --issuer for team API keys." >&2
+echo "Repo wrapper: make setup-notary-profile NOTARY_PROFILE=\"$NOTARY_PROFILE\" with private NOTARY_* environment variables." >&2
 echo "Do not commit Apple IDs, app-specific passwords, API keys, or keychain exports." >&2
 exit 69

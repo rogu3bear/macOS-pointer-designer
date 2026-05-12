@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupCursorEngine() {
+        CursorStateController.shared.refreshPermissionState()
         let settings = SettingsManager.shared.currentSettings
         NSLog("AppDelegate: setupCursorEngine - isEnabled=%d, contrastMode=%@",
               settings.isEnabled ? 1 : 0, String(describing: settings.contrastMode))

@@ -43,6 +43,7 @@ public final class CursorStateController: ObservableObject {
     @Published public private(set) var currentSettings: CursorSettings
     @Published public private(set) var isLaunchAtLoginEnabled: Bool = false
     @Published public private(set) var hasScreenRecordingPermission: Bool = false
+    @Published public private(set) var hasAccessibilityPermission: Bool = false
     @Published public private(set) var isHelperInstalled: Bool = false
     @Published public private(set) var supportsSystemWidePointerReplacement: Bool = false
 
@@ -53,6 +54,12 @@ public final class CursorStateController: ObservableObject {
 
     public var isBackgroundSamplingActive: Bool {
         dynamicContrastStatus == .active
+    }
+
+    public var permissionContinuitySummary: String {
+        let screenRecording = Self.permissionContinuityText(for: currentSettings.lastKnownScreenRecordingPermission)
+        let accessibility = Self.permissionContinuityText(for: currentSettings.lastKnownAccessibilityPermission)
+        return "Last checked: Screen Recording \(screenRecording); Accessibility \(accessibility). Live macOS permission checks decide features."
     }
 
     /// Initializer for dependency injection (testing)
@@ -72,6 +79,7 @@ public final class CursorStateController: ObservableObject {
         self.isEnabled = settingsService.currentSettings.isEnabled
         self.isLaunchAtLoginEnabled = launchAtLoginService.isEnabled
         self.hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission
+        self.hasAccessibilityPermission = permissionService.hasAccessibilityPermission
         self.isHelperInstalled = helperService.isHelperInstalled
         self.supportsSystemWidePointerReplacement = helperService.supportsSystemWidePointerReplacement
 
@@ -227,6 +235,8 @@ public final class CursorStateController: ObservableObject {
     /// Refresh permission state
     public func refreshPermissionState() {
         hasScreenRecordingPermission = permissionService.hasScreenRecordingPermission
+        hasAccessibilityPermission = permissionService.hasAccessibilityPermission
+        persistPermissionStateIfNeeded()
     }
 
     /// Refresh helper installation state
@@ -288,6 +298,28 @@ public final class CursorStateController: ObservableObject {
 
         if persistIfNeeded {
             settingsService.save(currentSettings)
+        }
+    }
+
+    private func persistPermissionStateIfNeeded() {
+        guard currentSettings.lastKnownScreenRecordingPermission != hasScreenRecordingPermission ||
+              currentSettings.lastKnownAccessibilityPermission != hasAccessibilityPermission else {
+            return
+        }
+
+        currentSettings.lastKnownScreenRecordingPermission = hasScreenRecordingPermission
+        currentSettings.lastKnownAccessibilityPermission = hasAccessibilityPermission
+        settingsService.save(currentSettings)
+    }
+
+    private static func permissionContinuityText(for permission: Bool?) -> String {
+        switch permission {
+        case true:
+            return "granted"
+        case false:
+            return "not granted"
+        case nil:
+            return "unknown"
         }
     }
 }

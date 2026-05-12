@@ -41,11 +41,18 @@ swift test
 make preflight
 make release
 make dmg
+make setup-notary-profile
+make notary-profile-check
+make release-candidate
+make release-artifact-readiness
+make release-readiness
 ```
 
 Run only the commands that match the claim being made. Do not claim release,
 signing, notarization, or installed-helper behavior unless those paths were
 actually exercised.
+The release authority targets require private Apple/notary inputs from the
+operator; do not invent credentials or publish release metadata.
 
 ## Guardrails
 
@@ -57,6 +64,8 @@ actually exercised.
   verified by the repo gates.
 - Keep helper installation explicit and permission-aware.
 - Keep screen recording permission behavior truthful.
+- Treat persisted permission posture as continuity/diagnostics only; live macOS
+  permission checks remain authoritative.
 - Treat the `NORTH_STAR.md` production readiness bar as binding. Do not claim
   mass-production readiness without live evidence for every item.
 - Keep app/helper behavior local-first and free of telemetry, trackers, and
@@ -83,3 +92,5 @@ Every response after work should include:
 - Residual risk or skipped checks
 
 Use local evidence and exact paths. Avoid vague CI claims.
+Keep hosted CI cheap unless the operator explicitly authorizes a release-grade
+CI lane.

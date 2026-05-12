@@ -81,13 +81,14 @@ required_fields=(
     "xcrun stapler validate CursorDesigner.dmg:"
     "APP-1 menu bar launch:"
     "APP-2 persistence after quit/relaunch:"
+    "APP-2 last-known permission posture:"
     "APP-2 recovery after force quit:"
     "APP-3 Negative preset and custom color:"
     "APP-4 Screen Recording denied:"
     "APP-4 Screen Recording granted:"
     "APP-5 unsupported helper/system-wide replacement unavailable:"
     "APP-6 drag install from DMG:"
-    "APP-8 local-first and website-boundary product truth:"
+    "APP-8 local-first, website-boundary, and future Leptos/Cloudflare product truth:"
     "Blocker disposition:"
 )
 
@@ -97,13 +98,14 @@ observed_fields=(
     "xcrun stapler validate CursorDesigner.dmg:"
     "APP-1 menu bar launch:"
     "APP-2 persistence after quit/relaunch:"
+    "APP-2 last-known permission posture:"
     "APP-2 recovery after force quit:"
     "APP-3 Negative preset and custom color:"
     "APP-4 Screen Recording denied:"
     "APP-4 Screen Recording granted:"
     "APP-5 unsupported helper/system-wide replacement unavailable:"
     "APP-6 drag install from DMG:"
-    "APP-8 local-first and website-boundary product truth:"
+    "APP-8 local-first, website-boundary, and future Leptos/Cloudflare product truth:"
 )
 
 failures=()
@@ -133,7 +135,7 @@ done
 
 for field in "${observed_fields[@]}"; do
     value="$(field_value "$field")"
-    if [[ "$value" =~ [Ff]ail|[Ff]ailed|[Ff]ailing|[Bb]locked|[Ss]kipped|[Nn]ot[[:space:]]+(run|performed|observed|tested) ]]; then
+    if [[ "$value" =~ [Ff]ail|[Ff]ailed|[Ff]ailing|[Bb]locked|[Ss]kipped|[Pp]ending|[Uu]ntested|[Ii]ncomplete|[Nn]/?[Aa]([[:space:].,:;-]|$)|[Nn]ot[[:space:]]+(run|performed|observed|tested|verified|applicable) ]]; then
         failures+=("non-passing evidence recorded for: $field")
     fi
 done

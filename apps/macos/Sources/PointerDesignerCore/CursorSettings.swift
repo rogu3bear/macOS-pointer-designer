@@ -264,7 +264,7 @@ public struct CursorColor: Codable, Equatable, Sendable {
 /// Fixes edge cases: #45 (corrupted data), #47 (migration), #48 (zero sampling), #49 (zero outline)
 public struct CursorSettings: Codable, Equatable, Sendable {
     /// Schema version for migration support (edge case #47)
-    public static let currentSchemaVersion = 2
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var isEnabled: Bool
@@ -274,6 +274,8 @@ public struct CursorSettings: Codable, Equatable, Sendable {
     public var outlineColor: CursorColor?
     public var samplingRate: Int // Hz for background detection
     public var launchAtLogin: Bool
+    public var lastKnownScreenRecordingPermission: Bool?
+    public var lastKnownAccessibilityPermission: Bool?
 
     // Advanced settings
     public var brightnessThreshold: Float // Edge case #14: configurable threshold
@@ -297,6 +299,8 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         outlineColor: CursorColor? = nil,
         samplingRate: Int = 60,
         launchAtLogin: Bool = false,
+        lastKnownScreenRecordingPermission: Bool? = nil,
+        lastKnownAccessibilityPermission: Bool? = nil,
         brightnessThreshold: Float = 0.5,
         hysteresis: Float = 0.1,
         adaptiveScaling: Bool = true,
@@ -317,6 +321,8 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         // Edge case #48: Ensure valid sampling rate (15-120 Hz)
         self.samplingRate = max(15, min(120, samplingRate))
         self.launchAtLogin = launchAtLogin
+        self.lastKnownScreenRecordingPermission = lastKnownScreenRecordingPermission
+        self.lastKnownAccessibilityPermission = lastKnownAccessibilityPermission
         self.brightnessThreshold = max(0.1, min(0.9, brightnessThreshold))
         self.hysteresis = max(0.01, min(0.2, hysteresis))
         self.adaptiveScaling = adaptiveScaling
@@ -376,6 +382,8 @@ public struct CursorSettings: Codable, Equatable, Sendable {
         self.outlineColor = try? container.decode(CursorColor?.self, forKey: .outlineColor)
         self.samplingRate = (try? container.decode(Int.self, forKey: .samplingRate)) ?? 60
         self.launchAtLogin = (try? container.decode(Bool.self, forKey: .launchAtLogin)) ?? false
+        self.lastKnownScreenRecordingPermission = try? container.decode(Bool.self, forKey: .lastKnownScreenRecordingPermission)
+        self.lastKnownAccessibilityPermission = try? container.decode(Bool.self, forKey: .lastKnownAccessibilityPermission)
         self.brightnessThreshold = (try? container.decode(Float.self, forKey: .brightnessThreshold)) ?? 0.5
         self.hysteresis = (try? container.decode(Float.self, forKey: .hysteresis)) ?? 0.1
         self.adaptiveScaling = (try? container.decode(Bool.self, forKey: .adaptiveScaling)) ?? true
@@ -407,12 +415,17 @@ public struct CursorSettings: Codable, Equatable, Sendable {
             self.shadowEnabled = false
             self.cursorScale = 1.0
         }
+        if version < 3 {
+            self.lastKnownScreenRecordingPermission = nil
+            self.lastKnownAccessibilityPermission = nil
+        }
         self.schemaVersion = Self.currentSchemaVersion
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, isEnabled, cursorColor, contrastMode
         case outlineWidth, outlineColor, samplingRate, launchAtLogin
+        case lastKnownScreenRecordingPermission, lastKnownAccessibilityPermission
         case brightnessThreshold, hysteresis, adaptiveScaling
         case preset, glowEnabled, glowColor, glowRadius, shadowEnabled, cursorScale
     }

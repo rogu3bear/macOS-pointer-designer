@@ -52,6 +52,9 @@ If a proposal conflicts with these anchors, the burden is on the proposal.
   appear to work without real permission.
 - Restore or fail safe when crashes, signals, settings corruption, helper
   unresponsiveness, or display changes interrupt the cursor path.
+- Persist last-known Screen Recording and Accessibility permission posture only
+  for continuity and diagnostics; live macOS permission checks remain
+  authoritative.
 - Keep compatibility identifiers stable unless the task explicitly includes a
   migration and verification plan.
 
@@ -70,6 +73,12 @@ If a proposal conflicts with these anchors, the burden is on the proposal.
 - Release, DMG, signing, notarization, and Homebrew cask work belong under
   `apps/macos` and must be verified with the package scripts before claims are
   made.
+- The release authority path starts with `make setup-notary-profile` and
+  `make notary-profile-check`, then proceeds through `make release-candidate`,
+  `make release-artifact-readiness`, and `make release-readiness` against the
+  same artifact.
+- Hosted CI should stay a cheap product-boundary smoke check unless the
+  operator explicitly authorizes a more expensive release lane.
 
 ## Decision Questions
 

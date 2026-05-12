@@ -23,6 +23,10 @@ Do not commit Apple IDs, app-specific passwords, API keys, certificates,
 private keys, keychains, provisioning profiles, notarization output, or manual
 release evidence that contains secrets.
 
+Current release-authority blockers are tracked in GitHub issue #71:
+https://github.com/rogu3bear/macOS-pointer-designer/issues/71
+Keep that issue open until this runbook's final audit passes.
+
 ## Current Blocker Check
 
 Run this first:
@@ -38,6 +42,35 @@ xcrun notarytool store-credentials "<notarytool profile>" \
   --apple-id <apple-id> \
   --team-id <team-id>
 ```
+
+Omit `--password` so `notarytool` prompts for the app-specific password instead
+of putting it in shell history. If the team uses an App Store Connect API key,
+store the profile with `--key` and `--key-id` from a private operator machine
+path; add `--issuer` for team API keys. Do not copy the key into this
+repository.
+
+The repo also provides a wrapper that stores and immediately verifies the
+profile from private environment variables:
+
+```bash
+NOTARY_KEY_PATH="/private/path/AuthKey_XXXXXXXXXX.p8" \
+NOTARY_KEY_ID="XXXXXXXXXX" \
+NOTARY_ISSUER_ID="00000000-0000-0000-0000-000000000000" \
+make setup-notary-profile NOTARY_PROFILE="<notarytool profile>"
+```
+
+`NOTARY_ISSUER_ID` is optional for individual API keys and required for team
+API keys.
+
+For Apple ID auth, set `NOTARY_APPLE_ID` and `NOTARY_TEAM_ID`, then run the
+target interactively so `notarytool` prompts securely. Use
+`NOTARY_APP_SPECIFIC_PASSWORD` only from a private automation environment:
+this `notarytool` build has no password-stdin mode, so the wrapper must pass
+that value to `notarytool --password`. Do not paste app-specific passwords
+into committed docs.
+
+`notarytool` does not expose a profile-list command in its help surface; use the
+exact profile name you created with `store-credentials` or create a new one.
 
 Then rerun the check. Do not proceed to release-candidate work until it passes.
 

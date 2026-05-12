@@ -74,15 +74,16 @@ echo ""
 
 echo "Prompt-to-artifact checklist"
 echo "- APP-1 menu bar launch and compatibility truth: apps/macos/REQUIREMENTS.md -> make launch-smoke, check-compatibility-boundary.sh"
-echo "- APP-2 persistence and recovery: apps/macos/REQUIREMENTS.md -> CursorStateControllerTests, AppSupportMigratorTests, CrashRecoveryManagerTests, MANUAL_RELEASE_CHECKS.md"
+echo "- APP-2 persistence, last-known permission posture, and recovery: apps/macos/REQUIREMENTS.md -> CursorSettingsTests, CursorStateControllerTests, AppSupportMigratorTests, CrashRecoveryManagerTests, MANUAL_RELEASE_CHECKS.md"
 echo "- APP-3 Negative preset and custom color: apps/macos/REQUIREMENTS.md -> check-app-ui-contract.sh, CursorSettingsTests, CursorStateControllerTests"
 echo "- APP-4 dynamic contrast permission truth: apps/macos/REQUIREMENTS.md -> check-app-ui-contract.sh, CursorStateControllerTests, MANUAL_RELEASE_CHECKS.md"
 echo "- APP-5 unsupported helper and system-wide replacement unavailable: apps/macos/REQUIREMENTS.md -> check-app-ui-contract.sh, IdentityTests, CursorStateControllerTests"
 echo "- APP-6 app bundle, DMG, and mounted app match: apps/macos/REQUIREMENTS.md -> make preflight, make dmg, make dmg-install-check, make dmg-artifact-match-check"
-echo "- APP-7 signing, notarization, Gatekeeper, release metadata, install instructions, and artifact-bound human evidence: apps/macos/REQUIREMENTS.md -> make release-readiness, make release-metadata-check, manual-release-evidence-check.sh"
+echo "- APP-7 signing, notarization, Gatekeeper, release metadata, install instructions, optional Homebrew/cask truth, and artifact-bound human evidence: apps/macos/REQUIREMENTS.md -> make setup-notary-profile, make notary-profile-check, make release-readiness, make release-metadata-check, manual-release-evidence-check.sh"
 echo "  Manual evidence must match the same DMG digest, commit, release tag, mounted app bundle ID, app version, app build, and app executable SHA-256."
 echo "- APP-8 local-first, website-boundary, and distribution-boundary product truth: apps/macos/REQUIREMENTS.md -> check-monorepo-references.sh, check-website-boundary.sh, check-distribution-boundary.sh, check-local-first.sh, IdentityTests"
-echo "- Website: NORTH_STAR.md -> No canonical Cursor Designer website exists."
+echo "- Website: NORTH_STAR.md -> No canonical Cursor Designer website exists; future Leptos/Cloudflare work is limited to static-first Leptos UI, Cloudflare edge delivery, verified release metadata reads, digest display, compatibility notes, and privacy-preserving download routing."
+echo "- Hosted CI: .github/workflows/ci.yml -> cheap boundary smoke only; local macOS package, DMG, signing, notarization, permission-flow, and release-evidence gates remain authoritative."
 echo ""
 
 echo ">>> Product boundary"
@@ -107,6 +108,14 @@ echo ">>> Local-first app surface"
 echo ""
 echo ">>> App UI truth"
 "$ROOT_DIR/scripts/check-app-ui-contract.sh"
+
+echo ""
+echo ">>> Core macOS behavior"
+(cd "$MACOS_DIR" && swift test)
+
+echo ""
+echo ">>> Current app launch smoke"
+(cd "$MACOS_DIR" && "$SCRIPT_DIR/launch-smoke.sh" --app "$APP_PATH")
 
 echo ""
 echo ">>> Public distribution readiness"

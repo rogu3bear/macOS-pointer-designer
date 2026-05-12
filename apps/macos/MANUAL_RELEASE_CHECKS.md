@@ -21,13 +21,14 @@ human-only macOS permission, Finder, and installed-app behavior.
 |----|-------------|--------------|
 | APP-1 | Launch as a menu bar utility. | Open `CursorDesigner.app` from Finder or LaunchServices and confirm the menu bar item appears without extra setup beyond documented permissions. |
 | APP-2 | Persist settings across normal use. | Change cursor color, cursor size, contrast mode, outline width, sampling rate, pointer scope, and launch-at-login; quit and relaunch; confirm values persist. |
+| APP-2 | Preserve last-known permission posture without overclaiming. | Toggle Screen Recording and Accessibility permission states as available on the test Mac, relaunch the app, and confirm diagnostics/continuity reflect the last-known posture while live macOS permission checks still decide current capability. |
 | APP-2 | Recover safely after interruption. | Force quit the running app, relaunch it from the installed bundle, and confirm it restores a safe cursor state without losing saved preferences. |
 | APP-3 | Preserve the Negative preset and custom color path. | Apply the Negative preset, confirm black pointer with white outline behavior, then choose a custom color and confirm the UI marks the result as custom. |
 | APP-4 | Tell the truth about Screen Recording. | With Screen Recording denied, confirm dynamic contrast is inactive or permission-required and does not claim to be active. |
 | APP-4 | Tell the truth after permission is granted. | Grant Screen Recording, restart if macOS requires it, enable Auto-Invert and Outline, and confirm the UI says dynamic contrast is active only while background sampling can run. |
 | APP-5 | Keep unsupported helper and system-wide replacement unavailable. | Confirm the Preferences pointer scope surface says system-wide pointer replacement is not enabled in this build and no helper install flow is presented as required. |
 | APP-6 | Verify drag-install behavior. | Open the notarized DMG, drag `CursorDesigner.app` to `/Applications`, launch the installed app, and repeat the preference and dynamic contrast checks from the installed bundle. |
-| APP-8 | Preserve local-first and website-boundary product truth. | Confirm the app and docs make no network, telemetry, cloud processing, Homebrew, premature website, or stable download claim beyond the verified release artifact. |
+| APP-8 | Preserve local-first and website-boundary product truth. | Confirm the app and docs make no network, telemetry, cloud processing, Homebrew, premature website, generic SaaS, account, dashboard, analytics, placeholder pricing, fake testimonial, or stable download claim beyond the verified release artifact. Confirm any future Leptos/Cloudflare language is limited to verified release metadata, digest display, compatibility notes, and privacy-preserving download routing. |
 
 ## Evidence To Keep With The Release
 
@@ -36,6 +37,11 @@ human-only macOS permission, Finder, and installed-app behavior.
   release tag must match the mounted app version as `v<version>`.
 - Mounted app bundle ID, version, build, and executable SHA-256 digest.
 - Screen Recording denied and granted observations.
+- Last-known Screen Recording and Accessibility posture observation, including
+  confirmation that persisted posture is not presented as a permanent grant.
+- Website/product-truth observation, including confirmation that any future
+  Leptos/Cloudflare language is limited to release metadata, digest display,
+  compatibility notes, and privacy-preserving download routing.
 - Finder or LaunchServices launch result.
 - Installed `/Applications/CursorDesigner.app` launch result.
 - Any blocker, crash, permission mismatch, or misleading copy found during the
@@ -66,7 +72,6 @@ App bundle ID:
 App version:
 App build:
 App executable SHA-256:
-  shasum -a 256 CursorDesigner.dmg
 
 Machine gates:
 - make release-readiness: Pass/fail
@@ -76,13 +81,14 @@ Machine gates:
 Manual observations:
 - APP-1 menu bar launch:
 - APP-2 persistence after quit/relaunch:
+- APP-2 last-known permission posture:
 - APP-2 recovery after force quit:
 - APP-3 Negative preset and custom color:
 - APP-4 Screen Recording denied:
 - APP-4 Screen Recording granted:
 - APP-5 unsupported helper/system-wide replacement unavailable:
 - APP-6 drag install from DMG:
-- APP-8 local-first and website-boundary product truth:
+- APP-8 local-first, website-boundary, and future Leptos/Cloudflare product truth:
 
 Blocker disposition: None
 ```

@@ -101,7 +101,7 @@ print_next_required_proof() {
     fi
 
     if has_failure "notarytool credential profile is available"; then
-        echo "- Store or select a valid notarytool profile, then rerun this gate with NOTARY_PROFILE=<profile>." >&2
+        echo "- Store or select a valid notarytool profile with make setup-notary-profile NOTARY_PROFILE=<profile>, then rerun this gate with NOTARY_PROFILE=<profile>." >&2
     fi
 
     if has_failure "Gatekeeper assessment accepts app" ||
@@ -119,15 +119,23 @@ print_next_required_proof() {
 
 run_check() {
     local label="$1"
+    local output
+    local status
     shift
 
     echo ""
     echo ">>> $label"
-    if "$@"; then
+    if output=$("$@" 2>&1); then
+        if [[ -n "$output" ]]; then
+            printf '%s\n' "$output"
+        fi
         echo "PASS: $label"
     else
-        local status=$?
-        echo "FAIL: $label (exit $status)" >&2
+        status=$?
+        if [[ -n "$output" ]]; then
+            printf '%s\n' "$output"
+        fi
+        echo "FAIL: $label (exit $status)"
         record_failure "$label"
     fi
 }
@@ -178,8 +186,8 @@ if [[ -f "$DMG_PATH" ]]; then
     run_check "DMG signature verifies" \
         codesign --verify --verbose=2 "$DMG_PATH"
 
-    run_check "Gatekeeper assessment accepts DMG" \
-        spctl --assess --type open --verbose=4 "$DMG_PATH"
+    run_check "Gatekeeper primary-signature assessment accepts DMG" \
+        spctl --assess --type open --context context:primary-signature --verbose=4 "$DMG_PATH"
 
     run_check "Stapled notarization ticket validates" \
         xcrun stapler validate "$DMG_PATH"
