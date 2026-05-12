@@ -49,10 +49,10 @@ for pattern in "${forbidden_patterns[@]}"; do
 
   if [[ -n "$matches" ]]; then
     if [[ "$pattern" == "URLSession" || "$pattern" == "https://" ]]; then
-      allowed_matches=$(printf '%s\n' "$matches" | rg --fixed-strings "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" || true)
+      allowed_matches=$(printf '%s\n' "$matches" | grep -F "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" || true)
       if [[ "$allowed_matches" == "$matches" ]] &&
-         rg --fixed-strings --quiet "allowsInternetAccess" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" &&
-         rg --fixed-strings --quiet "Internet access for update checks is disabled" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift"; then
+         grep -Fq "allowsInternetAccess" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift" &&
+         grep -Fq "Internet access for update checks is disabled" "apps/macos/Sources/PointerDesignerCore/UpdateChecker.swift"; then
         continue
       fi
     fi
