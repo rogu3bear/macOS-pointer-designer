@@ -243,7 +243,3 @@ No data is collected or transmitted. All processing happens locally.
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions welcome! Please read our contributing guidelines before submitting PRs.
