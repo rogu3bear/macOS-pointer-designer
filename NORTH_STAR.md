@@ -155,11 +155,21 @@ When a Cursor Designer website is created:
 Use the smallest gate that proves the claim, and do not substitute one kind of
 proof for another.
 
+- App proof map: `apps/macos/REQUIREMENTS.md`
+- Human-only release proof: `apps/macos/MANUAL_RELEASE_CHECKS.md`
 - Product boundary: `./scripts/check-monorepo-references.sh`
+- Local-first app surface: `./scripts/check-local-first.sh`
+- App UI truth: `./scripts/check-app-ui-contract.sh`
 - Core macOS behavior: `swift test --package-path apps/macos`
 - Package preflight: from `apps/macos`, `make preflight`
-- Release bundle: from `apps/macos`, `make release`
-- DMG: from `apps/macos`, `make dmg`
+- Launch smoke: from `apps/macos`, `make launch-smoke`
+- Unsigned local DMG shape: from `apps/macos`, `make dmg` and
+  `make dmg-install-check`
+- Signed local artifact: from `apps/macos`, `make release-candidate`
+- Artifact distribution readiness without public metadata: from `apps/macos`,
+  `make release-artifact-readiness`
+- Public distribution readiness: from `apps/macos`, `make release-readiness`
+  and `make release-metadata-check`
 - Website: Leptos/Cloudflare template checks, browser-visible proof, and live
   download metadata verification after a real `apps/website` exists
 
