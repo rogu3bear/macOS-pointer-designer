@@ -4,6 +4,7 @@ set -euo pipefail
 EVIDENCE_PATH="ReleaseEvidence/manual-release-evidence.txt"
 DMG_PATH="CursorDesigner.dmg"
 EXPECTED_COMMIT=""
+MOUNT_DIR=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -42,6 +43,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+cleanup() {
+    if [[ -n "$MOUNT_DIR" && -d "$MOUNT_DIR" ]]; then
+        hdiutil detach "$MOUNT_DIR" -quiet || true
+        rmdir "$MOUNT_DIR" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
 echo "=== Cursor Designer Manual Release Evidence Check ==="
 echo "Evidence: $EVIDENCE_PATH"
 echo "DMG:      $DMG_PATH"
@@ -63,6 +72,10 @@ required_fields=(
     "Hardware:"
     "DMG filename:"
     "DMG SHA-256:"
+    "App bundle ID:"
+    "App version:"
+    "App build:"
+    "App executable SHA-256:"
     "make release-readiness:"
     "spctl --assess --type open --verbose=4 CursorDesigner.dmg:"
     "xcrun stapler validate CursorDesigner.dmg:"
@@ -135,6 +148,42 @@ if [[ -f "$DMG_PATH" ]]; then
     actual_digest="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
     if [[ "$recorded_digest" != "$actual_digest" ]]; then
         failures+=("Recorded DMG SHA-256 does not match $DMG_PATH")
+    fi
+
+    MOUNT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/cursor-designer-evidence.XXXXXX")
+    if hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$MOUNT_DIR" "$DMG_PATH" >/dev/null; then
+        mounted_app="$MOUNT_DIR/CursorDesigner.app"
+        info_plist="$mounted_app/Contents/Info.plist"
+        executable_path="$mounted_app/Contents/MacOS/PointerDesigner"
+
+        if [[ ! -f "$info_plist" ]]; then
+            failures+=("Mounted DMG app is missing Info.plist")
+        elif [[ ! -x "$executable_path" ]]; then
+            failures+=("Mounted DMG app is missing executable")
+        else
+            actual_bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$info_plist")
+            actual_version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$info_plist")
+            actual_build=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$info_plist")
+            actual_executable_digest="$(shasum -a 256 "$executable_path" | awk '{print $1}')"
+
+            if [[ "$(field_value "App bundle ID:")" != "$actual_bundle_id" ]]; then
+                failures+=("Recorded app bundle ID does not match mounted DMG app")
+            fi
+
+            if [[ "$(field_value "App version:")" != "$actual_version" ]]; then
+                failures+=("Recorded app version does not match mounted DMG app")
+            fi
+
+            if [[ "$(field_value "App build:")" != "$actual_build" ]]; then
+                failures+=("Recorded app build does not match mounted DMG app")
+            fi
+
+            if [[ "$(field_value "App executable SHA-256:")" != "$actual_executable_digest" ]]; then
+                failures+=("Recorded app executable SHA-256 does not match mounted DMG app")
+            fi
+        fi
+    else
+        failures+=("DMG could not be mounted for app identity verification: $DMG_PATH")
     fi
 else
     failures+=("DMG not found for evidence digest check: $DMG_PATH")

@@ -32,7 +32,8 @@ human-only macOS permission, Finder, and installed-app behavior.
 ## Evidence To Keep With The Release
 
 - macOS version and hardware architecture.
-- Release tag, DMG filename, and SHA-256 digest.
+- Release tag, DMG filename, SHA-256 digest, and mounted app identity.
+- Mounted app bundle ID, version, build, and executable SHA-256 digest.
 - Screen Recording denied and granted observations.
 - Finder or LaunchServices launch result.
 - Installed `/Applications/CursorDesigner.app` launch result.
@@ -60,6 +61,10 @@ macOS version:
 Hardware:
 DMG filename:
 DMG SHA-256:
+App bundle ID:
+App version:
+App build:
+App executable SHA-256:
   shasum -a 256 CursorDesigner.dmg
 
 Machine gates:
