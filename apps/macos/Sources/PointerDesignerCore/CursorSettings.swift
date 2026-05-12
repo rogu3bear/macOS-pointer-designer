@@ -14,6 +14,7 @@ public enum ContrastMode: String, Codable, CaseIterable, Sendable {
 public enum CursorPreset: String, Codable, CaseIterable, Sendable {
     case custom      // User's own settings
     case neonGlow    // Vibrant with glow effect
+    case negative    // High-contrast black pointer with white outline
     case stealth     // Dark, minimal, semi-transparent
     case highContrast // Bold black/white for accessibility
     case sunset      // Warm oranges/reds
@@ -26,6 +27,7 @@ public enum CursorPreset: String, Codable, CaseIterable, Sendable {
         switch self {
         case .custom: return "Custom"
         case .neonGlow: return "Neon Glow"
+        case .negative: return "Negative"
         case .stealth: return "Stealth"
         case .highContrast: return "High Contrast"
         case .sunset: return "Sunset"
@@ -55,6 +57,18 @@ public enum CursorPreset: String, Codable, CaseIterable, Sendable {
                 glowRadius: 8,
                 shadowEnabled: false,
                 scale: 1.0
+            )
+        case .negative:
+            return PresetSettings(
+                color: .black,
+                glowEnabled: false,
+                glowColor: .white,
+                glowRadius: 0,
+                shadowEnabled: false,
+                scale: 1.25,
+                contrastMode: .outline,
+                outlineColor: .white,
+                outlineWidth: 3.0
             )
         case .stealth:
             return PresetSettings(
@@ -131,6 +145,9 @@ public struct PresetSettings: Codable, Equatable, Sendable {
     public var glowRadius: Float
     public var shadowEnabled: Bool
     public var scale: Float
+    public var contrastMode: ContrastMode?
+    public var outlineColor: CursorColor?
+    public var outlineWidth: Float?
 
     public init(
         color: CursorColor,
@@ -138,7 +155,10 @@ public struct PresetSettings: Codable, Equatable, Sendable {
         glowColor: CursorColor,
         glowRadius: Float,
         shadowEnabled: Bool,
-        scale: Float
+        scale: Float,
+        contrastMode: ContrastMode? = nil,
+        outlineColor: CursorColor? = nil,
+        outlineWidth: Float? = nil
     ) {
         self.color = color
         self.glowEnabled = glowEnabled
@@ -146,6 +166,9 @@ public struct PresetSettings: Codable, Equatable, Sendable {
         self.glowRadius = max(0, min(20, glowRadius))
         self.shadowEnabled = shadowEnabled
         self.scale = max(0.5, min(2.0, scale))
+        self.contrastMode = contrastMode
+        self.outlineColor = outlineColor
+        self.outlineWidth = outlineWidth.map { max(0.5, min(5.0, $0)) }
     }
 }
 
@@ -318,6 +341,15 @@ public struct CursorSettings: Codable, Equatable, Sendable {
             self.glowRadius = presetSettings.glowRadius
             self.shadowEnabled = presetSettings.shadowEnabled
             self.cursorScale = presetSettings.scale
+            if let contrastMode = presetSettings.contrastMode {
+                self.contrastMode = contrastMode
+            }
+            if let outlineColor = presetSettings.outlineColor {
+                self.outlineColor = outlineColor
+            }
+            if let outlineWidth = presetSettings.outlineWidth {
+                self.outlineWidth = outlineWidth
+            }
         }
     }
 

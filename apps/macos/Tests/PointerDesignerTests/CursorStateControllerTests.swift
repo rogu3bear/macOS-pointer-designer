@@ -143,6 +143,20 @@ final class CursorStateControllerTests: XCTestCase {
         XCTAssertEqual(mockSettings.lastSavedSettings?.shadowEnabled, CursorPreset.stealth.settings.shadowEnabled)
     }
 
+    func testApplyNegativePresetPersistsHighContrastAccessibilitySettings() {
+        controller.setContrastMode(.none)
+        controller.setOutlineColor(nil)
+        controller.setOutlineWidth(1.0)
+
+        controller.applyPreset(.negative)
+
+        XCTAssertEqual(mockSettings.lastSavedSettings?.preset, .negative)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.cursorColor, .black)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.contrastMode, .outline)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.outlineColor, .white)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.outlineWidth, 3.0)
+    }
+
     func testSetGlowEnabledMarksPresetCustom() {
         controller.applyPreset(.neonGlow)
 
