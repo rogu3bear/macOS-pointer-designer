@@ -464,6 +464,24 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(script.contains("Release metadata is explicitly not ready for stable download claims."))
     }
 
+    func testManualReleaseChecklistCoversHumanOnlyProof() throws {
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+        let checklist = try loadText(relativeToThisFile: "../../MANUAL_RELEASE_CHECKS.md")
+
+        XCTAssertTrue(requirements.contains("MANUAL_RELEASE_CHECKS.md"))
+        XCTAssertTrue(checklist.contains("make release-readiness"))
+        XCTAssertTrue(checklist.contains("signed, notarized"))
+        XCTAssertTrue(checklist.contains("Gatekeeper-accepted DMG"))
+        XCTAssertTrue(checklist.contains("Finder or LaunchServices"))
+        XCTAssertTrue(checklist.contains("Screen Recording denied"))
+        XCTAssertTrue(checklist.contains("Screen Recording"))
+        XCTAssertTrue(checklist.contains("Negative preset"))
+        XCTAssertTrue(checklist.contains("drag `CursorDesigner.app` to `/Applications`"))
+        XCTAssertTrue(checklist.contains("system-wide pointer replacement is not enabled"))
+        XCTAssertTrue(checklist.contains("SHA-256 digest"))
+        XCTAssertTrue(checklist.contains("network, telemetry, cloud processing"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile

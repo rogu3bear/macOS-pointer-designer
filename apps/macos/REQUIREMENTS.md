@@ -52,21 +52,13 @@ signed/notarized artifacts and stable GitHub release metadata are all verified.
 
 ## Manual Release-Candidate Checks
 
-These checks require a built app running on macOS and cannot be honestly proven
-by unit tests alone:
-
-- Launch from Finder or LaunchServices and confirm the menu bar item appears.
-- Open Preferences and verify Theme, Cursor Color, Cursor Size, Visual Effects,
-  Contrast Mode, Outline Width, Background Sampling Rate, Screen Recording,
-  Pointer Scope, and Launch at Login are visible and truthful.
-- Toggle contrast mode between None, Auto-Invert, and Outline with Screen
-  Recording denied and granted. The UI must say when dynamic contrast is
-  inactive, active, or paused for permission. Preserve the user-facing truth
-  that "Dynamic contrast is active" only when background sampling can actually
-  run.
-- Apply the Negative preset, quit, relaunch, and confirm settings persist.
-- Drag-install from the DMG, launch the installed app, and confirm the same
-  preference behavior from the installed bundle.
+These checks require a signed, notarized app running on macOS and cannot be
+honestly proven by unit tests alone. The canonical checklist is
+[`MANUAL_RELEASE_CHECKS.md`](MANUAL_RELEASE_CHECKS.md). The release remains
+blocked until every row in that checklist is performed against the same
+Gatekeeper-accepted DMG that `make release-readiness` verifies. Preserve the
+user-facing truth that "Dynamic contrast is active" only when background
+sampling can actually run.
 
 ## Blockers
 
