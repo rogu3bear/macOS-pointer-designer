@@ -41,6 +41,7 @@ For public distribution, add the signed/notarized artifact gates:
 (cd apps/macos && make sign SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make create-dmg)
 (cd apps/macos && make sign-dmg SIGN_IDENTITY="<Developer ID Application identity>")
+(cd apps/macos && make release-candidate SIGN_IDENTITY="<Developer ID Application identity>" NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-metadata-check)
 ```
