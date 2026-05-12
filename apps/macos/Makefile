@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -90,6 +90,9 @@ sign-dmg:
 		--sign "$(SIGN_IDENTITY)" \
 		"$(DMG_NAME)"
 
+# Build a signed local DMG candidate without notarizing it.
+signed-dmg: sign create-dmg sign-dmg
+
 # Verify the generated DMG mounts to the expected drag-install surface.
 dmg-install-check:
 	@./Scripts/dmg-install-check.sh --dmg "$(DMG_NAME)"
@@ -108,7 +111,7 @@ sign: release
 		"$(APP_BUNDLE)"
 
 # Notarize for distribution (requires Apple Developer account)
-notarize: sign create-dmg sign-dmg
+notarize: signed-dmg
 	@echo "Notarizing..."
 	@xcrun notarytool submit $(DMG_NAME) \
 		--keychain-profile "$(NOTARY_PROFILE)" \
@@ -118,3 +121,6 @@ notarize: sign create-dmg sign-dmg
 # Verify a signed, notarized, distribution-ready local artifact.
 release-readiness:
 	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)" --repo "$(GITHUB_REPO)"
+
+# Build, sign, notarize, staple, and verify the local release candidate.
+release-candidate: notarize release-readiness

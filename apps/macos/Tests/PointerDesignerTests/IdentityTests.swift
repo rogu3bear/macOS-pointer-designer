@@ -308,6 +308,7 @@ final class IdentityTests: XCTestCase {
             "APP-8",
             "make launch-smoke",
             "make dmg-install-check",
+            "make release-candidate",
             "make release-readiness",
             "make release-metadata-check",
             "./scripts/check-local-first.sh",
@@ -379,8 +380,10 @@ final class IdentityTests: XCTestCase {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
 
         XCTAssertTrue(makefile.contains("dmg: release create-dmg"))
+        XCTAssertTrue(makefile.contains("signed-dmg: sign create-dmg sign-dmg"))
         XCTAssertTrue(makefile.contains("sign-dmg:"))
-        XCTAssertTrue(makefile.contains("notarize: sign create-dmg sign-dmg"))
+        XCTAssertTrue(makefile.contains("notarize: signed-dmg"))
+        XCTAssertTrue(makefile.contains("release-candidate: notarize release-readiness"))
         XCTAssertFalse(makefile.contains("notarize: sign dmg"))
         XCTAssertTrue(makefile.contains("SIGN_IDENTITY ?="))
         XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
