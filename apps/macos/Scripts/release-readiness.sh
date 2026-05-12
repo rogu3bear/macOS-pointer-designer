@@ -65,6 +65,13 @@ print_next_required_proof() {
     echo "" >&2
     echo "Next required proof:" >&2
 
+    if has_failure "Code signature verifies" ||
+       has_failure "Hardened runtime is enabled" ||
+       has_failure "DMG install surface and mounted app signature verify" ||
+       has_failure "DMG signature verifies"; then
+        echo "- Build and sign the app with a Developer ID Application identity, recreate the DMG from that signed app, sign the DMG, then rerun this gate." >&2
+    fi
+
     if has_failure "notarytool credential profile is available"; then
         echo "- Store or select a valid notarytool profile, then rerun this gate with NOTARY_PROFILE=<profile>." >&2
     fi
