@@ -74,7 +74,7 @@ required_fields=(
     "APP-4 Screen Recording granted:"
     "APP-5 unsupported helper/system-wide replacement unavailable:"
     "APP-6 drag install from DMG:"
-    "APP-8 local-first product truth:"
+    "APP-8 local-first and website-boundary product truth:"
     "Blocker disposition:"
 )
 
