@@ -27,7 +27,7 @@ human-only macOS permission, Finder, and installed-app behavior.
 | APP-4 | Tell the truth after permission is granted. | Grant Screen Recording, restart if macOS requires it, enable Auto-Invert and Outline, and confirm the UI says dynamic contrast is active only while background sampling can run. |
 | APP-5 | Keep unsupported helper and system-wide replacement unavailable. | Confirm the Preferences pointer scope surface says system-wide pointer replacement is not enabled in this build and no helper install flow is presented as required. |
 | APP-6 | Verify drag-install behavior. | Open the notarized DMG, drag `CursorDesigner.app` to `/Applications`, launch the installed app, and repeat the preference and dynamic contrast checks from the installed bundle. |
-| APP-8 | Preserve local-first product truth. | Confirm the app and docs make no network, telemetry, cloud processing, Homebrew, or stable download claim beyond the verified release artifact. |
+| APP-8 | Preserve local-first and website-boundary product truth. | Confirm the app and docs make no network, telemetry, cloud processing, Homebrew, premature website, or stable download claim beyond the verified release artifact. |
 
 ## Evidence To Keep With The Release
 
@@ -76,7 +76,7 @@ Manual observations:
 - APP-4 Screen Recording granted:
 - APP-5 unsupported helper/system-wide replacement unavailable:
 - APP-6 drag install from DMG:
-- APP-8 local-first product truth:
+- APP-8 local-first and website-boundary product truth:
 
 Blocker disposition:
 - None, or list every blocker with owner and decision.

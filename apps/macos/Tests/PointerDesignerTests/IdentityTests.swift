@@ -703,7 +703,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checker.contains("--dmg"))
         XCTAssertTrue(checker.contains("--commit"))
         XCTAssertTrue(checker.contains("APP-1 menu bar launch:"))
-        XCTAssertTrue(checker.contains("APP-8 local-first product truth:"))
+        XCTAssertTrue(checker.contains("APP-8 local-first and website-boundary product truth:"))
         XCTAssertTrue(checker.contains("Manual release evidence is incomplete"))
         XCTAssertTrue(checker.contains("Pass/fail"))
         XCTAssertTrue(checker.contains("Recorded DMG SHA-256 does not match"))
@@ -713,7 +713,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(template.contains("Commit:"))
         XCTAssertTrue(template.contains("DMG SHA-256:"))
         XCTAssertTrue(template.contains("APP-1 menu bar launch:"))
-        XCTAssertTrue(template.contains("APP-8 local-first product truth:"))
+        XCTAssertTrue(template.contains("APP-8 local-first and website-boundary product truth:"))
         XCTAssertTrue(template.contains("shasum -a 256"))
     }
 

@@ -80,7 +80,7 @@ echo "- APP-4 dynamic contrast permission truth: apps/macos/REQUIREMENTS.md -> c
 echo "- APP-5 unsupported helper and system-wide replacement unavailable: apps/macos/REQUIREMENTS.md -> check-app-ui-contract.sh, IdentityTests, CursorStateControllerTests"
 echo "- APP-6 app bundle, DMG, and mounted app match: apps/macos/REQUIREMENTS.md -> make preflight, make dmg, make dmg-install-check, make dmg-artifact-match-check"
 echo "- APP-7 signing, notarization, Gatekeeper, release metadata, and install instructions: apps/macos/REQUIREMENTS.md -> make release-readiness and make release-metadata-check"
-echo "- APP-8 local-first product truth: apps/macos/REQUIREMENTS.md -> check-monorepo-references.sh, check-local-first.sh, IdentityTests"
+echo "- APP-8 local-first and website-boundary product truth: apps/macos/REQUIREMENTS.md -> check-monorepo-references.sh, check-website-boundary.sh, check-local-first.sh, IdentityTests"
 echo "- Website: NORTH_STAR.md -> No canonical Cursor Designer website exists."
 echo ""
 
