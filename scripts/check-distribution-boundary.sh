@@ -17,9 +17,16 @@ if find Casks apps/macos/Casks homebrew Formula \
   exit 1
 fi
 
-scan_files=(
-  "README.md"
-  "apps/macos/README.md"
+scan_paths=(
+  "."
+)
+
+rg_args=(
+  --line-number
+  --fixed-strings
+  --glob '*.md'
+  --glob '!.git/**'
+  --glob '!apps/macos/.build/**'
 )
 
 forbidden_patterns=(
@@ -30,7 +37,7 @@ forbidden_patterns=(
 )
 
 for pattern in "${forbidden_patterns[@]}"; do
-  if rg --line-number --fixed-strings "$pattern" "${scan_files[@]}"; then
+  if rg "${rg_args[@]}" "$pattern" "${scan_paths[@]}"; then
     echo "ERROR: unverified public distribution instruction found: $pattern" >&2
     echo "Stable download and Homebrew claims require a notarized artifact, matching release digest, and manual release evidence." >&2
     exit 1

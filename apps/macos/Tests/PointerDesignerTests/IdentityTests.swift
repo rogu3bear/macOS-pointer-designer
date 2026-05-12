@@ -335,6 +335,8 @@ final class IdentityTests: XCTestCase {
         let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
 
         XCTAssertTrue(script.contains("Casks apps/macos/Casks homebrew Formula"))
+        XCTAssertTrue(script.contains("--glob '*.md'"))
+        XCTAssertTrue(script.contains("--glob '!apps/macos/.build/**'"))
         XCTAssertTrue(script.contains("brew install --cask cursor-designer-osx"))
         XCTAssertTrue(script.contains("Cursor Designer distribution-boundary check passed."))
         XCTAssertTrue(workflow.contains("./scripts/check-distribution-boundary.sh"))
