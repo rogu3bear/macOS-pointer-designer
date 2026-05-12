@@ -36,30 +36,60 @@ echo "DMG:             $DMG_PATH"
 echo "Notary profile:  $NOTARY_PROFILE"
 echo ""
 
+failures=()
+
+record_failure() {
+    failures+=("$1")
+}
+
+run_check() {
+    local label="$1"
+    shift
+
+    echo ""
+    echo ">>> $label"
+    if "$@"; then
+        echo "PASS: $label"
+    else
+        local status=$?
+        echo "FAIL: $label (exit $status)" >&2
+        record_failure "$label"
+    fi
+}
+
 if [[ ! -d "$APP_PATH" ]]; then
     echo "ERROR: App bundle not found: $APP_PATH" >&2
-    exit 2
+    record_failure "App bundle exists"
 fi
 
 if [[ ! -f "$DMG_PATH" ]]; then
     echo "ERROR: DMG not found: $DMG_PATH" >&2
-    exit 2
+    record_failure "DMG exists"
 fi
 
-echo ">>> Verifying code signature"
-codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+if [[ -d "$APP_PATH" ]]; then
+    run_check "Code signature verifies" \
+        codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+    run_check "Gatekeeper assessment accepts app" \
+        spctl --assess --type execute --verbose=4 "$APP_PATH"
+fi
+
+if [[ -f "$DMG_PATH" ]]; then
+    run_check "Stapled notarization ticket validates" \
+        xcrun stapler validate "$DMG_PATH"
+fi
+
+run_check "notarytool credential profile is available" \
+    xcrun notarytool history --keychain-profile "$NOTARY_PROFILE"
 
 echo ""
-echo ">>> Checking Gatekeeper assessment"
-spctl --assess --type execute --verbose=4 "$APP_PATH"
+if [[ ${#failures[@]} -gt 0 ]]; then
+    echo "Distribution blockers:" >&2
+    for failure in "${failures[@]}"; do
+        echo "- $failure" >&2
+    done
+    exit 1
+fi
 
-echo ""
-echo ">>> Validating stapled notarization ticket"
-xcrun stapler validate "$DMG_PATH"
-
-echo ""
-echo ">>> Checking notarytool credential profile"
-xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null
-
-echo ""
 echo "Release readiness passed."
