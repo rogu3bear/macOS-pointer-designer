@@ -353,6 +353,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("stapler validate"))
         XCTAssertTrue(script.contains("notarytool history"))
+        XCTAssertTrue(script.contains("Distribution blockers:"))
+        XCTAssertTrue(script.contains("FAIL:"))
+        XCTAssertTrue(script.contains("failures=("))
     }
 
     func testDMGInstallGateChecksMountedArtifactShape() throws {
