@@ -144,6 +144,12 @@ if [[ ! "$blocker_disposition" =~ ^[Nn]one([[:space:].,:;-]|$) ]]; then
 fi
 
 if [[ -f "$DMG_PATH" ]]; then
+    recorded_filename="$(field_value "DMG filename:")"
+    actual_filename="$(basename "$DMG_PATH")"
+    if [[ "$recorded_filename" != "$actual_filename" ]]; then
+        failures+=("Recorded DMG filename does not match $DMG_PATH")
+    fi
+
     recorded_digest="$(field_value "DMG SHA-256:")"
     actual_digest="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
     if [[ "$recorded_digest" != "$actual_digest" ]]; then
@@ -172,6 +178,11 @@ if [[ -f "$DMG_PATH" ]]; then
 
             if [[ "$(field_value "App version:")" != "$actual_version" ]]; then
                 failures+=("Recorded app version does not match mounted DMG app")
+            fi
+
+            expected_release_tag="v$actual_version"
+            if [[ "$(field_value "Release tag:")" != "$expected_release_tag" ]]; then
+                failures+=("Recorded release tag does not match mounted DMG app version")
             fi
 
             if [[ "$(field_value "App build:")" != "$actual_build" ]]; then
