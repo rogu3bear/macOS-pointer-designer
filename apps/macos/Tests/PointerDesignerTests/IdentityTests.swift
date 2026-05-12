@@ -349,6 +349,14 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(readme.contains("[`REQUIREMENTS.md`](REQUIREMENTS.md)"))
     }
 
+    func testCIExercisesMacOSPackageAndDMGShape() throws {
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+
+        XCTAssertTrue(workflow.contains("swift test --package-path apps/macos"))
+        XCTAssertTrue(workflow.contains("make -C apps/macos preflight"))
+        XCTAssertTrue(workflow.contains("make -C apps/macos dmg && make -C apps/macos dmg-install-check"))
+    }
+
     func testLocalFirstGuardChecksAppSourceForNetworkAndTelemetry() throws {
         let script = try loadText(relativeToThisFile: "../../../../scripts/check-local-first.sh")
         let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
