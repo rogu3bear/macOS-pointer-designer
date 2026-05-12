@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness
+.PHONY: all build release clean test install uninstall dmg create-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -83,6 +83,13 @@ create-dmg:
 	@./Scripts/create-dmg.sh
 	@echo "DMG created: $(DMG_NAME)"
 
+# Code sign the generated DMG for distribution.
+sign-dmg:
+	@echo "Signing DMG..."
+	@codesign --force --verify --verbose \
+		--sign "$(SIGN_IDENTITY)" \
+		"$(DMG_NAME)"
+
 # Verify the generated DMG mounts to the expected drag-install surface.
 dmg-install-check:
 	@./Scripts/dmg-install-check.sh --dmg "$(DMG_NAME)"
@@ -101,7 +108,7 @@ sign: release
 		"$(APP_BUNDLE)"
 
 # Notarize for distribution (requires Apple Developer account)
-notarize: sign create-dmg
+notarize: sign create-dmg sign-dmg
 	@echo "Notarizing..."
 	@xcrun notarytool submit $(DMG_NAME) \
 		--keychain-profile "$(NOTARY_PROFILE)" \

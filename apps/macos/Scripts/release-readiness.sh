@@ -107,6 +107,9 @@ if [[ -f "$DMG_PATH" ]]; then
     run_check "DMG install surface and mounted app signature verify" \
         "$SCRIPT_DIR/dmg-install-check.sh" --dmg "$DMG_PATH" --require-signature
 
+    run_check "DMG signature verifies" \
+        codesign --verify --verbose=2 "$DMG_PATH"
+
     run_check "Stapled notarization ticket validates" \
         xcrun stapler validate "$DMG_PATH"
 fi
