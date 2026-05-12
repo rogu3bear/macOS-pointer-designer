@@ -246,6 +246,33 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testOperatorDoctrineListsCurrentRootGuardrails() throws {
+        let checkedFiles = [
+            "../../../../ANCHOR.md",
+            "../../../../AGENTS.md",
+            "../../../../CLAUDE.md"
+        ]
+        let requiredCommands = [
+            "./scripts/check-monorepo-references.sh",
+            "./scripts/check-website-boundary.sh",
+            "./scripts/check-distribution-boundary.sh",
+            "./scripts/check-local-first.sh",
+            "./scripts/check-app-ui-contract.sh",
+            "swift test --package-path apps/macos"
+        ]
+
+        for file in checkedFiles {
+            let text = try loadText(relativeToThisFile: file)
+
+            for command in requiredCommands {
+                XCTAssertTrue(
+                    text.contains(command),
+                    "\(file) must list current root guardrail command: \(command)"
+                )
+            }
+        }
+    }
+
     func testAppReadmeDoesNotAdvertiseUnverifiedDownloadChannels() throws {
         let readme = try loadText(relativeToThisFile: "../../README.md")
         let forbiddenClaims = [

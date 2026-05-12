@@ -57,8 +57,11 @@ If a proposal conflicts with these anchors, the burden is on the proposal.
 
 ## Operational Anchors
 
-- From the monorepo root, run `./scripts/check-monorepo-references.sh` to guard
-  against wrong-product references in runtime surfaces.
+- From the monorepo root, run `./scripts/check-monorepo-references.sh`,
+  `./scripts/check-website-boundary.sh`,
+  `./scripts/check-distribution-boundary.sh`,
+  `./scripts/check-local-first.sh`, and
+  `./scripts/check-app-ui-contract.sh` before product or release claims.
 - From the monorepo root, run `swift test --package-path apps/macos` for the
   primary test gate.
 - From `apps/macos`, `swift build`, `swift test`, and `make preflight` are the
@@ -77,7 +80,7 @@ Before changing code, ask:
    another product's website, deployment, or release identity?
 3. Does it respect macOS permissions and keep helper behavior explicit?
 4. Does it preserve or intentionally migrate the identifiers in `Identity.swift`?
-5. Can the change be verified locally with the root boundary check and targeted
+5. Can the change be verified locally with the root guardrails and targeted
    Swift tests or package preflight?
 
 If the answer to any of these is "no", the change probably needs to be smaller

@@ -51,6 +51,10 @@ From the monorepo root:
 
 ```bash
 ./scripts/check-monorepo-references.sh
+./scripts/check-website-boundary.sh
+./scripts/check-distribution-boundary.sh
+./scripts/check-local-first.sh
+./scripts/check-app-ui-contract.sh
 swift test --package-path apps/macos
 ```
 
@@ -89,7 +93,8 @@ runs tests, and validates the generated app bundle with
    blocked before editing.
 4. Read the smallest relevant app surfaces before changing behavior.
 5. Make scoped edits that preserve the product boundary.
-6. Run the root boundary check and targeted Swift tests before claiming success.
+6. Run the root boundary, distribution, local-first, UI, and targeted Swift
+   tests before claiming success.
 7. For readiness claims, build a prompt-to-artifact checklist against
    `NORTH_STAR.md` and verify every item with files, commands, or explicit
    blockers.
