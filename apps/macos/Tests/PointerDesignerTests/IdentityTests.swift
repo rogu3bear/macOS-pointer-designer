@@ -311,6 +311,7 @@ final class IdentityTests: XCTestCase {
             "make release-readiness",
             "make release-metadata-check",
             "./scripts/check-local-first.sh",
+            "./scripts/check-app-ui-contract.sh",
             "Dynamic contrast is active",
             "System-wide pointer replacement is not implemented",
             "notarytool profile credentials are missing"
@@ -332,6 +333,7 @@ final class IdentityTests: XCTestCase {
         let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
         let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
 
+        XCTAssertTrue(script.contains("command -v rg"))
         XCTAssertTrue(script.contains("apps/macos/Sources"))
         XCTAssertTrue(script.contains("URLSession"))
         XCTAssertTrue(script.contains("NSURLConnection"))
@@ -339,9 +341,29 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("SentrySDK"))
         XCTAssertTrue(script.contains("FirebaseApp"))
         XCTAssertTrue(script.contains("Cursor Designer local-first app check passed."))
+        XCTAssertTrue(workflow.contains("sudo apt-get update && sudo apt-get install -y ripgrep"))
         XCTAssertTrue(workflow.contains("./scripts/check-local-first.sh"))
         XCTAssertTrue(rootReadme.contains("./scripts/check-local-first.sh"))
         XCTAssertTrue(requirements.contains("./scripts/check-local-first.sh"))
+    }
+
+    func testAppUIContractGuardChecksPreferencesAndMenuTruth() throws {
+        let script = try loadText(relativeToThisFile: "../../../../scripts/check-app-ui-contract.sh")
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+        let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+
+        XCTAssertTrue(script.contains("command -v rg"))
+        XCTAssertTrue(script.contains("PreferencesWindowController.swift"))
+        XCTAssertTrue(script.contains("MenuBarController.swift"))
+        XCTAssertTrue(script.contains("Cursor Designer Preferences"))
+        XCTAssertTrue(script.contains("Background Sampling Rate"))
+        XCTAssertTrue(script.contains("Dynamic contrast is paused until Screen Recording is granted."))
+        XCTAssertTrue(script.contains("System-wide pointer replacement is not enabled in this build."))
+        XCTAssertTrue(script.contains("Cursor Designer app UI contract check passed."))
+        XCTAssertTrue(workflow.contains("./scripts/check-app-ui-contract.sh"))
+        XCTAssertTrue(rootReadme.contains("./scripts/check-app-ui-contract.sh"))
+        XCTAssertTrue(requirements.contains("./scripts/check-app-ui-contract.sh"))
     }
 
     func testTrustCheckDoesNotClaimCursorApplicationRequiresHelper() throws {

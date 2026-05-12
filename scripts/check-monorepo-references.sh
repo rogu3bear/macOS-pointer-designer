@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
+if ! command -v rg >/dev/null 2>&1; then
+  echo "ripgrep (rg) is required for product-boundary checks." >&2
+  exit 127
+fi
+
 forbidden_patterns=(
   "/Users/star/dev/drop-web"
   "rogu3bear/drop-web"
