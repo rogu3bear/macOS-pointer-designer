@@ -158,6 +158,7 @@ proof for another.
 - App proof map: `apps/macos/REQUIREMENTS.md`
 - Human-only release proof: `apps/macos/MANUAL_RELEASE_CHECKS.md`
 - Product boundary: `./scripts/check-monorepo-references.sh`
+- Current website boundary: `./scripts/check-website-boundary.sh`
 - Local-first app surface: `./scripts/check-local-first.sh`
 - App UI truth: `./scripts/check-app-ui-contract.sh`
 - Core macOS behavior: `swift test --package-path apps/macos`

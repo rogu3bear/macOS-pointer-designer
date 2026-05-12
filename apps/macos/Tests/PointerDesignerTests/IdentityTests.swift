@@ -333,6 +333,7 @@ final class IdentityTests: XCTestCase {
         let requiredGates = [
             "apps/macos/REQUIREMENTS.md",
             "apps/macos/MANUAL_RELEASE_CHECKS.md",
+            "./scripts/check-website-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "make launch-smoke",
@@ -380,6 +381,7 @@ final class IdentityTests: XCTestCase {
             "make release-metadata-check",
             "mounted DMG app matches the release app",
             "stable release tag matches app version",
+            "./scripts/check-website-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "Dynamic contrast is active",
@@ -418,6 +420,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("APP-8"))
         XCTAssertTrue(script.contains("release-readiness"))
         XCTAssertTrue(script.contains("release-metadata-check"))
+        XCTAssertTrue(script.contains("check-website-boundary.sh"))
+        XCTAssertTrue(script.contains("Website boundary"))
         XCTAssertTrue(script.contains("manual-release-evidence-check.sh"))
         XCTAssertTrue(script.contains("Manual release evidence"))
         XCTAssertTrue(script.contains("not mass-production ready"))
