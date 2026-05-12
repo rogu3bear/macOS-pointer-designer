@@ -618,6 +618,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(makefile.contains("notary-profile-check:"))
         XCTAssertTrue(makefile.contains(#"notary-profile-check.sh --notary-profile "$(NOTARY_PROFILE)""#))
         XCTAssertTrue(signingIdentityCheck.contains("security find-identity -v -p codesigning"))
+        XCTAssertTrue(signingIdentityCheck.contains("Resolved default signing identity"))
+        XCTAssertTrue(signingIdentityCheck.contains("multiple Developer ID Application identities are available"))
         XCTAssertTrue(signingIdentityCheck.contains("ERROR: signing identity"))
         XCTAssertTrue(signingIdentityCheck.contains("Do not commit certificates"))
         XCTAssertTrue(notaryProfileCheck.contains("notarytool history --keychain-profile"))

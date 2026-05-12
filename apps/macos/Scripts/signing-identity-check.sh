@@ -35,6 +35,25 @@ if grep -Fq "\"$SIGN_IDENTITY\"" <<<"$IDENTITIES"; then
     exit 0
 fi
 
+if [[ "$SIGN_IDENTITY" == "Developer ID Application" ]]; then
+    matching_identities=$(grep -E '"Developer ID Application: .+ \([A-Z0-9]+\)"' <<<"$IDENTITIES" || true)
+    matching_count=$(grep -Ec '"Developer ID Application: .+ \([A-Z0-9]+\)"' <<<"$IDENTITIES" || true)
+
+    if [[ "$matching_count" -eq 1 ]]; then
+        resolved_identity=$(sed -E 's/^.*"([^"]+)".*$/\1/' <<<"$matching_identities")
+        echo "Resolved default signing identity: $resolved_identity"
+        exit 0
+    fi
+
+    if [[ "$matching_count" -gt 1 ]]; then
+        echo "$IDENTITIES" >&2
+        echo "" >&2
+        echo "ERROR: multiple Developer ID Application identities are available." >&2
+        echo "Set SIGN_IDENTITY to the exact identity printed by security find-identity." >&2
+        exit 69
+    fi
+fi
+
 echo "$IDENTITIES" >&2
 echo "" >&2
 echo "ERROR: signing identity '$SIGN_IDENTITY' is not available for codesigning." >&2
