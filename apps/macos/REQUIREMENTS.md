@@ -18,7 +18,7 @@ either verified by live evidence or explicitly marked blocked.
 | APP-5 | Hide, disable, or mark unsupported helper and system-wide replacement paths unavailable. | `swift test --package-path apps/macos --filter IdentityTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-monorepo-references.sh` | Locally verified; system-wide replacement remains unsupported. |
 | APP-6 | Produce a validated app bundle and DMG from the repo-local macOS package. | `make preflight`; `make dmg`; `make dmg-install-check` | Locally verified when the gates pass on the candidate artifact. |
 | APP-7 | Verify signing, notarization, release metadata, and install instructions before public distribution. | `make sign`; `make create-dmg`; `make release-readiness`; `make release-metadata-check` | Blocked until notarization credentials/profile and stable release metadata exist. |
-| APP-8 | Keep wrong-product language, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `swift test --package-path apps/macos --filter IdentityTests`; repo review for new runtime/network dependencies | Guarded locally; repeat before release. |
+| APP-8 | Keep wrong-product language, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `./scripts/check-local-first.sh`; `swift test --package-path apps/macos --filter IdentityTests` | Guarded locally; repeat before release. |
 
 ## Release-Candidate Proof
 
@@ -26,6 +26,7 @@ Run these from the monorepo root unless a command says otherwise:
 
 ```bash
 ./scripts/check-monorepo-references.sh
+./scripts/check-local-first.sh
 swift test --package-path apps/macos
 (cd apps/macos && make preflight)
 (cd apps/macos && make launch-smoke)

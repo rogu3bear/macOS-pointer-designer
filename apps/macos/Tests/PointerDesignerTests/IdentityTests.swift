@@ -310,6 +310,7 @@ final class IdentityTests: XCTestCase {
             "make dmg-install-check",
             "make release-readiness",
             "make release-metadata-check",
+            "./scripts/check-local-first.sh",
             "Dynamic contrast is active",
             "System-wide pointer replacement is not implemented",
             "notarytool profile credentials are missing"
@@ -323,6 +324,24 @@ final class IdentityTests: XCTestCase {
         }
 
         XCTAssertTrue(readme.contains("[`REQUIREMENTS.md`](REQUIREMENTS.md)"))
+    }
+
+    func testLocalFirstGuardChecksAppSourceForNetworkAndTelemetry() throws {
+        let script = try loadText(relativeToThisFile: "../../../../scripts/check-local-first.sh")
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+        let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+
+        XCTAssertTrue(script.contains("apps/macos/Sources"))
+        XCTAssertTrue(script.contains("URLSession"))
+        XCTAssertTrue(script.contains("NSURLConnection"))
+        XCTAssertTrue(script.contains("NWConnection"))
+        XCTAssertTrue(script.contains("SentrySDK"))
+        XCTAssertTrue(script.contains("FirebaseApp"))
+        XCTAssertTrue(script.contains("Cursor Designer local-first app check passed."))
+        XCTAssertTrue(workflow.contains("./scripts/check-local-first.sh"))
+        XCTAssertTrue(rootReadme.contains("./scripts/check-local-first.sh"))
+        XCTAssertTrue(requirements.contains("./scripts/check-local-first.sh"))
     }
 
     func testTrustCheckDoesNotClaimCursorApplicationRequiresHelper() throws {

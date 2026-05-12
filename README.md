@@ -34,5 +34,6 @@ Run the product checks from the monorepo root:
 
 ```bash
 ./scripts/check-monorepo-references.sh
+./scripts/check-local-first.sh
 swift test --package-path apps/macos
 ```
