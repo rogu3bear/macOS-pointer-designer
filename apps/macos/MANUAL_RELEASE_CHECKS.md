@@ -46,6 +46,13 @@ Use this template for the release notes or release ticket after
 only what was observed against the same signed, notarized, Gatekeeper-accepted
 DMG.
 
+To avoid hand-copying the commit and DMG digest, generate the starting record
+from the same candidate artifact:
+
+```bash
+make manual-release-evidence-template RELEASE_TAG="<stable tag>" > ReleaseEvidence/manual-release-evidence.txt
+```
+
 ```text
 Release tag:
 Commit:

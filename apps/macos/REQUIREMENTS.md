@@ -49,6 +49,7 @@ For public distribution, add the signed/notarized artifact gates:
 (cd apps/macos && make release-artifact-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-metadata-check)
+(cd apps/macos && make manual-release-evidence-template RELEASE_TAG="<stable tag>" > ReleaseEvidence/manual-release-evidence.txt)
 (cd apps/macos && make manual-release-evidence-check MANUAL_EVIDENCE="<completed evidence file>")
 (cd apps/macos && make north-star-audit NOTARY_PROFILE="<notarytool profile>" MANUAL_EVIDENCE="<completed evidence file>")
 ```

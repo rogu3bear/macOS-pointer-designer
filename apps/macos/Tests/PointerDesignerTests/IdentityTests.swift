@@ -477,6 +477,7 @@ final class IdentityTests: XCTestCase {
             "../../Scripts/release-metadata-check.sh": "ERROR: --repo requires OWNER/REPO",
             "../../Scripts/release-readiness.sh": "ERROR: --notary-profile requires a name",
             "../../Scripts/manual-release-evidence-check.sh": "ERROR: --evidence requires a path",
+            "../../Scripts/manual-release-evidence-template.sh": "ERROR: --dmg requires a path",
             "../../Scripts/north-star-audit.sh": "ERROR: --manual-evidence requires a path"
         ]
 
@@ -490,6 +491,10 @@ final class IdentityTests: XCTestCase {
         let manualEvidenceCheck = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-check.sh")
         XCTAssertTrue(manualEvidenceCheck.contains("ERROR: --dmg requires a path"))
         XCTAssertTrue(manualEvidenceCheck.contains("ERROR: --commit requires a commit"))
+
+        let manualEvidenceTemplate = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-template.sh")
+        XCTAssertTrue(manualEvidenceTemplate.contains("ERROR: --release-tag requires a tag"))
+        XCTAssertTrue(manualEvidenceTemplate.contains("ERROR: --commit requires a commit"))
     }
 
     func testHelperScaffoldDoesNotAcceptUnverifiedClients() throws {
@@ -652,10 +657,14 @@ final class IdentityTests: XCTestCase {
         let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
         let checklist = try loadText(relativeToThisFile: "../../MANUAL_RELEASE_CHECKS.md")
         let checker = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-check.sh")
+        let template = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-template.sh")
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
 
         XCTAssertTrue(requirements.contains("MANUAL_RELEASE_CHECKS.md"))
         XCTAssertTrue(requirements.contains("make manual-release-evidence-check"))
+        XCTAssertTrue(requirements.contains("make manual-release-evidence-template"))
         XCTAssertTrue(checklist.contains("make release-readiness"))
+        XCTAssertTrue(checklist.contains("make manual-release-evidence-template"))
         XCTAssertTrue(checklist.contains("signed, notarized"))
         XCTAssertTrue(checklist.contains("Gatekeeper-accepted DMG"))
         XCTAssertTrue(checklist.contains("Finder or LaunchServices"))
@@ -681,6 +690,13 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checker.contains("Pass/fail"))
         XCTAssertTrue(checker.contains("Recorded DMG SHA-256 does not match"))
         XCTAssertTrue(checker.contains("Recorded commit does not match"))
+        XCTAssertTrue(makefile.contains("manual-release-evidence-template:"))
+        XCTAssertTrue(template.contains("Release tag:"))
+        XCTAssertTrue(template.contains("Commit:"))
+        XCTAssertTrue(template.contains("DMG SHA-256:"))
+        XCTAssertTrue(template.contains("APP-1 menu bar launch:"))
+        XCTAssertTrue(template.contains("APP-8 local-first product truth:"))
+        XCTAssertTrue(template.contains("shasum -a 256"))
     }
 
     func testReleaseRunbookDrivesEndToEndReadinessWithoutClaimingAvailability() throws {
@@ -693,6 +709,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(runbook.contains("xcrun notarytool store-credentials"))
         XCTAssertTrue(runbook.contains("make release-candidate"))
         XCTAssertTrue(runbook.contains("make release-readiness"))
+        XCTAssertTrue(runbook.contains("make manual-release-evidence-template"))
         XCTAssertTrue(runbook.contains("make manual-release-evidence-check"))
         XCTAssertTrue(runbook.contains("make north-star-audit"))
         XCTAssertTrue(runbook.contains("MANUAL_RELEASE_CHECKS.md"))
