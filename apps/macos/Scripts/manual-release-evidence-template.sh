@@ -86,6 +86,14 @@ APP_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$INFO_PL
 APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
 APP_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
 APP_EXECUTABLE_SHA256="$(shasum -a 256 "$EXECUTABLE_PATH" | awk '{print $1}')"
+EXPECTED_RELEASE_TAG="v$APP_VERSION"
+
+if [[ "$RELEASE_TAG" != "$EXPECTED_RELEASE_TAG" ]]; then
+    echo "ERROR: RELEASE_TAG does not match mounted app version" >&2
+    echo "Release tag:  $RELEASE_TAG" >&2
+    echo "Expected tag: $EXPECTED_RELEASE_TAG" >&2
+    exit 2
+fi
 
 cat <<EOF
 Release tag: $RELEASE_TAG
