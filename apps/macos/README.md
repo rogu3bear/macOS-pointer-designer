@@ -13,7 +13,7 @@ This package lives in `apps/macos` inside the Cursor Designer monorepo.
 - **Launch at Login**: Optionally start with your Mac
 - **Pointer Scope Status**: Shows whether this build enables any broader pointer replacement capability
 - **Multi-Monitor Support**: Handles different DPI scales and refresh rates per display
-- **Crash Recovery**: Automatically restores system cursor if app terminates unexpectedly
+- **Crash Recovery**: Tracks app session state and recovers cleanly after unexpected termination
 
 ## Requirements
 
@@ -233,9 +233,9 @@ No data is collected or transmitted. All processing happens locally.
 - The app includes flicker suppression for video content
 - If issues persist, lower sampling rate to 30 Hz
 
-### App crashed and cursor is stuck
-- The app tracks cursor state and will restore it on next launch
-- Force quit and relaunch to trigger recovery
+### App crashed or settings look wrong
+- Relaunch Cursor Designer to rebuild app session state
+- Open Preferences, review the selected preset and contrast mode, then disable and re-enable customization if needed
 
 ## License
 
