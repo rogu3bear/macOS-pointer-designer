@@ -300,6 +300,7 @@ final class IdentityTests: XCTestCase {
             "./scripts/check-app-ui-contract.sh",
             "make launch-smoke",
             "make dmg-install-check",
+            "make dmg-artifact-match-check",
             "mounted DMG app must match the release app",
             "make signing-identity-check",
             "make signed-dmg",
@@ -331,6 +332,7 @@ final class IdentityTests: XCTestCase {
             "APP-8",
             "make launch-smoke",
             "make dmg-install-check",
+            "make dmg-artifact-match-check",
             "make signing-identity-check",
             "make signed-dmg",
             "make release-candidate",
@@ -361,7 +363,7 @@ final class IdentityTests: XCTestCase {
 
         XCTAssertTrue(workflow.contains("swift test --package-path apps/macos"))
         XCTAssertTrue(workflow.contains("make -C apps/macos preflight"))
-        XCTAssertTrue(workflow.contains("make -C apps/macos dmg && make -C apps/macos dmg-install-check"))
+        XCTAssertTrue(workflow.contains("make -C apps/macos dmg && make -C apps/macos dmg-artifact-match-check"))
     }
 
     func testLocalFirstGuardChecksAppSourceForNetworkAndTelemetry() throws {
