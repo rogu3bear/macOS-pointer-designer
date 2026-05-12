@@ -9,6 +9,7 @@ APP_PATH=".build/release/CursorDesigner.app"
 DMG_PATH="CursorDesigner.dmg"
 NOTARY_PROFILE="notarization"
 REPO="rogu3bear/macOS-pointer-designer"
+MANUAL_EVIDENCE="ReleaseEvidence/manual-release-evidence.txt"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -44,8 +45,16 @@ while [[ $# -gt 0 ]]; do
             REPO="$2"
             shift 2
             ;;
+        --manual-evidence)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --manual-evidence requires a path" >&2
+                exit 2
+            fi
+            MANUAL_EVIDENCE="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME] [--repo OWNER/REPO]"
+            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME] [--repo OWNER/REPO] [--manual-evidence PATH]"
             exit 0
             ;;
         *)
@@ -60,6 +69,7 @@ echo "App:            $APP_PATH"
 echo "DMG:            $DMG_PATH"
 echo "Notary profile: $NOTARY_PROFILE"
 echo "Release repo:   $REPO"
+echo "Manual evidence: $MANUAL_EVIDENCE"
 echo ""
 
 echo "Prompt-to-artifact checklist"
@@ -100,5 +110,18 @@ if [[ "$readiness_status" -ne 0 ]]; then
 fi
 
 echo ""
-echo "North Star audit result: release-readiness passed."
-echo "Complete MANUAL_RELEASE_CHECKS.md against the same Gatekeeper-accepted DMG before declaring mass-production readiness."
+echo ">>> Manual release evidence"
+set +e
+(cd "$MACOS_DIR" && "$SCRIPT_DIR/manual-release-evidence-check.sh" --evidence "$MANUAL_EVIDENCE")
+manual_status=$?
+set -e
+
+if [[ "$manual_status" -ne 0 ]]; then
+    echo ""
+    echo "North Star audit result: not mass-production ready."
+    echo "manual-release-evidence-check failed with exit $manual_status; complete MANUAL_RELEASE_CHECKS.md against the same Gatekeeper-accepted DMG."
+    exit "$manual_status"
+fi
+
+echo ""
+echo "North Star audit result: release-readiness and manual release evidence passed."

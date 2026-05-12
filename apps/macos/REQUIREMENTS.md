@@ -17,7 +17,7 @@ either verified by live evidence or explicitly marked blocked.
 | APP-4 | Make dynamic contrast honest with and without Screen Recording permission. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; Preferences UI must show active, inactive, or permission-required state. | Controller and Preferences contract verified; real permission flow still needs release-candidate manual proof. |
 | APP-5 | Hide, disable, or mark unsupported helper and system-wide replacement paths unavailable. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter IdentityTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-monorepo-references.sh` | Locally verified; system-wide replacement remains unsupported. |
 | APP-6 | Produce a validated app bundle and DMG from the repo-local macOS package. | `make preflight`; `make dmg`; `make dmg-install-check`; `make dmg-artifact-match-check` | Locally verified when the gates pass on the candidate artifact. Public artifact gates additionally verify the mounted DMG app matches the release app under assessment. |
-| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, and install instructions before public distribution. | `make signing-identity-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release checks, and stable release metadata exist. `make release-metadata-check` also verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. |
+| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, manual release evidence, and install instructions before public distribution. | `make signing-identity-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check`; `make manual-release-evidence-check`; `make north-star-audit` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release evidence, and stable release metadata exist. `make release-metadata-check` also verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. `make north-star-audit` fails until both `make release-readiness` and manual evidence validation pass. |
 | APP-8 | Keep wrong-product language, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `./scripts/check-local-first.sh`; `swift test --package-path apps/macos --filter IdentityTests` | Guarded locally; repeat before release. |
 
 ## Release-Candidate Proof
@@ -48,6 +48,8 @@ For public distribution, add the signed/notarized artifact gates:
 (cd apps/macos && make release-artifact-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-readiness NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make release-metadata-check)
+(cd apps/macos && make manual-release-evidence-check MANUAL_EVIDENCE="<completed evidence file>")
+(cd apps/macos && make north-star-audit NOTARY_PROFILE="<notarytool profile>" MANUAL_EVIDENCE="<completed evidence file>")
 ```
 
 Do not substitute a green test suite for app signing, DMG signing, hardened
@@ -61,8 +63,9 @@ These checks require a signed, notarized app running on macOS and cannot be
 honestly proven by unit tests alone. The canonical checklist is
 [`MANUAL_RELEASE_CHECKS.md`](MANUAL_RELEASE_CHECKS.md). The release remains
 blocked until every row in that checklist is performed against the same
-Gatekeeper-accepted DMG that `make release-readiness` verifies. Preserve the
-user-facing truth that "Dynamic contrast is active" only when background
+Gatekeeper-accepted DMG that `make release-readiness` verifies and the
+completed evidence record passes `make manual-release-evidence-check`. Preserve
+the user-facing truth that "Dynamic contrast is active" only when background
 sampling can actually run.
 
 ## Blockers

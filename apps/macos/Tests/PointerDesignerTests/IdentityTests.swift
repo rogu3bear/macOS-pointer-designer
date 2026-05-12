@@ -307,7 +307,9 @@ final class IdentityTests: XCTestCase {
             "make release-candidate",
             "make release-artifact-readiness",
             "make release-readiness",
-            "make release-metadata-check"
+            "make release-metadata-check",
+            "make manual-release-evidence-check",
+            "make north-star-audit"
         ]
 
         for gate in requiredGates {
@@ -372,11 +374,15 @@ final class IdentityTests: XCTestCase {
 
         XCTAssertTrue(makefile.contains("north-star-audit:"))
         XCTAssertTrue(makefile.contains("north-star-audit.sh"))
+        XCTAssertTrue(makefile.contains("manual-release-evidence-check:"))
+        XCTAssertTrue(makefile.contains("manual-release-evidence-check.sh"))
         XCTAssertTrue(script.contains("Prompt-to-artifact checklist"))
         XCTAssertTrue(script.contains("APP-1"))
         XCTAssertTrue(script.contains("APP-8"))
         XCTAssertTrue(script.contains("release-readiness"))
         XCTAssertTrue(script.contains("release-metadata-check"))
+        XCTAssertTrue(script.contains("manual-release-evidence-check.sh"))
+        XCTAssertTrue(script.contains("Manual release evidence"))
         XCTAssertTrue(script.contains("not mass-production ready"))
         XCTAssertTrue(script.contains("No canonical Cursor Designer website exists."))
     }
@@ -446,7 +452,9 @@ final class IdentityTests: XCTestCase {
             "../../Scripts/launch-smoke.sh": "ERROR: --app requires a path",
             "../../Scripts/notary-profile-check.sh": "ERROR: --notary-profile requires a name",
             "../../Scripts/release-metadata-check.sh": "ERROR: --repo requires OWNER/REPO",
-            "../../Scripts/release-readiness.sh": "ERROR: --notary-profile requires a name"
+            "../../Scripts/release-readiness.sh": "ERROR: --notary-profile requires a name",
+            "../../Scripts/manual-release-evidence-check.sh": "ERROR: --evidence requires a path",
+            "../../Scripts/north-star-audit.sh": "ERROR: --manual-evidence requires a path"
         ]
 
         for (scriptPath, requiredMessage) in scriptsByRequiredMessage {
@@ -616,8 +624,10 @@ final class IdentityTests: XCTestCase {
     func testManualReleaseChecklistCoversHumanOnlyProof() throws {
         let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
         let checklist = try loadText(relativeToThisFile: "../../MANUAL_RELEASE_CHECKS.md")
+        let checker = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-check.sh")
 
         XCTAssertTrue(requirements.contains("MANUAL_RELEASE_CHECKS.md"))
+        XCTAssertTrue(requirements.contains("make manual-release-evidence-check"))
         XCTAssertTrue(checklist.contains("make release-readiness"))
         XCTAssertTrue(checklist.contains("signed, notarized"))
         XCTAssertTrue(checklist.contains("Gatekeeper-accepted DMG"))
@@ -635,6 +645,11 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checklist.contains("xcrun stapler validate CursorDesigner.dmg"))
         XCTAssertTrue(checklist.contains("Pass/fail"))
         XCTAssertTrue(checklist.contains("Blocker disposition"))
+        XCTAssertTrue(checker.contains("Release tag:"))
+        XCTAssertTrue(checker.contains("APP-1 menu bar launch:"))
+        XCTAssertTrue(checker.contains("APP-8 local-first product truth:"))
+        XCTAssertTrue(checker.contains("Manual release evidence is incomplete"))
+        XCTAssertTrue(checker.contains("Pass/fail"))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
