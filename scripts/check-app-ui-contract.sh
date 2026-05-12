@@ -23,6 +23,8 @@ require_text() {
 }
 
 preferences_text=(
+  "NSScrollView"
+  "hasVerticalScroller"
   "Cursor Designer Preferences"
   "Theme"
   "Cursor Color"
