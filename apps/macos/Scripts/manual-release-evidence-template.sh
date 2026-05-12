@@ -49,6 +49,37 @@ fi
 
 DMG_FILENAME="$(basename "$DMG_PATH")"
 DMG_SHA256="$(shasum -a 256 "$DMG_PATH" | awk '{print $1}')"
+MOUNT_DIR=""
+
+cleanup() {
+    if [[ -n "$MOUNT_DIR" && -d "$MOUNT_DIR" ]]; then
+        hdiutil detach "$MOUNT_DIR" -quiet || true
+        rmdir "$MOUNT_DIR" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+MOUNT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/cursor-designer-evidence.XXXXXX")
+hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$MOUNT_DIR" "$DMG_PATH" >/dev/null
+
+APP_PATH="$MOUNT_DIR/CursorDesigner.app"
+INFO_PLIST="$APP_PATH/Contents/Info.plist"
+EXECUTABLE_PATH="$APP_PATH/Contents/MacOS/PointerDesigner"
+
+if [[ ! -f "$INFO_PLIST" ]]; then
+    echo "ERROR: mounted DMG app is missing Info.plist" >&2
+    exit 1
+fi
+
+if [[ ! -x "$EXECUTABLE_PATH" ]]; then
+    echo "ERROR: mounted DMG app is missing executable: $EXECUTABLE_PATH" >&2
+    exit 1
+fi
+
+APP_BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$INFO_PLIST")
+APP_VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$INFO_PLIST")
+APP_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$INFO_PLIST")
+APP_EXECUTABLE_SHA256="$(shasum -a 256 "$EXECUTABLE_PATH" | awk '{print $1}')"
 
 cat <<EOF
 Release tag: $RELEASE_TAG
@@ -57,6 +88,10 @@ macOS version:
 Hardware:
 DMG filename: $DMG_FILENAME
 DMG SHA-256: $DMG_SHA256
+App bundle ID: $APP_BUNDLE_ID
+App version: $APP_VERSION
+App build: $APP_BUILD
+App executable SHA-256: $APP_EXECUTABLE_SHA256
 
 Machine gates:
 - make release-readiness:
