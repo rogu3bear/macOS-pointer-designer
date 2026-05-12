@@ -165,7 +165,9 @@ proof for another.
 - Launch smoke: from `apps/macos`, `make launch-smoke`
 - Unsigned local DMG shape: from `apps/macos`, `make dmg` and
   `make dmg-install-check`
-- Signed local artifact: from `apps/macos`, `make release-candidate`
+- Signing identity: from `apps/macos`, `make signing-identity-check`
+- Signed local DMG: from `apps/macos`, `make signed-dmg`
+- Signed and notarized local artifact: from `apps/macos`, `make release-candidate`
 - Artifact distribution readiness without public metadata: from `apps/macos`,
   `make release-artifact-readiness`
 - Public distribution readiness: from `apps/macos`, `make release-readiness`
