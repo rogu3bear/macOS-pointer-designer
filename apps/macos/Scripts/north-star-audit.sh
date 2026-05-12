@@ -111,8 +111,9 @@ fi
 
 echo ""
 echo ">>> Manual release evidence"
+HEAD_COMMIT="$(cd "$ROOT_DIR" && git rev-parse HEAD)"
 set +e
-(cd "$MACOS_DIR" && "$SCRIPT_DIR/manual-release-evidence-check.sh" --evidence "$MANUAL_EVIDENCE")
+(cd "$MACOS_DIR" && "$SCRIPT_DIR/manual-release-evidence-check.sh" --evidence "$MANUAL_EVIDENCE" --dmg "$DMG_PATH" --commit "$HEAD_COMMIT")
 manual_status=$?
 set -e
 
