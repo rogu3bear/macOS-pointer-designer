@@ -598,6 +598,12 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checklist.contains("system-wide pointer replacement is not enabled"))
         XCTAssertTrue(checklist.contains("SHA-256 digest"))
         XCTAssertTrue(checklist.contains("network, telemetry, cloud processing"))
+        XCTAssertTrue(checklist.contains("## Evidence Record Template"))
+        XCTAssertTrue(checklist.contains("shasum -a 256 CursorDesigner.dmg"))
+        XCTAssertTrue(checklist.contains("spctl --assess --type open --verbose=4 CursorDesigner.dmg"))
+        XCTAssertTrue(checklist.contains("xcrun stapler validate CursorDesigner.dmg"))
+        XCTAssertTrue(checklist.contains("Pass/fail"))
+        XCTAssertTrue(checklist.contains("Blocker disposition"))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
