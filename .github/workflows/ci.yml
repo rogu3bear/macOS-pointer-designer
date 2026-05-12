@@ -35,3 +35,9 @@ jobs:
 
       - name: Test Swift package
         run: swift test --package-path apps/macos
+
+      - name: Run package preflight
+        run: make -C apps/macos preflight
+
+      - name: Verify DMG install surface
+        run: make -C apps/macos dmg && make -C apps/macos dmg-install-check
