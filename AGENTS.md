@@ -35,6 +35,8 @@ and boundary checks.
   helper installed.
 - Do not claim system-wide pointer replacement unless the helper path is
   supported, tested, and exposed through the app capability model.
+- Do not claim mass-production readiness until the `NORTH_STAR.md` production
+  readiness bar is mapped to live evidence.
 - Screen recording permission handling must stay honest; do not imply dynamic
   background sampling works without real permission.
 - Keep crash recovery, signal handling, orphan cleanup, and cursor restore paths
@@ -88,6 +90,9 @@ runs tests, and validates the generated app bundle with
 4. Read the smallest relevant app surfaces before changing behavior.
 5. Make scoped edits that preserve the product boundary.
 6. Run the root boundary check and targeted Swift tests before claiming success.
+7. For readiness claims, build a prompt-to-artifact checklist against
+   `NORTH_STAR.md` and verify every item with files, commands, or explicit
+   blockers.
 
 ## Output Contract
 

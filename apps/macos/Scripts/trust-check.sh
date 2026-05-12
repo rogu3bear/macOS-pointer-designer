@@ -196,7 +196,8 @@ fi
 echo ""
 echo "=== Capability Check ==="
 echo "Can Sample:           Run app to verify (requires Screen Recording)"
-echo "Can Apply Cursor:     Run app to verify (requires helper)"
+echo "Can Preview Pointer:  Run app to verify local AppKit cursor behavior"
+echo "System-wide Pointer:  Not enabled in this build"
 
 echo ""
 echo "=== Identity Consistency Check ==="

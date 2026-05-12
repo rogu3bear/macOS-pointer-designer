@@ -236,6 +236,31 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testNorthStarDefinesProductionReadinessBar() throws {
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let requiredSections = [
+            "## Pointer Capability Contract",
+            "## Production Readiness Bar",
+            "## Mass-Production Blockers",
+            "## Website Standard",
+            "## Verification Gates"
+        ]
+
+        for section in requiredSections {
+            XCTAssertTrue(
+                northStar.contains(section),
+                "NORTH_STAR.md must define \(section)"
+            )
+        }
+    }
+
+    func testTrustCheckDoesNotClaimCursorApplicationRequiresHelper() throws {
+        let trustCheck = try loadText(relativeToThisFile: "../../Scripts/trust-check.sh")
+
+        XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("Can Apply Cursor:     Run app to verify (requires helper)"))
+        XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("requires helper"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
