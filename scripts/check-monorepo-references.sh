@@ -11,11 +11,26 @@ forbidden_patterns=(
   "windowdrop"
 )
 
+allowed_doctrine_files=(
+  "NORTH_STAR.md"
+  "ANCHOR.md"
+  "AGENTS.md"
+  "CLAUDE.md"
+)
+
+rg_args=(
+  --fixed-strings
+  --line-number
+  --glob '!.git/**'
+  --glob '!scripts/check-monorepo-references.sh'
+)
+
+for file in "${allowed_doctrine_files[@]}"; do
+  rg_args+=(--glob "!$file")
+done
+
 for pattern in "${forbidden_patterns[@]}"; do
-  if rg --fixed-strings --line-number \
-    --glob '!.git/**' \
-    --glob '!scripts/check-monorepo-references.sh' \
-    "$pattern" .; then
+  if rg "${rg_args[@]}" "$pattern" .; then
     echo "Found non-Cursor Designer product reference: $pattern" >&2
     exit 1
   fi
