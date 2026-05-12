@@ -20,17 +20,12 @@ release: build
 	@echo "Creating app bundle..."
 	@mkdir -p "$(APP_BUNDLE)/Contents/MacOS"
 	@mkdir -p "$(APP_BUNDLE)/Contents/Resources"
-	@mkdir -p "$(APP_BUNDLE)/Contents/Library/LaunchServices"
 
 	# Copy main executable
 	@cp "$(BUILD_DIR)/apple/Products/Release/PointerDesigner" "$(APP_BUNDLE)/Contents/MacOS/"
 
-	# Copy helper tool
-	@cp "$(BUILD_DIR)/apple/Products/Release/PointerDesignerHelper" "$(APP_BUNDLE)/Contents/Library/LaunchServices/com.pointerdesigner.helper"
-
 	# Copy resources
 	@cp "Sources/PointerDesigner/Resources/Info.plist" "$(APP_BUNDLE)/Contents/"
-	@cp "Sources/PointerDesigner/Resources/com.pointerdesigner.helper.plist" "$(APP_BUNDLE)/Contents/Library/LaunchServices/"
 
 	@echo "App bundle created at $(APP_BUNDLE)"
 
@@ -69,8 +64,6 @@ install: release
 uninstall:
 	@echo "Uninstalling..."
 	@rm -rf "/Applications/$(PRODUCT_NAME).app"
-	@rm -f "/Library/PrivilegedHelperTools/com.pointerdesigner.helper"
-	@rm -f "/Library/LaunchDaemons/com.pointerdesigner.helper.plist"
 	@echo "Uninstalled successfully"
 
 # Create DMG for distribution
@@ -85,10 +78,6 @@ sign: release
 	@codesign --deep --force --verify --verbose \
 		--sign "Developer ID Application" \
 		"$(APP_BUNDLE)"
-	@echo "Signing helper tool..."
-	@codesign --force --verify --verbose \
-		--sign "Developer ID Application" \
-		"$(APP_BUNDLE)/Contents/Library/LaunchServices/com.pointerdesigner.helper"
 
 # Notarize for distribution (requires Apple Developer account)
 notarize: sign dmg

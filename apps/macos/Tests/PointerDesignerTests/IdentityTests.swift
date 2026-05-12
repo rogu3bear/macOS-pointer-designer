@@ -208,6 +208,14 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(description.localizedCaseInsensitiveContains("system-wide cursor customization"))
     }
 
+    func testMainAppInfoPlistDoesNotDeclareUnsupportedPrivilegedHelper() throws {
+        let info = try loadPlist(
+            relativeToThisFile: "../../Sources/PointerDesigner/Resources/Info.plist"
+        )
+
+        XCTAssertNil(info["SMPrivilegedExecutables"])
+    }
+
     func testUserFacingDocsDoNotAdvertiseUnsupportedSystemWideCursorChanges() throws {
         let checkedFiles = [
             "../../../../NORTH_STAR.md",
@@ -259,6 +267,8 @@ final class IdentityTests: XCTestCase {
 
         XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("Can Apply Cursor:     Run app to verify (requires helper)"))
         XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("requires helper"))
+        XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("Embedded Helper:"))
+        XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("XPC Mach Service:"))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {

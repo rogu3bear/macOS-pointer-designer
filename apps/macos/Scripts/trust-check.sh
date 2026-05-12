@@ -93,45 +93,6 @@ else
     echo "Main Executable:      MISSING ($MAIN_EXEC)"
 fi
 
-# Check embedded helper
-EMBEDDED_HELPER="$BUNDLE_PATH/Contents/Library/LaunchServices/com.pointerdesigner.helper"
-if [[ -f "$EMBEDDED_HELPER" ]]; then
-    echo "Embedded Helper:      EXISTS"
-else
-    echo "Embedded Helper:      MISSING"
-fi
-
-# Check embedded helper plist
-EMBEDDED_HELPER_PLIST="$BUNDLE_PATH/Contents/Library/LaunchServices/com.pointerdesigner.helper.plist"
-if [[ -f "$EMBEDDED_HELPER_PLIST" ]]; then
-    EMBEDDED_LABEL="$(read_plist_key "$EMBEDDED_HELPER_PLIST" Label)"
-    echo "Embedded Helper Plist: EXISTS (Label: $EMBEDDED_LABEL)"
-else
-    echo "Embedded Helper Plist: MISSING"
-fi
-
-# Installed helper info
-echo ""
-echo "=== Installed Helper ==="
-HELPER_PATH="/Library/PrivilegedHelperTools/com.pointerdesigner.helper"
-if [[ -f "$HELPER_PATH" ]]; then
-    echo "Helper ID:            com.pointerdesigner.helper"
-    echo "Helper Path:          $HELPER_PATH (EXISTS)"
-    HELPER_PID=$(cat /tmp/com.pointerdesigner.helper.pid 2>/dev/null || echo "")
-    if [[ -n "$HELPER_PID" ]] && kill -0 "$HELPER_PID" 2>/dev/null; then
-        echo "Helper Running:       YES (PID $HELPER_PID)"
-    else
-        echo "Helper Running:       NO"
-    fi
-else
-    echo "Helper ID:            com.pointerdesigner.helper"
-    echo "Helper Path:          $HELPER_PATH (NOT INSTALLED)"
-    echo "Helper Running:       N/A"
-fi
-
-echo ""
-echo "XPC Mach Service:     com.pointerdesigner.helper"
-
 # App Support paths
 echo ""
 echo "=== App Support Paths ==="
@@ -204,8 +165,6 @@ echo "=== Identity Consistency Check ==="
 
 # Check for identifier mismatches
 EXPECTED_APP_ID="com.pointerdesigner.app"
-EXPECTED_HELPER_ID="com.pointerdesigner.helper"
-
 ERRORS=0
 
 if [[ "$APP_BUNDLE_ID" != "$EXPECTED_APP_ID" ]]; then
@@ -213,28 +172,6 @@ if [[ "$APP_BUNDLE_ID" != "$EXPECTED_APP_ID" ]]; then
     echo "  Expected: $EXPECTED_APP_ID"
     echo "  Actual:   $APP_BUNDLE_ID"
     ERRORS=$((ERRORS + 1))
-fi
-
-# Check launchd plist if installed
-LAUNCHD_PLIST="/Library/LaunchDaemons/com.pointerdesigner.helper.plist"
-if [[ -f "$LAUNCHD_PLIST" ]]; then
-    LAUNCHD_LABEL="$(read_plist_key "$LAUNCHD_PLIST" Label)"
-    if [[ "$LAUNCHD_LABEL" != "$EXPECTED_HELPER_ID" ]]; then
-        echo "ERROR: LaunchDaemon label mismatch!"
-        echo "  Expected: $EXPECTED_HELPER_ID"
-        echo "  Actual:   $LAUNCHD_LABEL"
-        ERRORS=$((ERRORS + 1))
-    fi
-fi
-
-# Check embedded helper plist label
-if [[ -f "$EMBEDDED_HELPER_PLIST" ]]; then
-    if [[ "$EMBEDDED_LABEL" != "$EXPECTED_HELPER_ID" ]]; then
-        echo "ERROR: Embedded helper plist label mismatch!"
-        echo "  Expected: $EXPECTED_HELPER_ID"
-        echo "  Actual:   $EMBEDDED_LABEL"
-        ERRORS=$((ERRORS + 1))
-    fi
 fi
 
 if [[ $ERRORS -eq 0 ]]; then
