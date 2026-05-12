@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg preflight dmg-install-check release-readiness
+.PHONY: all build release clean test install uninstall dmg create-dmg preflight launch-smoke dmg-install-check release-readiness
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -49,6 +49,10 @@ preflight: clean release
 	@./Scripts/trust-check.sh --app $(APP_BUNDLE)
 	@echo ""
 	@echo "=== Preflight Complete ✓ ==="
+
+# Launch the built app and verify it stays alive long enough for a menu bar smoke test.
+launch-smoke: release
+	@./Scripts/launch-smoke.sh --app "$(APP_BUNDLE)"
 
 # Clean build artifacts
 clean:

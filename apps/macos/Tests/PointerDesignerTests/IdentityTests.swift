@@ -335,6 +335,17 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
     }
 
+    func testLaunchSmokeGateStartsBuiltApp() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let script = try loadText(relativeToThisFile: "../../Scripts/launch-smoke.sh")
+
+        XCTAssertTrue(makefile.contains("launch-smoke: release"))
+        XCTAssertTrue(script.contains("open -n"))
+        XCTAssertTrue(script.contains("pgrep -x"))
+        XCTAssertTrue(script.contains("PointerDesigner"))
+        XCTAssertTrue(script.contains("kill -TERM"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
