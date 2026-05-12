@@ -181,7 +181,8 @@ proof for another.
 - Manual release evidence: from `apps/macos`,
   `make manual-release-evidence-check`; the evidence must come from
   `apps/macos/MANUAL_RELEASE_CHECKS.md` against the same Gatekeeper-accepted
-  DMG
+  DMG and must match its digest, commit, release tag, mounted app identity,
+  app version, app build, and executable digest
 - Final app readiness audit: from `apps/macos`, `make north-star-audit`
 - Website: Leptos/Cloudflare template checks, browser-visible proof, and live
   download metadata verification after a real `apps/website` exists

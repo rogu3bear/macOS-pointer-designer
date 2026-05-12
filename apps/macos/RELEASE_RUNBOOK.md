@@ -78,8 +78,9 @@ After `make release-readiness` passes, perform every row in
 `MANUAL_RELEASE_CHECKS.md` against the same Gatekeeper-accepted DMG. Record the
 observed values using that file's evidence template.
 
-Generate the starting evidence record from the current artifact so the commit
-and DMG digest are not hand-copied:
+Generate the starting evidence record from the current artifact so the commit,
+DMG digest, mounted app identity, app version, app build, and executable SHA-256
+are not hand-copied:
 
 ```bash
 make manual-release-evidence-template RELEASE_TAG="<stable tag>" > ReleaseEvidence/manual-release-evidence.txt
@@ -91,8 +92,9 @@ Then verify the evidence is complete and bound to the artifact:
 make manual-release-evidence-check MANUAL_EVIDENCE="<completed evidence file>"
 ```
 
-The evidence check compares the recorded commit and DMG SHA-256 to the local
-artifact under assessment.
+The evidence check compares the recorded commit, release tag, DMG filename,
+DMG SHA-256, mounted app bundle ID, app version, app build, and executable
+SHA-256 to the local artifact under assessment.
 
 ## Final Audit
 
