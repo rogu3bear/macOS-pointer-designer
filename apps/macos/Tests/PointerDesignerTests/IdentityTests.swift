@@ -263,6 +263,29 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testAppReadmeAvoidsUnbackedMarketingCounts() throws {
+        let readme = try loadText(relativeToThisFile: "../../README.md")
+        let forbiddenClaims = [
+            "70+ edge cases",
+            "dozens of edge cases",
+            "production-ready",
+            "mass-production ready",
+            "AI-powered",
+            "fake testimonials",
+            "placeholder pricing"
+        ]
+
+        for claim in forbiddenClaims {
+            XCTAssertFalse(
+                readme.localizedCaseInsensitiveContains(claim),
+                "README must not use unbacked marketing language: \(claim)"
+            )
+        }
+
+        XCTAssertTrue(readme.contains("## Verified Behavior Areas"))
+        XCTAssertTrue(readme.contains("See `swift test --package-path apps/macos`"))
+    }
+
     func testStaleHomebrewCaskIsNotShippedWithoutVerifiedRelease() {
         let testFile = URL(fileURLWithPath: #filePath)
         let caskURL = testFile
