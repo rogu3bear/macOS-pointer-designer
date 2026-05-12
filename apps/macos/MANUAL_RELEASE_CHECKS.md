@@ -39,5 +39,41 @@ human-only macOS permission, Finder, and installed-app behavior.
 - Any blocker, crash, permission mismatch, or misleading copy found during the
   checks.
 
+## Evidence Record Template
+
+Use this template for the release notes or release ticket after
+`make release-readiness` passes. Do not fill it with expected results; record
+only what was observed against the same signed, notarized, Gatekeeper-accepted
+DMG.
+
+```text
+Release tag:
+Commit:
+macOS version:
+Hardware:
+DMG filename:
+DMG SHA-256:
+  shasum -a 256 CursorDesigner.dmg
+
+Machine gates:
+- make release-readiness: Pass/fail
+- spctl --assess --type open --verbose=4 CursorDesigner.dmg: Pass/fail
+- xcrun stapler validate CursorDesigner.dmg: Pass/fail
+
+Manual observations:
+- APP-1 menu bar launch:
+- APP-2 persistence after quit/relaunch:
+- APP-2 recovery after force quit:
+- APP-3 Negative preset and custom color:
+- APP-4 Screen Recording denied:
+- APP-4 Screen Recording granted:
+- APP-5 unsupported helper/system-wide replacement unavailable:
+- APP-6 drag install from DMG:
+- APP-8 local-first product truth:
+
+Blocker disposition:
+- None, or list every blocker with owner and decision.
+```
+
 The release is blocked if any row above is not performed, fails, or cannot be
 truthfully observed on the signed and notarized candidate.
