@@ -198,9 +198,12 @@ SettingsManager
     └── Notifications: .settingsDidChange broadcast
 ```
 
-## Edge Cases Handled
+## Verified Behavior Areas
 
-The application handles 70+ edge cases across these categories:
+Cursor Designer's automated tests and release gates cover these behavior areas.
+See `swift test --package-path apps/macos` and `REQUIREMENTS.md` for the
+current proof map; manual permission and installed-app behavior still require
+the signed, notarized release checklist before any stable download claim.
 
 | Category | Examples |
 |----------|----------|
