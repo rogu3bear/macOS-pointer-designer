@@ -78,9 +78,11 @@ Manual observations:
 - APP-6 drag install from DMG:
 - APP-8 local-first and website-boundary product truth:
 
-Blocker disposition:
-- None, or list every blocker with owner and decision.
+Blocker disposition: None
 ```
 
 The release is blocked if any row above is not performed, fails, or cannot be
 truthfully observed on the signed and notarized candidate.
+`make manual-release-evidence-check` rejects evidence that records failed,
+skipped, blocked, or not-performed observations, and the final blocker
+disposition must be `None`.
