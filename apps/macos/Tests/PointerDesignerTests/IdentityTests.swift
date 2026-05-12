@@ -292,6 +292,26 @@ final class IdentityTests: XCTestCase {
                 "NORTH_STAR.md must define \(section)"
             )
         }
+
+        let requiredGates = [
+            "apps/macos/REQUIREMENTS.md",
+            "apps/macos/MANUAL_RELEASE_CHECKS.md",
+            "./scripts/check-local-first.sh",
+            "./scripts/check-app-ui-contract.sh",
+            "make launch-smoke",
+            "make dmg-install-check",
+            "make release-candidate",
+            "make release-artifact-readiness",
+            "make release-readiness",
+            "make release-metadata-check"
+        ]
+
+        for gate in requiredGates {
+            XCTAssertTrue(
+                northStar.contains(gate),
+                "NORTH_STAR.md must name current app readiness gate: \(gate)"
+            )
+        }
     }
 
     func testMacOSRequirementsMapDrivesAppReadinessProof() throws {
