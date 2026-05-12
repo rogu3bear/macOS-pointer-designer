@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check notary-profile-check release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check notary-profile-check release-artifact-readiness release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -123,8 +123,12 @@ notarize: notary-profile-check signed-dmg
 	@xcrun stapler staple $(DMG_NAME)
 
 # Verify a signed, notarized, distribution-ready local artifact.
+release-artifact-readiness:
+	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)" --repo "$(GITHUB_REPO)" --skip-release-metadata
+
+# Verify a signed, notarized, distribution-ready local artifact and stable release metadata.
 release-readiness:
 	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)" --repo "$(GITHUB_REPO)"
 
-# Build, sign, notarize, staple, and verify the local release candidate.
-release-candidate: notarize release-readiness
+# Build, sign, notarize, staple, and verify the local release candidate artifact.
+release-candidate: notarize release-artifact-readiness

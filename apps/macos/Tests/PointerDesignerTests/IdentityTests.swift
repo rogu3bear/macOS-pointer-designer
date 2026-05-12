@@ -309,6 +309,7 @@ final class IdentityTests: XCTestCase {
             "make launch-smoke",
             "make dmg-install-check",
             "make release-candidate",
+            "make release-artifact-readiness",
             "make release-readiness",
             "make release-metadata-check",
             "./scripts/check-local-first.sh",
@@ -385,7 +386,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(makefile.contains("notary-profile-check:"))
         XCTAssertTrue(makefile.contains(#"notarytool history --keychain-profile "$(NOTARY_PROFILE)""#))
         XCTAssertTrue(makefile.contains("notarize: notary-profile-check signed-dmg"))
-        XCTAssertTrue(makefile.contains("release-candidate: notarize release-readiness"))
+        XCTAssertTrue(makefile.contains("release-artifact-readiness:"))
+        XCTAssertTrue(makefile.contains("--skip-release-metadata"))
+        XCTAssertTrue(makefile.contains("release-candidate: notarize release-artifact-readiness"))
         XCTAssertFalse(makefile.contains("notarize: sign dmg"))
         XCTAssertTrue(makefile.contains("SIGN_IDENTITY ?="))
         XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
@@ -400,6 +403,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(makefile.contains("release-readiness:"))
         XCTAssertTrue(makefile.contains(#"--repo "$(GITHUB_REPO)""#))
         XCTAssertTrue(script.contains(#"--dmg "$DMG_PATH""#))
+        XCTAssertTrue(script.contains("--skip-release-metadata"))
+        XCTAssertTrue(script.contains("Release artifact readiness passed."))
+        XCTAssertTrue(script.contains("Run make release-readiness after publishing stable release metadata."))
         XCTAssertTrue(script.contains("dmg-install-check.sh"))
         XCTAssertTrue(script.contains("release-metadata-check.sh"))
         XCTAssertTrue(script.contains("--require-signature"))
