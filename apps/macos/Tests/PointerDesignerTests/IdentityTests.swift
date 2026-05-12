@@ -411,6 +411,11 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("stapler validate"))
         XCTAssertTrue(script.contains("notarytool history"))
         XCTAssertTrue(script.contains("Distribution blockers:"))
+        XCTAssertTrue(script.contains("Next required proof:"))
+        XCTAssertTrue(script.contains("Store or select a valid notarytool profile"))
+        XCTAssertTrue(script.contains("Notarize the signed DMG"))
+        XCTAssertTrue(script.contains("verify its SHA-256 digest matches this local DMG"))
+        XCTAssertTrue(script.contains("MANUAL_RELEASE_CHECKS.md"))
         XCTAssertTrue(script.contains("FAIL:"))
         XCTAssertTrue(script.contains("failures=("))
     }
