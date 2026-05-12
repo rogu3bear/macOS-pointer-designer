@@ -78,6 +78,21 @@ required_fields=(
     "Blocker disposition:"
 )
 
+observed_fields=(
+    "make release-readiness:"
+    "spctl --assess --type open --verbose=4 CursorDesigner.dmg:"
+    "xcrun stapler validate CursorDesigner.dmg:"
+    "APP-1 menu bar launch:"
+    "APP-2 persistence after quit/relaunch:"
+    "APP-2 recovery after force quit:"
+    "APP-3 Negative preset and custom color:"
+    "APP-4 Screen Recording denied:"
+    "APP-4 Screen Recording granted:"
+    "APP-5 unsupported helper/system-wide replacement unavailable:"
+    "APP-6 drag install from DMG:"
+    "APP-8 local-first and website-boundary product truth:"
+)
+
 failures=()
 
 field_value() {
@@ -102,6 +117,18 @@ for field in "${required_fields[@]}"; do
         failures+=("empty field: $field")
     fi
 done
+
+for field in "${observed_fields[@]}"; do
+    value="$(field_value "$field")"
+    if [[ "$value" =~ [Ff]ail|[Ff]ailed|[Ff]ailing|[Bb]locked|[Ss]kipped|[Nn]ot[[:space:]]+(run|performed|observed|tested) ]]; then
+        failures+=("non-passing evidence recorded for: $field")
+    fi
+done
+
+blocker_disposition="$(field_value "Blocker disposition:")"
+if [[ ! "$blocker_disposition" =~ ^[Nn]one([[:space:].,:;-]|$) ]]; then
+    failures+=("Blocker disposition must be None for final release evidence")
+fi
 
 if [[ -f "$DMG_PATH" ]]; then
     recorded_digest="$(field_value "DMG SHA-256:")"

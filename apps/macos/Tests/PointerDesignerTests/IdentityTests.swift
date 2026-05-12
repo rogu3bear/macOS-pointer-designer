@@ -729,6 +729,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(checker.contains("Pass/fail"))
         XCTAssertTrue(checker.contains("Recorded DMG SHA-256 does not match"))
         XCTAssertTrue(checker.contains("Recorded commit does not match"))
+        XCTAssertTrue(checker.contains("non-passing evidence recorded for:"))
+        XCTAssertTrue(checker.contains("Blocker disposition must be None"))
         XCTAssertTrue(makefile.contains("manual-release-evidence-template:"))
         XCTAssertTrue(template.contains("Release tag:"))
         XCTAssertTrue(template.contains("Commit:"))
