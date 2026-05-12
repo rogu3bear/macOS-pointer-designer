@@ -346,6 +346,17 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("kill -TERM"))
     }
 
+    func testReleaseMetadataGateChecksStableDownloadTruth() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let script = try loadText(relativeToThisFile: "../../Scripts/release-metadata-check.sh")
+
+        XCTAssertTrue(makefile.contains("release-metadata-check:"))
+        XCTAssertTrue(script.contains("gh release list"))
+        XCTAssertTrue(script.contains("isPrerelease"))
+        XCTAssertTrue(script.contains("CursorDesigner.dmg"))
+        XCTAssertTrue(script.contains("No stable public release"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile

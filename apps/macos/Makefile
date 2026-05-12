@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg preflight launch-smoke dmg-install-check release-readiness
+.PHONY: all build release clean test install uninstall dmg create-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -7,6 +7,7 @@ APP_BUNDLE = $(RELEASE_DIR)/$(PRODUCT_NAME).app
 DMG_NAME = $(PRODUCT_NAME).dmg
 SIGN_IDENTITY ?= Developer ID Application
 NOTARY_PROFILE ?= notarization
+GITHUB_REPO ?= rogu3bear/macOS-pointer-designer
 
 # Build configuration
 SWIFT_BUILD_FLAGS = -c release --arch arm64 --arch x86_64
@@ -85,6 +86,10 @@ create-dmg:
 # Verify the generated DMG mounts to the expected drag-install surface.
 dmg-install-check:
 	@./Scripts/dmg-install-check.sh --dmg "$(DMG_NAME)"
+
+# Verify public release metadata is truthful for the current distribution state.
+release-metadata-check:
+	@./Scripts/release-metadata-check.sh --repo "$(GITHUB_REPO)"
 
 # Code signing (requires valid Developer ID)
 sign: release
