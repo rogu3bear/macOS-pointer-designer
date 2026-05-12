@@ -812,6 +812,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(template.contains("ERROR: RELEASE_TAG is required for artifact-bound manual release evidence"))
         XCTAssertTrue(template.contains("make manual-release-evidence-template RELEASE_TAG="))
         XCTAssertTrue(template.contains("v<app-version>"))
+        XCTAssertTrue(template.contains("EXPECTED_RELEASE_TAG=\"v$APP_VERSION\""))
+        XCTAssertTrue(template.contains("ERROR: RELEASE_TAG does not match mounted app version"))
         XCTAssertTrue(template.contains("Commit:"))
         XCTAssertTrue(template.contains("DMG SHA-256:"))
         XCTAssertTrue(template.contains("App bundle ID:"))
