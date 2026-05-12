@@ -110,8 +110,8 @@ print_next_required_proof() {
         echo "- Notarize the signed DMG, staple the ticket, and rerun Gatekeeper assessment for both the app and DMG." >&2
     fi
 
-    if has_failure "Stable release metadata includes CursorDesigner.dmg"; then
-        echo "- Publish a stable GitHub release with CursorDesigner.dmg and verify its SHA-256 digest matches this local DMG." >&2
+    if has_failure "Stable release metadata matches app version and DMG digest"; then
+        echo "- Publish a stable GitHub release whose tag matches this app version and its SHA-256 digest matches this local DMG." >&2
     fi
 
     echo "- After this gate passes, complete MANUAL_RELEASE_CHECKS.md against the same Gatekeeper-accepted DMG." >&2
@@ -190,10 +190,10 @@ run_check "notarytool credential profile is available" \
 
 if [[ "$SKIP_RELEASE_METADATA" == true ]]; then
     echo ""
-    echo ">>> Stable release metadata includes CursorDesigner.dmg"
+    echo ">>> Stable release metadata matches app version and DMG digest"
     echo "SKIP: Stable release metadata check deferred until public release verification."
 else
-    run_check "Stable release metadata includes CursorDesigner.dmg" \
+    run_check "Stable release metadata matches app version and DMG digest" \
         "$SCRIPT_DIR/release-metadata-check.sh" --app "$APP_PATH" --repo "$REPO" --dmg "$DMG_PATH"
 fi
 
