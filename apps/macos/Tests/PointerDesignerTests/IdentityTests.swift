@@ -379,7 +379,8 @@ final class IdentityTests: XCTestCase {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
 
         XCTAssertTrue(makefile.contains("dmg: release create-dmg"))
-        XCTAssertTrue(makefile.contains("notarize: sign create-dmg"))
+        XCTAssertTrue(makefile.contains("sign-dmg:"))
+        XCTAssertTrue(makefile.contains("notarize: sign create-dmg sign-dmg"))
         XCTAssertFalse(makefile.contains("notarize: sign dmg"))
         XCTAssertTrue(makefile.contains("SIGN_IDENTITY ?="))
         XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
@@ -402,6 +403,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("Runtime Version"))
         XCTAssertTrue(script.contains("Hardened runtime is enabled"))
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
+        XCTAssertTrue(script.contains("DMG signature verifies"))
+        XCTAssertTrue(script.contains(#"codesign --verify --verbose=2 "$DMG_PATH""#))
         XCTAssertTrue(script.contains("stapler validate"))
         XCTAssertTrue(script.contains("notarytool history"))
         XCTAssertTrue(script.contains("Distribution blockers:"))
