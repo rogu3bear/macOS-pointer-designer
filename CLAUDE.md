@@ -49,6 +49,8 @@ actually exercised.
   product copy to this repo.
 - Keep helper installation explicit and permission-aware.
 - Keep screen recording permission behavior truthful.
+- Treat the `NORTH_STAR.md` production readiness bar as binding. Do not claim
+  mass-production readiness without live evidence for every item.
 - Keep app/helper behavior local-first and free of telemetry, trackers, and
   surprise network calls.
 - Do not rename identity constants or compatibility executable names without an
