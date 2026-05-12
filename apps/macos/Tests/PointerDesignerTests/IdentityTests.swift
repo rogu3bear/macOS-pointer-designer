@@ -294,6 +294,37 @@ final class IdentityTests: XCTestCase {
         }
     }
 
+    func testMacOSRequirementsMapDrivesAppReadinessProof() throws {
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+        let readme = try loadText(relativeToThisFile: "../../README.md")
+        let requiredContent = [
+            "APP-1",
+            "APP-2",
+            "APP-3",
+            "APP-4",
+            "APP-5",
+            "APP-6",
+            "APP-7",
+            "APP-8",
+            "make launch-smoke",
+            "make dmg-install-check",
+            "make release-readiness",
+            "make release-metadata-check",
+            "Dynamic contrast is active",
+            "System-wide pointer replacement is not implemented",
+            "notarytool profile credentials are missing"
+        ]
+
+        for content in requiredContent {
+            XCTAssertTrue(
+                requirements.localizedCaseInsensitiveContains(content),
+                "REQUIREMENTS.md must include app readiness content: \(content)"
+            )
+        }
+
+        XCTAssertTrue(readme.contains("[`REQUIREMENTS.md`](REQUIREMENTS.md)"))
+    }
+
     func testTrustCheckDoesNotClaimCursorApplicationRequiresHelper() throws {
         let trustCheck = try loadText(relativeToThisFile: "../../Scripts/trust-check.sh")
 
