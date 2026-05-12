@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check notary-profile-check release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -101,6 +101,10 @@ dmg-install-check:
 release-metadata-check:
 	@./Scripts/release-metadata-check.sh --repo "$(GITHUB_REPO)" --dmg "$(DMG_NAME)"
 
+# Verify notarization credentials before spending time building a release candidate.
+notary-profile-check:
+	@xcrun notarytool history --keychain-profile "$(NOTARY_PROFILE)" >/dev/null
+
 # Code signing (requires valid Developer ID)
 sign: release
 	@echo "Signing app bundle..."
@@ -111,7 +115,7 @@ sign: release
 		"$(APP_BUNDLE)"
 
 # Notarize for distribution (requires Apple Developer account)
-notarize: signed-dmg
+notarize: notary-profile-check signed-dmg
 	@echo "Notarizing..."
 	@xcrun notarytool submit $(DMG_NAME) \
 		--keychain-profile "$(NOTARY_PROFILE)" \
