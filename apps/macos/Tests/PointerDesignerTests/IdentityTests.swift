@@ -486,6 +486,24 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
     }
 
+    func testDMGCreationCleansUpMountedTempArtifacts() throws {
+        let script = try loadText(relativeToThisFile: "../../Scripts/create-dmg.sh")
+
+        XCTAssertTrue(script.contains("set -euo pipefail"))
+        XCTAssertTrue(script.contains("cleanup()"))
+        XCTAssertTrue(script.contains("trap cleanup EXIT"))
+        XCTAssertTrue(script.contains(#"hdiutil detach "$DEVICE" -quiet || true"#))
+        XCTAssertTrue(script.contains(#"rm -f "$DMG_TEMP""#))
+        XCTAssertTrue(script.contains("trap - EXIT"))
+    }
+
+    func testAppReadmeDoesNotReferenceMissingContributionGuide() throws {
+        let readme = try loadText(relativeToThisFile: "../../README.md")
+
+        XCTAssertFalse(readme.localizedCaseInsensitiveContains("contributing guidelines"))
+        XCTAssertFalse(readme.localizedCaseInsensitiveContains("Contributions welcome"))
+    }
+
     func testLaunchSmokeGateStartsBuiltApp() throws {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let script = try loadText(relativeToThisFile: "../../Scripts/launch-smoke.sh")

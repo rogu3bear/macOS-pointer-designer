@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 PRODUCT_NAME="CursorDesigner"
 APP_PATH=".build/release/${PRODUCT_NAME}.app"
@@ -7,6 +7,18 @@ DMG_NAME="${PRODUCT_NAME}.dmg"
 DMG_TEMP="temp_${DMG_NAME}"
 VOLUME_NAME="${PRODUCT_NAME}"
 DMG_SIZE="50m"
+DEVICE=""
+MOUNT_POINT="/Volumes/$VOLUME_NAME"
+
+cleanup() {
+    if [[ -n "$DEVICE" ]]; then
+        hdiutil detach "$DEVICE" -quiet || true
+    elif [[ -d "$MOUNT_POINT" ]]; then
+        hdiutil detach "$MOUNT_POINT" -quiet || true
+    fi
+    rm -f "$DMG_TEMP"
+}
+trap cleanup EXIT
 
 echo "Creating DMG for ${PRODUCT_NAME}..."
 
@@ -32,8 +44,6 @@ hdiutil create -srcfolder "$APP_PATH" \
 # Mount the temporary DMG
 DEVICE=$(hdiutil attach -readwrite -noverify -noautoopen "$DMG_TEMP" | \
     egrep '^/dev/' | sed 1q | awk '{print $1}')
-
-MOUNT_POINT="/Volumes/$VOLUME_NAME"
 
 # Wait for mount
 sleep 2
@@ -66,6 +76,7 @@ echo '
 # Sync and unmount
 sync
 hdiutil detach "$DEVICE"
+DEVICE=""
 
 # Convert to compressed read-only DMG
 hdiutil convert "$DMG_TEMP" \
@@ -75,6 +86,7 @@ hdiutil convert "$DMG_TEMP" \
 
 # Clean up
 rm -f "$DMG_TEMP"
+trap - EXIT
 
 echo "DMG created: $DMG_NAME"
 echo "Size: $(du -h "$DMG_NAME" | cut -f1)"
