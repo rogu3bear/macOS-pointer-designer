@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check release-metadata-check signing-identity-check notary-profile-check release-artifact-readiness release-readiness release-candidate
+.PHONY: all build release clean test install uninstall dmg create-dmg signed-dmg sign-dmg preflight launch-smoke dmg-install-check dmg-artifact-match-check release-metadata-check signing-identity-check notary-profile-check release-artifact-readiness release-readiness release-candidate
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -96,6 +96,10 @@ signed-dmg: sign create-dmg sign-dmg
 # Verify the generated DMG mounts to the expected drag-install surface.
 dmg-install-check:
 	@./Scripts/dmg-install-check.sh --dmg "$(DMG_NAME)"
+
+# Verify the generated DMG contains the same app bundle currently under assessment.
+dmg-artifact-match-check:
+	@./Scripts/dmg-install-check.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)"
 
 # Verify public release metadata is truthful for the current distribution state.
 release-metadata-check:

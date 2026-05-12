@@ -40,4 +40,4 @@ jobs:
         run: make -C apps/macos preflight
 
       - name: Verify DMG install surface
-        run: make -C apps/macos dmg && make -C apps/macos dmg-install-check
+        run: make -C apps/macos dmg && make -C apps/macos dmg-artifact-match-check

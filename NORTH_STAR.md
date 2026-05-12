@@ -166,7 +166,8 @@ proof for another.
 - Unsigned local DMG shape: from `apps/macos`, `make dmg` and
   `make dmg-install-check`
 - Distribution artifact integrity: mounted DMG app must match the release app
-  under assessment by identity, version, build, and executable digest.
+  under assessment by identity, version, build, and executable digest; from
+  `apps/macos`, `make dmg-artifact-match-check`
 - Signing identity: from `apps/macos`, `make signing-identity-check`
 - Signed local DMG: from `apps/macos`, `make signed-dmg`
 - Signed and notarized local artifact: from `apps/macos`, `make release-candidate`
