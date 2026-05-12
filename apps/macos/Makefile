@@ -108,4 +108,4 @@ notarize: sign create-dmg
 
 # Verify a signed, notarized, distribution-ready local artifact.
 release-readiness:
-	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)"
+	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)" --repo "$(GITHUB_REPO)"

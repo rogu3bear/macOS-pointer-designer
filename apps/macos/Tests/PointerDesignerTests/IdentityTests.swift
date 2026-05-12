@@ -390,8 +390,11 @@ final class IdentityTests: XCTestCase {
         let script = try loadText(relativeToThisFile: "../../Scripts/release-readiness.sh")
 
         XCTAssertTrue(makefile.contains("release-readiness:"))
+        XCTAssertTrue(makefile.contains(#"--repo "$(GITHUB_REPO)""#))
         XCTAssertTrue(script.contains("dmg-install-check.sh"))
+        XCTAssertTrue(script.contains("release-metadata-check.sh"))
         XCTAssertTrue(script.contains("--require-signature"))
+        XCTAssertTrue(script.contains("--repo"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("stapler validate"))
@@ -438,6 +441,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("isPrerelease"))
         XCTAssertTrue(script.contains("CursorDesigner.dmg"))
         XCTAssertTrue(script.contains("No stable public release"))
+        XCTAssertTrue(script.contains("exit 4"))
+        XCTAssertFalse(script.contains("Release metadata is explicitly not ready for stable download claims."))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
