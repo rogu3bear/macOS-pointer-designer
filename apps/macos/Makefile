@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg preflight
+.PHONY: all build release clean test install uninstall dmg create-dmg preflight release-readiness
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -92,3 +92,7 @@ notarize: sign create-dmg
 		--keychain-profile "$(NOTARY_PROFILE)" \
 		--wait
 	@xcrun stapler staple $(DMG_NAME)
+
+# Verify a signed, notarized, distribution-ready local artifact.
+release-readiness:
+	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)"

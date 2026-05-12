@@ -298,6 +298,17 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
     }
 
+    func testReleaseReadinessGateChecksSigningAndNotarization() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let script = try loadText(relativeToThisFile: "../../Scripts/release-readiness.sh")
+
+        XCTAssertTrue(makefile.contains("release-readiness:"))
+        XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
+        XCTAssertTrue(script.contains("spctl --assess --type execute"))
+        XCTAssertTrue(script.contains("stapler validate"))
+        XCTAssertTrue(script.contains("notarytool history"))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
