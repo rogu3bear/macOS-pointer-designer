@@ -64,6 +64,24 @@ run_check() {
     fi
 }
 
+check_hardened_runtime() {
+    local app_path="$1"
+    local details
+
+    if ! details=$(codesign -dvvv --verbose=4 "$app_path" 2>&1); then
+        echo "$details"
+        return 1
+    fi
+
+    if ! grep -q "Runtime Version" <<<"$details"; then
+        echo "ERROR: Hardened runtime is not enabled for $app_path" >&2
+        echo "$details" | grep -E "Identifier=|flags=|Authority=|TeamIdentifier=|Timestamp=" >&2 || true
+        return 1
+    fi
+
+    echo "$details" | grep -E "Runtime Version|Authority=|TeamIdentifier=|Timestamp=" || true
+}
+
 if [[ ! -d "$APP_PATH" ]]; then
     echo "ERROR: App bundle not found: $APP_PATH" >&2
     record_failure "App bundle exists"
@@ -77,6 +95,9 @@ fi
 if [[ -d "$APP_PATH" ]]; then
     run_check "Code signature verifies" \
         codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+
+    run_check "Hardened runtime is enabled" \
+        check_hardened_runtime "$APP_PATH"
 
     run_check "Gatekeeper assessment accepts app" \
         spctl --assess --type execute --verbose=4 "$APP_PATH"

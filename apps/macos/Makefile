@@ -95,6 +95,8 @@ release-metadata-check:
 sign: release
 	@echo "Signing app bundle..."
 	@codesign --deep --force --verify --verbose \
+		--options runtime \
+		--timestamp \
 		--sign "$(SIGN_IDENTITY)" \
 		"$(APP_BUNDLE)"
 
