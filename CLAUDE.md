@@ -25,6 +25,10 @@ From the monorepo root:
 
 ```bash
 ./scripts/check-monorepo-references.sh
+./scripts/check-website-boundary.sh
+./scripts/check-distribution-boundary.sh
+./scripts/check-local-first.sh
+./scripts/check-app-ui-contract.sh
 swift test --package-path apps/macos
 ```
 
@@ -47,6 +51,9 @@ actually exercised.
 - Do not conflate Cursor Designer with WindowDrop.
 - Do not add another product's website, release metadata, deploy pipeline, or
   product copy to this repo.
+- Do not add public download, Homebrew, cask, or stable release instructions
+  unless the signed, notarized artifact and stable release metadata are
+  verified by the repo gates.
 - Keep helper installation explicit and permission-aware.
 - Keep screen recording permission behavior truthful.
 - Treat the `NORTH_STAR.md` production readiness bar as binding. Do not claim
