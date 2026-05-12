@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 PREFERENCES_SOURCE="apps/macos/Sources/PointerDesigner/PreferencesWindowController.swift"
 MENU_SOURCE="apps/macos/Sources/PointerDesigner/MenuBarController.swift"
+MAIN_SOURCE="apps/macos/Sources/PointerDesigner/main.swift"
 
 require_text() {
   local file="$1"
@@ -80,5 +81,7 @@ done
 for text in "${menu_text[@]}"; do
   require_text "$MENU_SOURCE" "$text"
 done
+
+require_text "$MAIN_SOURCE" "withExtendedLifetime(delegate)"
 
 echo "Cursor Designer app UI contract check passed."
