@@ -39,6 +39,7 @@ swift test --package-path apps/macos
 For public distribution, add the signed/notarized artifact gates:
 
 ```bash
+(cd apps/macos && make notary-profile-check NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make signing-identity-check SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make sign SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make create-dmg)
@@ -51,6 +52,8 @@ For public distribution, add the signed/notarized artifact gates:
 (cd apps/macos && make manual-release-evidence-check MANUAL_EVIDENCE="<completed evidence file>")
 (cd apps/macos && make north-star-audit NOTARY_PROFILE="<notarytool profile>" MANUAL_EVIDENCE="<completed evidence file>")
 ```
+
+For the ordered e2e release path, use [`RELEASE_RUNBOOK.md`](RELEASE_RUNBOOK.md).
 
 Do not substitute a green test suite for app signing, DMG signing, hardened
 runtime, Gatekeeper acceptance, notarization, DMG install, release metadata, or
