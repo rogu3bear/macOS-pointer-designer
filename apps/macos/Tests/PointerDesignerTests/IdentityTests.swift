@@ -761,6 +761,7 @@ final class IdentityTests: XCTestCase {
         let checker = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-check.sh")
         let template = try loadText(relativeToThisFile: "../../Scripts/manual-release-evidence-template.sh")
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let gitignore = try loadText(relativeToThisFile: "../../.gitignore")
 
         XCTAssertTrue(requirements.contains("MANUAL_RELEASE_CHECKS.md"))
         XCTAssertTrue(requirements.contains("make manual-release-evidence-check"))
@@ -811,6 +812,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(template.contains("APP-1 menu bar launch:"))
         XCTAssertTrue(template.contains("APP-8 local-first and website-boundary product truth:"))
         XCTAssertTrue(template.contains("shasum -a 256"))
+        XCTAssertTrue(gitignore.contains("ReleaseEvidence/"))
+        XCTAssertTrue(gitignore.contains("notarization-output/"))
     }
 
     func testReleaseRunbookDrivesEndToEndReadinessWithoutClaimingAvailability() throws {

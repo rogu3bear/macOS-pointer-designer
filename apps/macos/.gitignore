@@ -63,6 +63,10 @@ Icon
 *.mobileprovision
 *.provisionprofile
 
+# Release evidence and notarization records
+ReleaseEvidence/
+notarization-output/
+
 # Local configuration
 .env
 .env.local
