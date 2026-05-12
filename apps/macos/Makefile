@@ -1,4 +1,4 @@
-.PHONY: all build release clean test install uninstall dmg create-dmg preflight release-readiness
+.PHONY: all build release clean test install uninstall dmg create-dmg preflight dmg-install-check release-readiness
 
 PRODUCT_NAME = CursorDesigner
 BUILD_DIR = .build
@@ -78,6 +78,10 @@ create-dmg:
 	@./Scripts/create-dmg.sh
 	@echo "DMG created: $(DMG_NAME)"
 
+# Verify the generated DMG mounts to the expected drag-install surface.
+dmg-install-check:
+	@./Scripts/dmg-install-check.sh --dmg "$(DMG_NAME)"
+
 # Code signing (requires valid Developer ID)
 sign: release
 	@echo "Signing app bundle..."
@@ -94,5 +98,5 @@ notarize: sign create-dmg
 	@xcrun stapler staple $(DMG_NAME)
 
 # Verify a signed, notarized, distribution-ready local artifact.
-release-readiness:
+release-readiness: dmg-install-check
 	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)"
