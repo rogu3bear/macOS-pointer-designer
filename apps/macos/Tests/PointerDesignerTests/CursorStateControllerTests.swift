@@ -261,6 +261,42 @@ final class CursorStateControllerTests: XCTestCase {
         XCTAssertFalse(controller.hasScreenRecordingPermission)
     }
 
+    func testDynamicContrastStatusActiveWhenContrastModeHasPermission() {
+        mockPermission.hasScreenRecordingPermission = true
+
+        controller.setContrastMode(.autoInvert)
+
+        XCTAssertEqual(controller.dynamicContrastStatus, .active)
+        XCTAssertTrue(controller.isBackgroundSamplingActive)
+    }
+
+    func testDynamicContrastStatusInactiveWhenContrastModeNone() {
+        mockPermission.hasScreenRecordingPermission = false
+
+        controller.setContrastMode(.none)
+
+        XCTAssertEqual(controller.dynamicContrastStatus, .inactive)
+        XCTAssertFalse(controller.isBackgroundSamplingActive)
+    }
+
+    func testDynamicContrastStatusRequiresPermissionForAutoInvert() {
+        mockPermission.hasScreenRecordingPermission = false
+
+        controller.setContrastMode(.autoInvert)
+
+        XCTAssertEqual(controller.dynamicContrastStatus, .permissionRequired)
+        XCTAssertFalse(controller.isBackgroundSamplingActive)
+    }
+
+    func testDynamicContrastStatusRequiresPermissionForOutline() {
+        mockPermission.hasScreenRecordingPermission = false
+
+        controller.setContrastMode(.outline)
+
+        XCTAssertEqual(controller.dynamicContrastStatus, .permissionRequired)
+        XCTAssertFalse(controller.isBackgroundSamplingActive)
+    }
+
     // MARK: - Helper Tests
 
     func testRefreshHelperState() {
