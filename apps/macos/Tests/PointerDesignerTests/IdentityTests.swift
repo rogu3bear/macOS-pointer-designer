@@ -412,6 +412,7 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("notarytool history"))
         XCTAssertTrue(script.contains("Distribution blockers:"))
         XCTAssertTrue(script.contains("Next required proof:"))
+        XCTAssertTrue(script.contains("Build and sign the app with a Developer ID Application identity"))
         XCTAssertTrue(script.contains("Store or select a valid notarytool profile"))
         XCTAssertTrue(script.contains("Notarize the signed DMG"))
         XCTAssertTrue(script.contains("verify its SHA-256 digest matches this local DMG"))
