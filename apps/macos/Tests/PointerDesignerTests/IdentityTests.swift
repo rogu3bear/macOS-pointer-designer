@@ -185,4 +185,37 @@ final class IdentityTests: XCTestCase {
             "Current and legacy app support dir names must be different for migration"
         )
     }
+
+    // MARK: - Least Permission Tests
+
+    func testMainAppEntitlementsStayMinimalForPointerCustomization() throws {
+        let entitlements = try loadPlist(
+            relativeToThisFile: "../../Sources/PointerDesigner/Resources/PointerDesigner.entitlements"
+        )
+
+        XCTAssertEqual(entitlements["com.apple.security.app-sandbox"] as? Bool, false)
+        XCTAssertNil(entitlements["com.apple.security.automation.apple-events"])
+        XCTAssertNil(entitlements["com.apple.security.cs.allow-unsigned-executable-memory"])
+        XCTAssertNil(entitlements["com.apple.security.cs.disable-library-validation"])
+    }
+
+    func testAccessibilityUsageDescriptionDoesNotOverclaimSystemWidePointerSupport() throws {
+        let info = try loadPlist(
+            relativeToThisFile: "../../Sources/PointerDesigner/Resources/Info.plist"
+        )
+
+        let description = try XCTUnwrap(info["NSAccessibilityUsageDescription"] as? String)
+        XCTAssertFalse(description.localizedCaseInsensitiveContains("system-wide cursor customization"))
+    }
+
+    private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
+        let testFile = URL(fileURLWithPath: #filePath)
+        let plistURL = testFile
+            .deletingLastPathComponent()
+            .appendingPathComponent(relativePath)
+            .standardizedFileURL
+        let data = try Data(contentsOf: plistURL)
+        let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        return try XCTUnwrap(plist as? [String: Any])
+    }
 }
