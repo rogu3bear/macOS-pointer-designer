@@ -80,12 +80,16 @@ From `apps/macos`, run:
 
 ```bash
 make signing-identity-check SIGN_IDENTITY="<Developer ID Application identity>"
+make release-source-state-check
 make release-candidate \
   SIGN_IDENTITY="<Developer ID Application identity>" \
   NOTARY_PROFILE="<notarytool profile>"
 make release-readiness NOTARY_PROFILE="<notarytool profile>"
 ```
 
+`make release-source-state-check` keeps public release proof tied to a clean
+committed tree. In `make release-readiness`, that same guard also requires the
+app executable and DMG to be newer than the commit being certified.
 `make release-candidate` builds, signs, notarizes, staples, and runs artifact
 readiness. `make release-readiness` additionally verifies stable GitHub release
 metadata, so it must remain red until a stable GitHub release exists and its
@@ -148,6 +152,7 @@ passes on the same commit and DMG.
 Stop and do not publish if any of these are true:
 
 - Gatekeeper rejects the app or DMG.
+- The release tree has uncommitted or untracked files.
 - The DMG is not notarized or stapled.
 - The stable GitHub release digest does not match the local DMG.
 - Manual Screen Recording, persistence, drag-install, or local-first checks are

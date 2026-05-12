@@ -251,6 +251,29 @@ final class CursorStateControllerTests: XCTestCase {
         XCTAssertFalse(controller.currentSettings.launchAtLogin)
     }
 
+    // MARK: - Update Permission Tests
+
+    func testInternetUpdateChecksDefaultToDisabled() {
+        XCTAssertFalse(controller.currentSettings.allowsInternetUpdateChecks)
+    }
+
+    func testSetAllowsInternetUpdateChecksPersistsExplicitConsent() {
+        controller.setAllowsInternetUpdateChecks(true)
+
+        XCTAssertTrue(controller.currentSettings.allowsInternetUpdateChecks)
+        XCTAssertTrue(mockSettings.lastSavedSettings?.allowsInternetUpdateChecks ?? false)
+    }
+
+    func testRecordUpdateCheckPersistsObservedReleaseMetadata() {
+        let checkedAt = Date(timeIntervalSince1970: 2_000)
+
+        controller.recordUpdateCheck(latestReleaseTag: "v1.0.1", checkedAt: checkedAt)
+
+        XCTAssertEqual(controller.currentSettings.lastKnownLatestReleaseTag, "v1.0.1")
+        XCTAssertEqual(controller.currentSettings.lastUpdateCheckDate, checkedAt)
+        XCTAssertEqual(mockSettings.lastSavedSettings?.lastKnownLatestReleaseTag, "v1.0.1")
+    }
+
     // MARK: - Permission Tests
 
     func testRefreshPermissionState() {

@@ -17,8 +17,10 @@ either verified by live evidence or explicitly marked blocked.
 | APP-4 | Make dynamic contrast honest with and without Screen Recording permission. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; Preferences UI must show active, inactive, or permission-required state. | Controller and Preferences contract verified; real permission flow still needs release-candidate manual proof. |
 | APP-5 | Hide, disable, or mark unsupported helper and system-wide replacement paths unavailable. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter IdentityTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-monorepo-references.sh` | Locally verified; system-wide replacement remains unsupported. |
 | APP-6 | Produce a validated app bundle and DMG from the repo-local macOS package. | `make preflight`; `make dmg`; `make dmg-install-check`; `make dmg-artifact-match-check` | Locally verified when the gates pass on the candidate artifact. Public artifact gates additionally verify the mounted DMG app matches the release app under assessment. |
-| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, manual release evidence, and install instructions before public distribution. | `make signing-identity-check`; `make setup-notary-profile`; `make notary-profile-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check`; `make manual-release-evidence-check`; `make north-star-audit` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release evidence, and stable release metadata exist. `make setup-notary-profile` creates the private Keychain credential lane, `make notary-profile-check` verifies it, and `make release-metadata-check` verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. `make north-star-audit` fails until both `make release-readiness` and manual evidence validation pass. |
+| APP-7 | Verify app signing, DMG signing, hardened runtime, Gatekeeper acceptance, notarization, release metadata, clean committed release source state, manual release evidence, and install instructions before public distribution. | `make signing-identity-check`; `make release-source-state-check`; `make setup-notary-profile`; `make notary-profile-check`; `make signed-dmg`; `make release-artifact-readiness`; `make release-readiness`; `make release-metadata-check`; `make manual-release-evidence-check`; `make north-star-audit` | Signing identity, app signing, hardened runtime, mounted app identity/version/executable match, mounted app signature, and DMG signature are locally verified when `make signed-dmg` and `make release-artifact-readiness` reach those checks; public distribution remains blocked until the release source tree is clean and committed, the app executable and DMG are rebuilt after that commit, notarization credentials/profile, stapled notarization, Gatekeeper acceptance, manual release evidence, and stable release metadata exist. `make setup-notary-profile` creates the private Keychain credential lane, `make notary-profile-check` verifies it, and `make release-metadata-check` verifies the stable release tag matches app version before comparing the DMG SHA-256 digest. `make north-star-audit` fails until both `make release-readiness` and manual evidence validation pass. |
 | APP-8 | Keep wrong-product language, premature website surfaces, premature public distribution instructions, telemetry, trackers, surprise network calls, and placeholder release claims out of user-facing surfaces. | `./scripts/check-monorepo-references.sh`; `./scripts/check-website-boundary.sh`; `./scripts/check-distribution-boundary.sh`; `./scripts/check-local-first.sh`; `swift test --package-path apps/macos --filter IdentityTests` | Guarded locally; repeat before release. |
+| APP-9 | Keep update checks explicit, user-initiated, and internet-gated from Settings. | `swift test --package-path apps/macos --filter UpdateCheckerTests`; `swift test --package-path apps/macos --filter CursorSettingsTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; `./scripts/check-local-first.sh`; `./scripts/check-app-ui-contract.sh` | Update metadata checks are allowed only through the reviewed `UpdateChecker` path after the user enables internet access for update checks. |
+| APP-10 | Research and implement pointer persistence as a least-permission capability, not as an unsupported helper claim. | `POINTER_PERSISTENCE_RESEARCH.md`; `CursorEngine.swift`; `HelperToolManager.swift`; future supervisor tests before any cross-app persistence claim | Research documented. `CursorEngine` now has a least-permission reapply supervisor for mouse/app activation resets; true system-wide replacement remains blocked until a stronger verified supervisor or supported helper path ships. |
 
 ## Release-Candidate Proof
 
@@ -45,6 +47,7 @@ For public distribution, add the signed/notarized artifact gates:
 (cd apps/macos && make setup-notary-profile NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make notary-profile-check NOTARY_PROFILE="<notarytool profile>")
 (cd apps/macos && make signing-identity-check SIGN_IDENTITY="<Developer ID Application identity>")
+(cd apps/macos && make release-source-state-check)
 (cd apps/macos && make sign SIGN_IDENTITY="<Developer ID Application identity>")
 (cd apps/macos && make create-dmg)
 (cd apps/macos && make sign-dmg SIGN_IDENTITY="<Developer ID Application identity>")
@@ -87,6 +90,16 @@ Accessibility posture for continuity and diagnostics. Live macOS permission
 checks remain authoritative; persisted permission posture must not be presented
 as a permanent grant.
 
+Internet access for update checks defaults off. Cursor Designer may contact
+verified release metadata only after the user enables update-check internet
+access in Settings and initiates a check.
+
+Cursor persistence across other applications is not proven by `NSCursor.set()`
+alone. The research note in `POINTER_PERSISTENCE_RESEARCH.md` is the current
+design boundary: prefer a least-permission supervisor before considering a
+privileged helper, and keep private/SIP-dependent cursor replacement out of the
+release path.
+
 The app must stay explicitly not-ready for broad distribution while any of
 these are true:
 
@@ -96,10 +109,16 @@ these are true:
   supported pointer capability exists.
 - The DMG is unsigned, unstapled, unnotarized, or rejected by Gatekeeper.
 - notarytool profile credentials are missing or notarization fails.
+- The release source tree has uncommitted or untracked files, or the app/DMG
+  artifact is older than the commit being certified, while a public release
+  gate is being used to certify an artifact.
 - There is no verified stable GitHub release metadata with a tag matching the
   app version and a SHA-256 digest matching the local DMG for public downloads.
 - Homebrew install instructions or casks are not backed by a verified stable
   artifact.
+- Update checks run without explicit Settings consent.
+- Cross-application pointer persistence is claimed without a verified
+  least-permission supervisor or supported helper path.
 
 ## Documentation Rule
 

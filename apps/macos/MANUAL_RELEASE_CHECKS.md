@@ -75,7 +75,7 @@ App executable SHA-256:
 
 Machine gates:
 - make release-readiness: Pass/fail
-- spctl --assess --type open --verbose=4 CursorDesigner.dmg: Pass/fail
+- spctl --assess --type open --context context:primary-signature --verbose=4 CursorDesigner.dmg: Pass/fail
 - xcrun stapler validate CursorDesigner.dmg: Pass/fail
 
 Manual observations:

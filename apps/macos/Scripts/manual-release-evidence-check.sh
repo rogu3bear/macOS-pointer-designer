@@ -77,7 +77,7 @@ required_fields=(
     "App build:"
     "App executable SHA-256:"
     "make release-readiness:"
-    "spctl --assess --type open --verbose=4 CursorDesigner.dmg:"
+    "spctl --assess --type open --context context:primary-signature --verbose=4 CursorDesigner.dmg:"
     "xcrun stapler validate CursorDesigner.dmg:"
     "APP-1 menu bar launch:"
     "APP-2 persistence after quit/relaunch:"
@@ -94,7 +94,7 @@ required_fields=(
 
 observed_fields=(
     "make release-readiness:"
-    "spctl --assess --type open --verbose=4 CursorDesigner.dmg:"
+    "spctl --assess --type open --context context:primary-signature --verbose=4 CursorDesigner.dmg:"
     "xcrun stapler validate CursorDesigner.dmg:"
     "APP-1 menu bar launch:"
     "APP-2 persistence after quit/relaunch:"
