@@ -315,11 +315,24 @@ final class IdentityTests: XCTestCase {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let script = try loadText(relativeToThisFile: "../../Scripts/release-readiness.sh")
 
-        XCTAssertTrue(makefile.contains("release-readiness:"))
+        XCTAssertTrue(makefile.contains("release-readiness: dmg-install-check"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
         XCTAssertTrue(script.contains("spctl --assess --type execute"))
         XCTAssertTrue(script.contains("stapler validate"))
         XCTAssertTrue(script.contains("notarytool history"))
+    }
+
+    func testDMGInstallGateChecksMountedArtifactShape() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+        let script = try loadText(relativeToThisFile: "../../Scripts/dmg-install-check.sh")
+
+        XCTAssertTrue(makefile.contains("dmg-install-check:"))
+        XCTAssertTrue(script.contains("hdiutil verify"))
+        XCTAssertTrue(script.contains("hdiutil attach"))
+        XCTAssertTrue(script.contains("CursorDesigner.app"))
+        XCTAssertTrue(script.contains("Applications"))
+        XCTAssertTrue(script.contains("CFBundleIdentifier"))
+        XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
     }
 
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
