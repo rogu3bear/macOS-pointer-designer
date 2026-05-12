@@ -2,7 +2,7 @@ import AppKit
 import Combine
 import PointerDesignerCore
 
-final class MenuBarController {
+final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
     private var enabledMenuItem: NSMenuItem?
@@ -19,6 +19,7 @@ final class MenuBarController {
     init(statusItem: NSStatusItem, stateController: CursorStateController = .shared) {
         self.statusItem = statusItem
         self.stateController = stateController
+        super.init()
         menu.autoenablesItems = false // Prevent auto-disabling menu items
         setupStatusItem()
         setupMenu()

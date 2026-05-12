@@ -59,6 +59,7 @@ preferences_text=(
 )
 
 menu_text=(
+  "final class MenuBarController: NSObject"
   "Enabled"
   "Disabled"
   "Contrast Mode"
