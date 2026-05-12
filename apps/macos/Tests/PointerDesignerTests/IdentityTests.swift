@@ -299,6 +299,22 @@ final class IdentityTests: XCTestCase {
         )
     }
 
+    func testDistributionBoundaryGuardPreventsPrematureDownloadSurface() throws {
+        let script = try loadText(relativeToThisFile: "../../../../scripts/check-distribution-boundary.sh")
+        let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
+        let northStar = try loadText(relativeToThisFile: "../../../../NORTH_STAR.md")
+        let requirements = try loadText(relativeToThisFile: "../../REQUIREMENTS.md")
+        let rootReadme = try loadText(relativeToThisFile: "../../../../README.md")
+
+        XCTAssertTrue(script.contains("Casks apps/macos/Casks homebrew Formula"))
+        XCTAssertTrue(script.contains("brew install --cask cursor-designer-osx"))
+        XCTAssertTrue(script.contains("Cursor Designer distribution-boundary check passed."))
+        XCTAssertTrue(workflow.contains("./scripts/check-distribution-boundary.sh"))
+        XCTAssertTrue(northStar.contains("./scripts/check-distribution-boundary.sh"))
+        XCTAssertTrue(requirements.contains("./scripts/check-distribution-boundary.sh"))
+        XCTAssertTrue(rootReadme.contains("./scripts/check-distribution-boundary.sh"))
+    }
+
     func testWebsiteBoundaryGuardPreventsPrematureWebsiteSurface() throws {
         let script = try loadText(relativeToThisFile: "../../../../scripts/check-website-boundary.sh")
         let workflow = try loadText(relativeToThisFile: "../../../../.github/workflows/ci.yml")
@@ -335,6 +351,7 @@ final class IdentityTests: XCTestCase {
             "apps/macos/REQUIREMENTS.md",
             "apps/macos/MANUAL_RELEASE_CHECKS.md",
             "./scripts/check-website-boundary.sh",
+            "./scripts/check-distribution-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "make launch-smoke",
@@ -383,6 +400,7 @@ final class IdentityTests: XCTestCase {
             "mounted DMG app matches the release app",
             "stable release tag matches app version",
             "./scripts/check-website-boundary.sh",
+            "./scripts/check-distribution-boundary.sh",
             "./scripts/check-local-first.sh",
             "./scripts/check-app-ui-contract.sh",
             "Dynamic contrast is active",
@@ -422,7 +440,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("release-readiness"))
         XCTAssertTrue(script.contains("release-metadata-check"))
         XCTAssertTrue(script.contains("check-website-boundary.sh"))
+        XCTAssertTrue(script.contains("check-distribution-boundary.sh"))
         XCTAssertTrue(script.contains("Website boundary"))
+        XCTAssertTrue(script.contains("Distribution boundary"))
         XCTAssertTrue(script.contains("manual-release-evidence-check.sh"))
         XCTAssertTrue(script.contains("Manual release evidence"))
         XCTAssertTrue(script.contains("not mass-production ready"))
