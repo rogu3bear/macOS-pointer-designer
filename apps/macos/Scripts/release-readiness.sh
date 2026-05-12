@@ -49,6 +49,39 @@ record_failure() {
     failures+=("$1")
 }
 
+has_failure() {
+    local expected="$1"
+
+    for failure in "${failures[@]}"; do
+        if [[ "$failure" == "$expected" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+print_next_required_proof() {
+    echo "" >&2
+    echo "Next required proof:" >&2
+
+    if has_failure "notarytool credential profile is available"; then
+        echo "- Store or select a valid notarytool profile, then rerun this gate with NOTARY_PROFILE=<profile>." >&2
+    fi
+
+    if has_failure "Gatekeeper assessment accepts app" ||
+       has_failure "Gatekeeper assessment accepts DMG" ||
+       has_failure "Stapled notarization ticket validates"; then
+        echo "- Notarize the signed DMG, staple the ticket, and rerun Gatekeeper assessment for both the app and DMG." >&2
+    fi
+
+    if has_failure "Stable release metadata includes CursorDesigner.dmg"; then
+        echo "- Publish a stable GitHub release with CursorDesigner.dmg and verify its SHA-256 digest matches this local DMG." >&2
+    fi
+
+    echo "- After this gate passes, complete MANUAL_RELEASE_CHECKS.md against the same Gatekeeper-accepted DMG." >&2
+}
+
 run_check() {
     local label="$1"
     shift
@@ -129,6 +162,7 @@ if [[ ${#failures[@]} -gt 0 ]]; then
     for failure in "${failures[@]}"; do
         echo "- $failure" >&2
     done
+    print_next_required_proof
     exit 1
 fi
 
