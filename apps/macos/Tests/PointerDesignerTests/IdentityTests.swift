@@ -399,6 +399,17 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("XPC Mach Service:"))
     }
 
+    func testHelperScaffoldDoesNotAcceptUnverifiedClients() throws {
+        let helper = try loadText(relativeToThisFile: "../../Sources/PointerDesignerHelper/main.swift")
+
+        XCTAssertTrue(helper.contains("Fail closed unless the caller resolves to one of the app bundle IDs."))
+        XCTAssertTrue(helper.contains("Identity.validClientBundleIDs"))
+        XCTAssertTrue(helper.contains("Rejected connection from PID"))
+        XCTAssertFalse(helper.localizedCaseInsensitiveContains("personal use mode"))
+        XCTAssertFalse(helper.contains("return true  // Accept"))
+        XCTAssertFalse(helper.contains("Code signing verification not implemented"))
+    }
+
     func testNotarizeTargetDoesNotRebuildAfterSigning() throws {
         let makefile = try loadText(relativeToThisFile: "../../Makefile")
         let notaryProfileCheck = try loadText(relativeToThisFile: "../../Scripts/notary-profile-check.sh")

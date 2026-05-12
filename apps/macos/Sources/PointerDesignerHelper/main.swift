@@ -7,10 +7,6 @@ import PointerDesignerCore
 final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelperProtocol {
     private let listener: NSXPCListener
 
-    // Personal use - skip team ID verification
-    // For distribution, implement proper code signing verification
-    private let verifyCodeSigning = false
-
     // Edge case #62: Temp file cleanup timer
     private var cleanupTimer: Timer?
 
@@ -203,19 +199,10 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
         return true
     }
 
-    // Client verification - simplified for personal use
     private func verifyClient(connection: NSXPCConnection) -> Bool {
-        // For personal use, just verify it's a local process with valid bundle ID
-        guard !verifyCodeSigning else {
-            // If code signing verification is enabled, implement proper checks here
-            NSLog("HelperTool: Code signing verification not implemented")
-            return false
-        }
-
-        // Basic check: verify bundle identifier
+        // Fail closed unless the caller resolves to one of the app bundle IDs.
         let validBundleIDs = Identity.validClientBundleIDs
 
-        // Get process info via SecCode (lighter check)
         var code: SecCode?
         let attributes = [kSecGuestAttributePid: connection.processIdentifier] as CFDictionary
         let status = SecCodeCopyGuestWithAttributes(nil, attributes, [], &code)
@@ -232,12 +219,14 @@ final class PointerDesignerHelper: NSObject, NSXPCListenerDelegate, PointerHelpe
                         NSLog("HelperTool: Accepted connection from \(bundleID)")
                         return true
                     }
+                    NSLog("HelperTool: Rejected connection from unexpected bundle ID \(bundleID)")
+                    return false
                 }
             }
         }
 
-        NSLog("HelperTool: Accepted connection from PID \(connection.processIdentifier) (personal use mode)")
-        return true  // Accept for personal use
+        NSLog("HelperTool: Rejected connection from PID \(connection.processIdentifier); bundle identity could not be verified")
+        return false
     }
 
     // MARK: - PointerHelperProtocol
