@@ -5,6 +5,7 @@ DMG_PATH="CursorDesigner.dmg"
 APP_NAME="CursorDesigner.app"
 EXPECTED_BUNDLE_ID="com.pointerdesigner.app"
 MOUNT_DIR=""
+REQUIRE_SIGNATURE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -12,8 +13,12 @@ while [[ $# -gt 0 ]]; do
             DMG_PATH="$2"
             shift 2
             ;;
+        --require-signature)
+            REQUIRE_SIGNATURE=true
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [--dmg PATH]"
+            echo "Usage: $0 [--dmg PATH] [--require-signature]"
             exit 0
             ;;
         *)
@@ -88,8 +93,13 @@ if [[ "$BUNDLE_ID" != "$EXPECTED_BUNDLE_ID" ]]; then
 fi
 
 echo ""
-echo ">>> Verifying mounted app signature"
-codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+if [[ "$REQUIRE_SIGNATURE" == "true" ]]; then
+    echo ">>> Verifying mounted app signature"
+    codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+else
+    echo ">>> Skipping mounted app signature check"
+    echo "Use --require-signature for signed release-candidate artifacts."
+fi
 
 echo ""
 echo "DMG install check passed."

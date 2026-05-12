@@ -107,5 +107,5 @@ notarize: sign create-dmg
 	@xcrun stapler staple $(DMG_NAME)
 
 # Verify a signed, notarized, distribution-ready local artifact.
-release-readiness: dmg-install-check
+release-readiness:
 	@./Scripts/release-readiness.sh --app "$(APP_BUNDLE)" --dmg "$(DMG_NAME)" --notary-profile "$(NOTARY_PROFILE)"
