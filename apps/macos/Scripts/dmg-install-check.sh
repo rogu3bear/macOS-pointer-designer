@@ -4,11 +4,20 @@ set -euo pipefail
 DMG_PATH="CursorDesigner.dmg"
 APP_NAME="CursorDesigner.app"
 EXPECTED_BUNDLE_ID="com.pointerdesigner.app"
+EXPECTED_APP_PATH=""
 MOUNT_DIR=""
 REQUIRE_SIGNATURE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --app)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --app requires a path" >&2
+                exit 2
+            fi
+            EXPECTED_APP_PATH="$2"
+            shift 2
+            ;;
         --dmg)
             if [[ $# -lt 2 || "$2" == --* ]]; then
                 echo "ERROR: --dmg requires a path" >&2
@@ -22,7 +31,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo "Usage: $0 [--dmg PATH] [--require-signature]"
+            echo "Usage: $0 [--app PATH] [--dmg PATH] [--require-signature]"
             exit 0
             ;;
         *)
@@ -42,10 +51,18 @@ trap cleanup EXIT
 
 echo "=== Cursor Designer DMG Install Check ==="
 echo "DMG: $DMG_PATH"
+if [[ -n "$EXPECTED_APP_PATH" ]]; then
+    echo "Expected app: $EXPECTED_APP_PATH"
+fi
 echo ""
 
 if [[ ! -f "$DMG_PATH" ]]; then
     echo "ERROR: DMG not found: $DMG_PATH" >&2
+    exit 2
+fi
+
+if [[ -n "$EXPECTED_APP_PATH" && ! -d "$EXPECTED_APP_PATH" ]]; then
+    echo "ERROR: Expected app bundle not found: $EXPECTED_APP_PATH" >&2
     exit 2
 fi
 
@@ -58,14 +75,14 @@ echo ""
 echo ">>> Mounting read-only"
 hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$MOUNT_DIR" "$DMG_PATH" >/dev/null
 
-APP_PATH="$MOUNT_DIR/$APP_NAME"
+MOUNTED_APP_PATH="$MOUNT_DIR/$APP_NAME"
 APPLICATIONS_LINK="$MOUNT_DIR/Applications"
-INFO_PLIST="$APP_PATH/Contents/Info.plist"
-EXECUTABLE_PATH="$APP_PATH/Contents/MacOS/PointerDesigner"
+INFO_PLIST="$MOUNTED_APP_PATH/Contents/Info.plist"
+EXECUTABLE_PATH="$MOUNTED_APP_PATH/Contents/MacOS/PointerDesigner"
 
 echo ""
 echo ">>> Checking install surface"
-if [[ ! -d "$APP_PATH" ]]; then
+if [[ ! -d "$MOUNTED_APP_PATH" ]]; then
     echo "ERROR: Missing app bundle in DMG: $APP_NAME" >&2
     exit 3
 fi
@@ -96,10 +113,51 @@ if [[ "$BUNDLE_ID" != "$EXPECTED_BUNDLE_ID" ]]; then
     exit 3
 fi
 
+if [[ -n "$EXPECTED_APP_PATH" ]]; then
+    echo ""
+    echo ">>> Comparing mounted app to expected app"
+    EXPECTED_INFO_PLIST="$EXPECTED_APP_PATH/Contents/Info.plist"
+    EXPECTED_EXECUTABLE_PATH="$EXPECTED_APP_PATH/Contents/MacOS/PointerDesigner"
+
+    if [[ ! -f "$EXPECTED_INFO_PLIST" ]]; then
+        echo "ERROR: Missing Info.plist in expected app: $EXPECTED_INFO_PLIST" >&2
+        exit 4
+    fi
+
+    if [[ ! -x "$EXPECTED_EXECUTABLE_PATH" ]]; then
+        echo "ERROR: Missing executable in expected app: $EXPECTED_EXECUTABLE_PATH" >&2
+        exit 4
+    fi
+
+    for key in CFBundleIdentifier CFBundleShortVersionString CFBundleVersion; do
+        mounted_value=$(/usr/libexec/PlistBuddy -c "Print :$key" "$INFO_PLIST")
+        expected_value=$(/usr/libexec/PlistBuddy -c "Print :$key" "$EXPECTED_INFO_PLIST")
+
+        if [[ "$mounted_value" != "$expected_value" ]]; then
+            echo "ERROR: Mounted app $key does not match expected app." >&2
+            echo "Mounted:  $mounted_value" >&2
+            echo "Expected: $expected_value" >&2
+            exit 4
+        fi
+    done
+
+    mounted_executable_sha=$(shasum -a 256 "$EXECUTABLE_PATH" | awk '{print $1}')
+    expected_executable_sha=$(shasum -a 256 "$EXPECTED_EXECUTABLE_PATH" | awk '{print $1}')
+
+    if [[ "$mounted_executable_sha" != "$expected_executable_sha" ]]; then
+        echo "ERROR: Mounted app executable does not match expected app executable." >&2
+        echo "Mounted:  $mounted_executable_sha" >&2
+        echo "Expected: $expected_executable_sha" >&2
+        exit 4
+    fi
+
+    echo "Mounted app matches expected app bundle."
+fi
+
 echo ""
 if [[ "$REQUIRE_SIGNATURE" == "true" ]]; then
     echo ">>> Verifying mounted app signature"
-    codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+    codesign --verify --deep --strict --verbose=2 "$MOUNTED_APP_PATH"
 else
     echo ">>> Skipping mounted app signature check"
     echo "Use --require-signature for signed release-candidate artifacts."

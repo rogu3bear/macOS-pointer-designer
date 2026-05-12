@@ -524,6 +524,8 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(makefile.contains("dmg-install-check:"))
         XCTAssertTrue(makefile.contains(#"dmg-install-check.sh --dmg "$(DMG_NAME)""#))
         XCTAssertFalse(makefile.contains(#"dmg-install-check.sh --dmg "$(DMG_NAME)" --require-signature"#))
+        XCTAssertTrue(script.contains("--app"))
+        XCTAssertTrue(script.contains("Mounted app matches expected app bundle."))
         XCTAssertTrue(script.contains("--require-signature"))
         XCTAssertTrue(script.contains("Use --require-signature for signed release-candidate artifacts."))
         XCTAssertTrue(script.contains("hdiutil verify"))
@@ -531,6 +533,9 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(script.contains("CursorDesigner.app"))
         XCTAssertTrue(script.contains("Applications"))
         XCTAssertTrue(script.contains("CFBundleIdentifier"))
+        XCTAssertTrue(script.contains("CFBundleShortVersionString"))
+        XCTAssertTrue(script.contains("CFBundleVersion"))
+        XCTAssertTrue(script.contains("shasum -a 256"))
         XCTAssertTrue(script.contains("codesign --verify --deep --strict"))
     }
 
