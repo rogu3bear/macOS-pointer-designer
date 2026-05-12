@@ -7,13 +7,17 @@
 #   ./Scripts/trust-check.sh --app /path/to/App.app   # Check specific app bundle
 #   ./Scripts/trust-check.sh --app .build/release/CursorDesigner.app  # Check build output
 
-set -e
+set -euo pipefail
 
 # Parse arguments
 BUNDLE_PATH="/Applications/CursorDesigner.app"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --app)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --app requires a path" >&2
+                exit 2
+            fi
             BUNDLE_PATH="$2"
             shift 2
             ;;
@@ -26,9 +30,9 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
+            echo "Unknown option: $1" >&2
+            echo "Use --help for usage information" >&2
+            exit 2
             ;;
     esac
 done
