@@ -20,6 +20,9 @@ jobs:
       - name: Check retired website references
         run: ./scripts/check-monorepo-references.sh
 
+      - name: Check website boundary
+        run: ./scripts/check-website-boundary.sh
+
       - name: Check local-first app boundary
         run: ./scripts/check-local-first.sh
 
