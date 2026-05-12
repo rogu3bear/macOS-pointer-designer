@@ -4,6 +4,7 @@ set -euo pipefail
 APP_PATH=".build/release/CursorDesigner.app"
 DMG_PATH="CursorDesigner.dmg"
 NOTARY_PROFILE="notarization"
+REPO="rogu3bear/macOS-pointer-designer"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 while [[ $# -gt 0 ]]; do
@@ -20,8 +21,12 @@ while [[ $# -gt 0 ]]; do
             NOTARY_PROFILE="$2"
             shift 2
             ;;
+        --repo)
+            REPO="$2"
+            shift 2
+            ;;
         -h|--help)
-            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME]"
+            echo "Usage: $0 [--app PATH] [--dmg PATH] [--notary-profile NAME] [--repo OWNER/REPO]"
             exit 0
             ;;
         *)
@@ -35,6 +40,7 @@ echo "=== Cursor Designer Release Readiness ==="
 echo "App:             $APP_PATH"
 echo "DMG:             $DMG_PATH"
 echo "Notary profile:  $NOTARY_PROFILE"
+echo "Release repo:    $REPO"
 echo ""
 
 failures=()
@@ -86,6 +92,9 @@ fi
 
 run_check "notarytool credential profile is available" \
     xcrun notarytool history --keychain-profile "$NOTARY_PROFILE"
+
+run_check "Stable release metadata includes CursorDesigner.dmg" \
+    "$SCRIPT_DIR/release-metadata-check.sh" --repo "$REPO"
 
 echo ""
 if [[ ${#failures[@]} -gt 0 ]]; then

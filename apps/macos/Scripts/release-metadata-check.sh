@@ -48,9 +48,9 @@ STABLE_TAG=$(gh release list \
 
 if [[ -z "$STABLE_TAG" ]]; then
     echo ""
-    echo "No stable public release found."
-    echo "Release metadata is explicitly not ready for stable download claims."
-    exit 0
+    echo "ERROR: No stable public release found." >&2
+    echo "Release metadata is not ready for stable download claims." >&2
+    exit 4
 fi
 
 echo ""
