@@ -88,6 +88,10 @@ echo ">>> Product boundary"
 "$ROOT_DIR/scripts/check-monorepo-references.sh"
 
 echo ""
+echo ">>> Website boundary"
+"$ROOT_DIR/scripts/check-website-boundary.sh"
+
+echo ""
 echo ">>> Local-first app surface"
 "$ROOT_DIR/scripts/check-local-first.sh"
 
