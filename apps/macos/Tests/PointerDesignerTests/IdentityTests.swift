@@ -288,6 +288,16 @@ final class IdentityTests: XCTestCase {
         XCTAssertFalse(trustCheck.localizedCaseInsensitiveContains("XPC Mach Service:"))
     }
 
+    func testNotarizeTargetDoesNotRebuildAfterSigning() throws {
+        let makefile = try loadText(relativeToThisFile: "../../Makefile")
+
+        XCTAssertTrue(makefile.contains("dmg: release create-dmg"))
+        XCTAssertTrue(makefile.contains("notarize: sign create-dmg"))
+        XCTAssertFalse(makefile.contains("notarize: sign dmg"))
+        XCTAssertTrue(makefile.contains("SIGN_IDENTITY ?="))
+        XCTAssertTrue(makefile.contains("NOTARY_PROFILE ?="))
+    }
+
     private func loadPlist(relativeToThisFile relativePath: String) throws -> [String: Any] {
         let testFile = URL(fileURLWithPath: #filePath)
         let plistURL = testFile
