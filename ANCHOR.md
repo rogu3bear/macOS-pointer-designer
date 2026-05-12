@@ -60,6 +60,7 @@ If a proposal conflicts with these anchors, the burden is on the proposal.
 - From the monorepo root, run `./scripts/check-monorepo-references.sh`,
   `./scripts/check-website-boundary.sh`,
   `./scripts/check-distribution-boundary.sh`,
+  `./scripts/check-compatibility-boundary.sh`,
   `./scripts/check-local-first.sh`, and
   `./scripts/check-app-ui-contract.sh` before product or release claims.
 - From the monorepo root, run `swift test --package-path apps/macos` for the

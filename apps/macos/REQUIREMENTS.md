@@ -11,7 +11,7 @@ either verified by live evidence or explicitly marked blocked.
 
 | ID | Requirement | Current proof path | Status |
 |----|-------------|--------------------|--------|
-| APP-1 | Launch as a menu bar utility on supported macOS versions without extra setup beyond documented permissions. | `make launch-smoke`; `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos`; `make preflight` | Locally verified by launch smoke, UI contract, and package gates. |
+| APP-1 | Launch as a menu bar utility on supported macOS versions without extra setup beyond documented permissions. | `make launch-smoke`; `./scripts/check-compatibility-boundary.sh`; `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos`; `make preflight` | Locally verified by launch smoke, compatibility boundary, UI contract, and package gates. |
 | APP-2 | Persist pointer settings across quit, relaunch, crash recovery, and migration from legacy app-support paths. | `swift test --package-path apps/macos --filter CursorStateControllerTests`; `swift test --package-path apps/macos --filter AppSupportMigratorTests`; `swift test --package-path apps/macos --filter CrashRecoveryManagerTests` | Unit verified; full UI persistence still needs release-candidate manual proof. |
 | APP-3 | Keep the Negative preset and custom color path visible, saved, and tested. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorSettingsTests`; `swift test --package-path apps/macos --filter CursorStateControllerTests` | Unit and UI-contract verified. |
 | APP-4 | Make dynamic contrast honest with and without Screen Recording permission. | `./scripts/check-app-ui-contract.sh`; `swift test --package-path apps/macos --filter CursorStateControllerTests`; Preferences UI must show active, inactive, or permission-required state. | Controller and Preferences contract verified; real permission flow still needs release-candidate manual proof. |
@@ -28,6 +28,7 @@ Run these from the monorepo root unless a command says otherwise:
 ./scripts/check-monorepo-references.sh
 ./scripts/check-website-boundary.sh
 ./scripts/check-distribution-boundary.sh
+./scripts/check-compatibility-boundary.sh
 ./scripts/check-local-first.sh
 ./scripts/check-app-ui-contract.sh
 swift test --package-path apps/macos

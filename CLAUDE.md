@@ -27,6 +27,7 @@ From the monorepo root:
 ./scripts/check-monorepo-references.sh
 ./scripts/check-website-boundary.sh
 ./scripts/check-distribution-boundary.sh
+./scripts/check-compatibility-boundary.sh
 ./scripts/check-local-first.sh
 ./scripts/check-app-ui-contract.sh
 swift test --package-path apps/macos
