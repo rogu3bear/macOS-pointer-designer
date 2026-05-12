@@ -416,6 +416,23 @@ final class IdentityTests: XCTestCase {
         XCTAssertTrue(trustCheck.contains("Unknown option: $1"))
     }
 
+    func testReleaseScriptsValidateMissingOptionValues() throws {
+        let scriptsByRequiredMessage = [
+            "../../Scripts/dmg-install-check.sh": "ERROR: --dmg requires a path",
+            "../../Scripts/launch-smoke.sh": "ERROR: --app requires a path",
+            "../../Scripts/notary-profile-check.sh": "ERROR: --notary-profile requires a name",
+            "../../Scripts/release-metadata-check.sh": "ERROR: --repo requires OWNER/REPO",
+            "../../Scripts/release-readiness.sh": "ERROR: --notary-profile requires a name"
+        ]
+
+        for (scriptPath, requiredMessage) in scriptsByRequiredMessage {
+            let script = try loadText(relativeToThisFile: scriptPath)
+
+            XCTAssertTrue(script.contains(requiredMessage), "\(scriptPath) must validate missing option values")
+            XCTAssertTrue(script.contains("exit 2"), "\(scriptPath) must treat CLI usage errors as exit 2")
+        }
+    }
+
     func testHelperScaffoldDoesNotAcceptUnverifiedClients() throws {
         let helper = try loadText(relativeToThisFile: "../../Sources/PointerDesignerHelper/main.swift")
 

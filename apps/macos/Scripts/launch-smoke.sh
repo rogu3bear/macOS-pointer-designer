@@ -8,6 +8,10 @@ LAUNCHED_PID=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --app)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --app requires a path" >&2
+                exit 2
+            fi
             APP_PATH="$2"
             shift 2
             ;;

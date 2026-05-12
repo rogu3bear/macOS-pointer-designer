@@ -8,10 +8,18 @@ DMG_PATH="CursorDesigner.dmg"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --repo)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --repo requires OWNER/REPO" >&2
+                exit 2
+            fi
             REPO="$2"
             shift 2
             ;;
         --dmg)
+            if [[ $# -lt 2 || "$2" == --* ]]; then
+                echo "ERROR: --dmg requires a path" >&2
+                exit 2
+            fi
             DMG_PATH="$2"
             EXPECTED_DMG="$(basename "$2")"
             shift 2
